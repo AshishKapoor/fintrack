@@ -212,3 +212,7 @@ FinTrack was built to give privacy-conscious users a simple but powerful way to 
 ## 🙌 Support
 
 If you find FinTrack useful, consider giving a ⭐ on GitHub or sharing it with others!
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=ashishkapoor/fintrack&type=Date)](https://www.star-history.com/#ashishkapoor/fintrack&Date)

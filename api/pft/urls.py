@@ -1,7 +1,7 @@
 from django.urls import path, include
 from .routers import router
 from .views import (
-    RegisterUserAPIView, 
+    RegisterUserAPIView,
     MeView,
     UpdateProfileView,
     ChangePasswordView,

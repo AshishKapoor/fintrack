@@ -2,9 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from .models import (
-    Category, Subscription, SubscriptionPlan, Transaction, Budget, User,
-    AnalyticsReport, SavingsGoal, BillReminder, DebtAccount, DebtPayment,
-    Investment, InvestmentValue
+    Category, Transaction, Budget, User,
 )
 
 class TransactionAdminForm(forms.ModelForm):
@@ -34,7 +32,7 @@ class UserAdmin(BaseUserAdmin):
     list_display = ('email', 'first_name', 'last_name', 'phone_number', 'department', 'role', 'is_staff')
     search_fields = ('email', 'first_name', 'last_name', 'phone_number')
     ordering = ('email',)
-    
+
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'location', 'bio')}),
@@ -42,7 +40,7 @@ class UserAdmin(BaseUserAdmin):
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
-    
+
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
@@ -57,63 +55,8 @@ class TransactionAdmin(admin.ModelAdmin):
     search_fields = ('title', 'user__email')
     list_filter = ('type', 'category', 'user')
 
-@admin.register(AnalyticsReport)
-class AnalyticsReportAdmin(admin.ModelAdmin):
-    list_display = ('user', 'report_type', 'start_date', 'end_date', 'created_at')
-    list_filter = ('report_type', 'user')
-    search_fields = ('user__email',)
-    readonly_fields = ('created_at',)
-
-
-@admin.register(SavingsGoal)
-class SavingsGoalAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'target_amount', 'current_amount', 'target_date', 'status')
-    list_filter = ('status', 'user')
-    search_fields = ('title', 'user__email')
-    readonly_fields = ('created_at', 'updated_at')
-
-
-@admin.register(BillReminder)
-class BillReminderAdmin(admin.ModelAdmin):
-    list_display = ('title', 'user', 'amount', 'due_date', 'recurrence', 'status')
-    list_filter = ('status', 'recurrence', 'user')
-    search_fields = ('title', 'user__email')
-    readonly_fields = ('created_at', 'updated_at', 'notification_sent')
-
-
-class DebtPaymentInline(admin.TabularInline):
-    model = DebtPayment
-    extra = 1
-    readonly_fields = ('created_at',)
-
-
-@admin.register(DebtAccount)
-class DebtAccountAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'balance', 'interest_rate', 'account_type', 'status', 'due_date')
-    list_filter = ('account_type', 'status', 'user')
-    search_fields = ('name', 'user__email')
-    readonly_fields = ('created_at', 'updated_at')
-    inlines = [DebtPaymentInline]
-
-
-class InvestmentValueInline(admin.TabularInline):
-    model = InvestmentValue
-    extra = 1
-    readonly_fields = ('created_at',)
-
-
-@admin.register(Investment)
-class InvestmentAdmin(admin.ModelAdmin):
-    list_display = ('name', 'user', 'symbol', 'type', 'purchase_price', 'quantity', 'purchase_date')
-    list_filter = ('type', 'user')
-    search_fields = ('name', 'symbol', 'user__email')
-    readonly_fields = ('created_at', 'updated_at')
-    inlines = [InvestmentValueInline]
-
 admin.site.register(Category)
 admin.site.register(Budget)
-admin.site.register(Subscription)
-admin.site.register(SubscriptionPlan)
 
 admin.site.site_header = "FinTrack Admin"
 admin.site.site_title = "FinTrack Admin Portal"

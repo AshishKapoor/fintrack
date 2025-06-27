@@ -1,9 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import (
-    Transaction, Category, Budget, SubscriptionPlan, Subscription,
-    AnalyticsReport, SavingsGoal, BillReminder, DebtAccount, DebtPayment,
-    Investment, InvestmentValue
+    Transaction, Category, Budget
 )
 
 User = get_user_model()
@@ -49,11 +47,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if not data.get("email"):
             raise serializers.ValidationError({"email": "Email is required."})
-        
+
         # Ensure username is set to email
         if "username" not in data or not data["username"]:
             data["username"] = data["email"]
-            
+
         if data["password"] != data.pop("confirm_password"):
             raise serializers.ValidationError({"password": "Passwords do not match."})
         if len(data["password"]) < 8:
@@ -87,7 +85,7 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ['id', 'user', 'title', 'amount', 'type', 'category', 
+        fields = ['id', 'user', 'title', 'amount', 'type', 'category',
                  'transaction_date', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
 
@@ -116,7 +114,6 @@ class TransactionSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
 class BudgetSerializer(serializers.ModelSerializer):
     def validate(self, data):
         user = self.context["request"].user
@@ -128,15 +125,15 @@ class BudgetSerializer(serializers.ModelSerializer):
                 month=data["month"],
                 year=data["year"],
             )
-            
+
             # If this is an update operation for this exact budget, allow it
             if self.instance and self.instance.id == existing_budget.id:
                 return data
-                
+
             # For POST requests, update the existing budget instead of creating a new one
             if not self.instance:
                 self.instance = existing_budget
-                
+
             return data
         except Budget.DoesNotExist:
             # No existing budget, so we can create a new one
@@ -146,159 +143,3 @@ class BudgetSerializer(serializers.ModelSerializer):
         model = Budget
         fields = "__all__"
         read_only_fields = ["user"]
-
-
-class SubscriptionPlanSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SubscriptionPlan
-        fields = '__all__'
-
-class SubscriptionSerializer(serializers.ModelSerializer):
-    plan_details = SubscriptionPlanSerializer(source='plan', read_only=True)
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-
-    class Meta:
-        model = Subscription
-        fields = [
-            'id',
-            'user',
-            'user_email',
-            'plan',
-            'plan_details',
-            'amount',
-            'start_date',
-            'end_date',
-            'auto_renewal',
-            'status',
-            'next_billing_date',
-            'notes',
-            'created_at',
-            'updated_at'
-        ]
-        read_only_fields = ['created_at', 'updated_at']
-
-    def validate(self, data):
-        if data.get('end_date') and data['start_date'] > data['end_date']:
-            raise serializers.ValidationError("End date must be after start date")
-        return data
-
-
-class AnalyticsReportSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-
-    class Meta:
-        model = AnalyticsReport
-        fields = ['id', 'user', 'user_email', 'start_date', 'end_date', 
-                 'report_type', 'data', 'created_at']
-        read_only_fields = ['created_at']
-
-    def validate(self, data):
-        if data['start_date'] > data['end_date']:
-            raise serializers.ValidationError("End date must be after start date")
-        return data
-
-
-class SavingsGoalSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-    progress_percentage = serializers.FloatField(read_only=True)
-
-    class Meta:
-        model = SavingsGoal
-        fields = ['id', 'user', 'user_email', 'title', 'target_amount', 
-                 'current_amount', 'target_date', 'status', 'progress_percentage',
-                 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
-
-    def validate(self, data):
-        if 'target_amount' in data and data['target_amount'] <= 0:
-            raise serializers.ValidationError("Target amount must be greater than zero")
-        if 'current_amount' in data and data['current_amount'] < 0:
-            raise serializers.ValidationError("Current amount cannot be negative")
-        return data
-
-
-class BillReminderSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-
-    class Meta:
-        model = BillReminder
-        fields = ['id', 'user', 'user_email', 'title', 'amount', 'due_date',
-                 'recurrence', 'status', 'notification_sent', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at', 'notification_sent']
-
-    def validate(self, data):
-        if data.get('amount', 0) <= 0:
-            raise serializers.ValidationError("Amount must be greater than zero")
-        return data
-
-
-class DebtPaymentSerializer(serializers.ModelSerializer):
-    transaction_details = TransactionSerializer(source='transaction', read_only=True)
-
-    class Meta:
-        model = DebtPayment
-        fields = ['id', 'debt_account', 'amount', 'payment_date', 
-                 'transaction', 'transaction_details', 'notes', 'created_at']
-        read_only_fields = ['created_at']
-
-    def validate_amount(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Payment amount must be greater than zero")
-        return value
-
-
-class DebtAccountSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-    payments = DebtPaymentSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = DebtAccount
-        fields = ['id', 'user', 'user_email', 'name', 'balance', 'interest_rate',
-                 'minimum_payment', 'due_date', 'account_type', 'status', 
-                 'payments', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
-
-    def validate(self, data):
-        if data.get('balance', 0) < 0:
-            raise serializers.ValidationError("Balance cannot be negative")
-        if data.get('interest_rate', 0) < 0:
-            raise serializers.ValidationError("Interest rate cannot be negative")
-        if data.get('minimum_payment', 0) <= 0:
-            raise serializers.ValidationError("Minimum payment must be greater than zero")
-        return data
-
-
-class InvestmentValueSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InvestmentValue
-        fields = ['id', 'date', 'value', 'created_at']
-        read_only_fields = ['created_at']
-
-    def validate_value(self, value):
-        if value < 0:
-            raise serializers.ValidationError("Investment value cannot be negative")
-        return value
-
-
-class InvestmentSerializer(serializers.ModelSerializer):
-    user_email = serializers.EmailField(source='user.email', read_only=True)
-    values = InvestmentValueSerializer(many=True, read_only=True)
-    current_value = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Investment
-        fields = ['id', 'user', 'user_email', 'name', 'symbol', 'type',
-                 'purchase_price', 'quantity', 'purchase_date', 'notes',
-                 'values', 'current_value', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
-
-    def get_current_value(self, obj):
-        latest_value = obj.values.first()
-        return latest_value.value if latest_value else None
-
-    def validate(self, data):
-        if data.get('purchase_price', 0) <= 0:
-            raise serializers.ValidationError("Purchase price must be greater than zero")
-        if data.get('quantity', 0) <= 0:
-            raise serializers.ValidationError("Quantity must be greater than zero")
-        return data

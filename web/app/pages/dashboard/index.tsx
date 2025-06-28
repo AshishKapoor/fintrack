@@ -17,9 +17,54 @@ import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
 import { TypeEnum } from '@/client/gen/pft/typeEnum'
+
 import { DatePickerWithRange } from '@/components/date-range-picker'
+import { useSearchParams } from 'react-router-dom'
+import { useEffect } from 'react'
+import { useDateStore } from '@/hooks/use-date-store'
 
 export default function DashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { dateRange, setDateRange } = useDateStore()
+
+  // On mount or when query params change, update store
+  useEffect(() => {
+    const startParam = searchParams.get('start')
+    const endParam = searchParams.get('end')
+    if (startParam && endParam) {
+      const from = new Date(startParam)
+      const to = new Date(endParam)
+      if (
+        !dateRange ||
+        dateRange.from?.toISOString().slice(0, 10) !== startParam ||
+        dateRange.to?.toISOString().slice(0, 10) !== endParam
+      ) {
+        setDateRange({ from, to })
+      }
+    }
+    // Only depend on the string values, not the object
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get('start'), searchParams.get('end'), setDateRange])
+
+  // When store changes, update query params
+  useEffect(() => {
+    if (dateRange?.from && dateRange?.to) {
+      const start = dateRange.from.toISOString().slice(0, 10)
+      const end = dateRange.to.toISOString().slice(0, 10)
+      if (searchParams.get('start') !== start || searchParams.get('end') !== end) {
+        const params = new URLSearchParams(searchParams)
+        params.set('start', start)
+        params.set('end', end)
+        setSearchParams(params, { replace: true })
+      }
+    }
+    // Only depend on dateRange and setSearchParams
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateRange, setSearchParams])
+
+  // Use dateRange from store for filtering
+  const selectedStart = dateRange?.from
+  const selectedEnd = dateRange?.to
   const { isLoading: isLoadingCategories, data: categories } = useV1CategoriesList(
     {},
     { swr: { revalidateOnMount: true } },
@@ -54,57 +99,67 @@ export default function DashboardPage() {
     )
   }
 
-  // Calculate financial stats
-  const currentDate = new Date()
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
-
-  const stats = transactions?.results?.reduce(
-    (acc, transaction: Transaction) => {
+  // Filter transactions by selected date range
+  const filteredTransactions =
+    transactions?.results?.filter((transaction: Transaction) => {
+      if (!selectedStart || !selectedEnd) return false
       const transactionDate = new Date(transaction.transaction_date)
-      const amount = Number(transaction.amount) || 0
+      return transactionDate >= selectedStart && transactionDate <= selectedEnd
+    }) || []
 
-      // Update total balance
+  // Calculate stats for selected range
+  const stats = filteredTransactions.reduce(
+    (acc, transaction: Transaction) => {
+      const amount = Number(transaction.amount) || 0
       if (transaction.type === TypeEnum.income) {
         acc.totalBalance += amount
+        acc.monthlyIncome += amount
       } else {
         acc.totalBalance -= amount
+        acc.monthlyExpenses += amount
       }
-
-      // Update monthly stats
-      if (transactionDate >= firstDayOfMonth) {
-        if (transaction.type === TypeEnum.income) {
-          acc.monthlyIncome += amount
-        } else {
-          acc.monthlyExpenses += amount
-        }
-      }
-
-      // Update previous month stats for comparison
-      const prevMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
-      const prevMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0)
-      if (transactionDate >= prevMonthStart && transactionDate <= prevMonthEnd) {
-        if (transaction.type === TypeEnum.income) {
-          acc.prevMonthIncome += amount
-        } else {
-          acc.prevMonthExpenses += amount
-        }
-      }
-
       return acc
     },
     {
       totalBalance: 0,
       monthlyIncome: 0,
       monthlyExpenses: 0,
-      prevMonthIncome: 0,
-      prevMonthExpenses: 0,
     },
-  ) || {
-    totalBalance: 0,
-    monthlyIncome: 0,
-    monthlyExpenses: 0,
-    prevMonthIncome: 0,
-    prevMonthExpenses: 0,
+  )
+
+  // For comparison, calculate stats for previous period of same length
+  let rangeDays = 0
+  let prevStart: Date | undefined = undefined
+  let prevEnd: Date | undefined = undefined
+  let prevTransactions: Transaction[] = []
+  let prevStats = { prevMonthIncome: 0, prevMonthExpenses: 0 }
+  if (selectedStart && selectedEnd) {
+    rangeDays =
+      Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    prevStart = new Date(selectedStart)
+    prevStart.setDate(prevStart.getDate() - rangeDays)
+    prevEnd = new Date(selectedStart)
+    prevEnd.setDate(prevEnd.getDate() - 1)
+    prevTransactions =
+      transactions?.results?.filter((transaction: Transaction) => {
+        const transactionDate = new Date(transaction.transaction_date)
+        return transactionDate >= prevStart! && transactionDate <= prevEnd!
+      }) || []
+    prevStats = prevTransactions.reduce(
+      (acc, transaction: Transaction) => {
+        const amount = Number(transaction.amount) || 0
+        if (transaction.type === TypeEnum.income) {
+          acc.prevMonthIncome += amount
+        } else {
+          acc.prevMonthExpenses += amount
+        }
+        return acc
+      },
+      {
+        prevMonthIncome: 0,
+        prevMonthExpenses: 0,
+      },
+    )
   }
 
   const calculatePercentageChange = (current: number, previous: number) => {
@@ -112,15 +167,19 @@ export default function DashboardPage() {
     return ((current - previous) / previous) * 100
   }
 
-  const incomeChange = calculatePercentageChange(stats.monthlyIncome, stats.prevMonthIncome)
-  const expensesChange = calculatePercentageChange(stats.monthlyExpenses, stats.prevMonthExpenses)
+  const incomeChange = calculatePercentageChange(stats.monthlyIncome, prevStats.prevMonthIncome)
+  const expensesChange = calculatePercentageChange(
+    stats.monthlyExpenses,
+    prevStats.prevMonthExpenses,
+  )
   const savingsRate =
     stats.monthlyIncome > 0
       ? ((stats.monthlyIncome - stats.monthlyExpenses) / stats.monthlyIncome) * 100
       : 0
   const prevSavingsRate =
-    stats.prevMonthIncome > 0
-      ? ((stats.prevMonthIncome - stats.prevMonthExpenses) / stats.prevMonthIncome) * 100
+    prevStats.prevMonthIncome > 0
+      ? ((prevStats.prevMonthIncome - prevStats.prevMonthExpenses) / prevStats.prevMonthIncome) *
+        100
       : 0
   const savingsRateChange = calculatePercentageChange(savingsRate, prevSavingsRate)
 
@@ -165,7 +224,7 @@ export default function DashboardPage() {
             </div>
             <p className='text-xs text-muted-foreground'>
               {incomeChange >= 0 ? '+' : ''}
-              {incomeChange.toFixed(1)}% from last month
+              {incomeChange.toFixed(1)}% from previous period
             </p>
           </CardContent>
         </Card>
@@ -179,7 +238,7 @@ export default function DashboardPage() {
             </div>
             <p className='text-xs text-muted-foreground'>
               {expensesChange >= 0 ? '+' : ''}
-              {expensesChange.toFixed(1)}% from last month
+              {expensesChange.toFixed(1)}% from previous period
             </p>
           </CardContent>
         </Card>
@@ -191,7 +250,7 @@ export default function DashboardPage() {
             <div className='text-2xl font-bold'>{savingsRate.toFixed(1)}%</div>
             <p className='text-xs text-muted-foreground'>
               {savingsRateChange >= 0 ? '+' : ''}
-              {savingsRateChange.toFixed(1)}% from last month
+              {savingsRateChange.toFixed(1)}% from previous period
             </p>
           </CardContent>
         </Card>
@@ -209,7 +268,7 @@ export default function DashboardPage() {
             <Card className='md:col-span-4'>
               <CardHeader>
                 <CardTitle>Financial Overview</CardTitle>
-                <CardDescription>Your income and expenses for the past 6 months</CardDescription>
+                <CardDescription>Your income and expenses for the selected period</CardDescription>
               </CardHeader>
               <CardContent className=''>
                 <Overview />

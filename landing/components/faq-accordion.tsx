@@ -24,11 +24,6 @@ const faqs = [
       "Currently, FinTrack is a responsive web application that works great on mobile devices. We're working on native mobile apps for iOS and Android that will be released soon.",
   },
   {
-    question: "Can I cancel my subscription anytime?",
-    answer:
-      "Absolutely. You can cancel your subscription at any time with no questions asked. If you cancel, you'll still have access to your premium features until the end of your billing period.",
-  },
-  {
     question: "How do I get started?",
     answer:
       "Getting started is easy! Just sign up for a free account, set up your profile, and you can start tracking your finances right away. We also offer guided onboarding to help you get the most out of FinTrack.",
@@ -36,7 +31,12 @@ const faqs = [
   {
     question: "Do you offer customer support?",
     answer:
-      "Yes, we offer customer support via email for all users. Premium and Family plan subscribers also get priority support with faster response times and access to live chat during business hours.",
+      "Yes, we offer customer support via email for all users. Feel free to reach out to us at ashish@sannty.in for any questions or assistance.",
+  },
+  {
+    question: "Is FinTrack really free?",
+    answer:
+      "Yes! FinTrack is completely free and open source. We believe financial tools should be accessible to everyone. You can even host it yourself if you prefer.",
   },
 ];
 

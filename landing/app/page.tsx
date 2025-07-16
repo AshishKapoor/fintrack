@@ -1,6 +1,5 @@
 import { FaqAccordion } from "@/components/faq-accordion";
 import { FeatureCard } from "@/components/feature-card";
-import { PricingCard } from "@/components/pricing-card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -46,12 +45,6 @@ export default function LandingPage() {
             >
               Testimonials
             </Link> */}
-            <Link
-              href="#pricing"
-              className="text-sm font-medium hover:text-emerald-600 transition-colors"
-            >
-              Pricing
-            </Link>
             <Link
               href="#faq"
               className="text-sm font-medium hover:text-emerald-600 transition-colors"
@@ -102,7 +95,8 @@ export default function LandingPage() {
                 <span className="text-emerald-600">Starts Here</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 max-w-[600px]">
-                FinTrack helps you track expenses, manage budgets, and achieve
+                FinTrack is a completely free and open source personal finance
+                tracker that helps you manage expenses, budgets, and achieve
                 your financial goals with powerful insights and easy-to-use
                 tools.
               </p>
@@ -139,7 +133,7 @@ export default function LandingPage() {
               </div>
 
               <div className="pt-4 text-sm text-gray-500">
-                No credit card required • Try now for free!
+                100% Free & Open Source • No hidden costs, ever!
               </div>
             </div>
             <div className="flex-1 w-full max-w-[600px]">
@@ -478,70 +472,6 @@ export default function LandingPage() {
         </div>
       </section> */}
 
-      {/* Pricing Section */}
-      <section id="pricing" className="py-16 md:py-24 bg-gray-50">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">
-              Simple, Transparent Pricing
-            </h2>
-            <p className="text-xl text-gray-600 max-w-[800px] mx-auto">
-              Choose the plan that works best for your financial needs
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <PricingCard
-              title="Basic"
-              price="Free"
-              description="Perfect for getting started with personal finance tracking"
-              features={[
-                "Unlimited transactions",
-                "Basic budget tracking",
-                "Monthly reports",
-                "Mobile access",
-              ]}
-              buttonText="Get Started"
-              buttonVariant="outline"
-              highlighted={true}
-            />
-            <PricingCard
-              title="Premium"
-              price="$5.99"
-              period="per month"
-              description="Advanced features for serious financial management"
-              features={[
-                "Everything in Basic",
-                "Advanced budget tools",
-                "Goal tracking",
-                "Custom categories",
-                "Data export",
-              ]}
-              buttonText="Subscribe Now"
-              buttonVariant="default"
-              // highlighted={true}
-              disabled={true}
-            />
-            <PricingCard
-              title="Family"
-              price="$19.99"
-              period="per month"
-              description="Manage finances for the whole family with shared access"
-              features={[
-                "Everything in Premium",
-                "Up to 5 user accounts",
-                "Shared budgets",
-                "Family financial goals",
-                "Priority support",
-              ]}
-              buttonText="Work in Progress"
-              buttonVariant="default"
-              disabled={true}
-            />
-          </div>
-        </div>
-      </section>
-
       {/* FAQ Section */}
       <section id="faq" className="py-16 md:py-24">
         <div className="container mx-auto px-4 md:px-6">
@@ -565,27 +495,27 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Ready to Take Control of Your Finances?
+              Start Your Financial Journey Today
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              Join thousands of users who have transformed their financial lives
-              with FinTrack.
+              Join thousands of users who trust FinTrack with their finances.
+              Completely free, open source, and always will be.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="https://fintrack.sannty.in/register">
                 <Button size="lg" className="w-full sm:w-auto">
-                  Get Started
+                  Get Started Free
                 </Button>
               </Link>
-              {/* <Link href="/demo">
+              <Link href="https://github.com/AshishKapoor/fintrack">
                 <Button
                   size="lg"
                   variant="outline"
                   className="w-full sm:w-auto"
                 >
-                  Request a Demo
+                  View on GitHub
                 </Button>
-              </Link> */}
+              </Link>
             </div>
           </div>
         </div>
@@ -666,14 +596,6 @@ export default function LandingPage() {
                     className="text-gray-400 hover:text-white transition-colors"
                   >
                     Features
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#pricing"
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Pricing
                   </a>
                 </li>
                 <li>

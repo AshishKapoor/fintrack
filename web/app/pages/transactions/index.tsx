@@ -5,6 +5,7 @@ import { TypeEnum } from '@/client/gen/pft/typeEnum'
 
 import { useV1CategoriesList, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
 import { AddTransactionDialog } from '@/components/add-transaction-dialog'
+import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog'
 import { AnimateSpinner } from '@/components/spinner'
@@ -38,6 +39,7 @@ import {
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
 import { formatDateForApi } from '@/lib/date'
+import { V2_ENABLED } from '@/lib/v2-client'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -50,6 +52,7 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
+  Repeat,
   Search,
   Trash,
 } from 'lucide-react'
@@ -59,6 +62,7 @@ import { toast } from 'sonner'
 
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
+  const [showAddTransfer, setShowAddTransfer] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -68,7 +72,11 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList({
+  const {
+    data: transactions,
+    isLoading: isLoadingTransactions,
+    mutate: refreshTransactions,
+  } = useV1TransactionsList({
     page: currentPage,
   })
 
@@ -211,7 +219,15 @@ export default function TransactionsPage() {
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
         <Typography variant='h2'>Transactions</Typography>
-        <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+        <div className='flex items-center gap-2'>
+          {V2_ENABLED && (
+            <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
+              <Repeat className='mr-2 h-4 w-4' />
+              Add Transfer
+            </Button>
+          )}
+          <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+        </div>
       </div>
 
       <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
@@ -327,7 +343,8 @@ export default function TransactionsPage() {
             ) : (
               filteredTransactions?.map((transaction) => {
                 const category = categories?.results?.find((c) => c.id === transaction.category)
-                const categoryName = category?.name || 'Uncategorized'
+                const isTransfer = transaction.category === null && /transfer/i.test(transaction.title)
+                const categoryName = isTransfer ? 'Transfer' : category?.name || 'Uncategorized'
 
                 return (
                   <TableRow key={transaction.id}>
@@ -420,6 +437,13 @@ export default function TransactionsPage() {
       </div>
 
       <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+      <AddTransferDialog
+        open={showAddTransfer}
+        onOpenChange={setShowAddTransfer}
+        onCreated={() => {
+          void refreshTransactions(undefined, { revalidate: true })
+        }}
+      />
       {selectedTransaction && (
         <>
           <EditTransactionDialog

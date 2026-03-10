@@ -9,6 +9,8 @@ import CategoriesPage from '@/pages/category'
 import DashboardPage from '@/pages/dashboard'
 import { LoginPage } from '@/pages/login'
 import NotFound from '@/pages/not-found'
+import ReportsPage from '@/pages/reports'
+import RulesAndRecurringPage from '@/pages/rules'
 import UserSettingsPage from '@/pages/settings'
 import TransactionsPage from '@/pages/transactions'
 import { Route, Routes, useLocation } from 'react-router-dom'
@@ -32,6 +34,8 @@ function App() {
             <Route path='/categories' element={<CategoriesPage />} />
             <Route path='/budgets' element={<BudgetsPage />} />
             <Route path='/transactions' element={<TransactionsPage />} />
+            <Route path='/reports' element={<ReportsPage />} />
+            <Route path='/rules' element={<RulesAndRecurringPage />} />
             <Route path='/home' element={<DashboardPage />} />
             <Route path='/settings' element={<UserSettingsPage />} />
             <Route path='*' element={<NotFound />} />

@@ -2,7 +2,17 @@
 
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
-import { ChevronLeft, ChevronRight, CreditCard, Home, PieChart, Settings, Tag } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Home,
+  PieChart,
+  Repeat,
+  Settings,
+  Tag,
+  TrendingUp,
+} from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
 
 interface SidebarProps {
@@ -86,6 +96,26 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
           >
             <CreditCard className='h-4 w-4' />
             {(expanded || isMobile) && <span>Transactions</span>}
+          </Link>
+          <Link
+            to='/reports'
+            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+              location.pathname === '/reports' ? 'bg-muted text-primary-background' : 'hover:bg-muted'
+            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
+            onClick={() => isMobile && onOpenChange(false)}
+          >
+            <TrendingUp className='h-4 w-4' />
+            {(expanded || isMobile) && <span>Reports</span>}
+          </Link>
+          <Link
+            to='/rules'
+            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+              location.pathname === '/rules' ? 'bg-muted text-primary-background' : 'hover:bg-muted'
+            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
+            onClick={() => isMobile && onOpenChange(false)}
+          >
+            <Repeat className='h-4 w-4' />
+            {(expanded || isMobile) && <span>Rules & Recurring</span>}
           </Link>
         </nav>
       </div>

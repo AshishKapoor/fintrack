@@ -6,21 +6,20 @@ import { toast } from 'sonner'
 
 import { useV1CategoriesList } from '@/client/gen/pft/v1/v1'
 import {
-  V2_ENABLED,
   createScheduledTransaction,
   createTransactionRule,
   deleteScheduledTransaction,
   deleteTransactionRule,
+  listAccounts,
   listScheduledTransactions,
   listTransactionRules,
-  listV2Accounts,
   runDueScheduledTransactions,
   updateScheduledTransaction,
   updateTransactionRule,
+  type FinanceAccount,
   type ScheduledTransaction,
   type TransactionRule,
-  type V2Account,
-} from '@/lib/v2-client'
+} from '@/lib/finance-client'
 
 import Typography from '@/components/ui/typography'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -148,7 +147,7 @@ const parseTemplate = (
 export default function RulesAndRecurringPage() {
   const [rules, setRules] = useState<TransactionRule[]>([])
   const [scheduled, setScheduled] = useState<ScheduledTransaction[]>([])
-  const [accounts, setAccounts] = useState<V2Account[]>([])
+  const [accounts, setAccounts] = useState<FinanceAccount[]>([])
 
   const [ruleForm, setRuleForm] = useState<RuleForm>(DEFAULT_RULE_FORM)
   const [editingRuleId, setEditingRuleId] = useState<number | null>(null)
@@ -171,13 +170,12 @@ export default function RulesAndRecurringPage() {
   )
 
   const loadAll = async () => {
-    if (!V2_ENABLED) return
     try {
       setLoading(true)
       const [ruleRows, scheduleRows, accountRows] = await Promise.all([
         listTransactionRules(),
         listScheduledTransactions(),
-        listV2Accounts(),
+        listAccounts(),
       ])
       setRules(ruleRows)
       setScheduled(scheduleRows)
@@ -406,17 +404,6 @@ export default function RulesAndRecurringPage() {
   const accountOptions = accounts
     .filter((item) => !item.is_archived)
     .map((item) => ({ id: String(item.id), name: item.name }))
-
-  if (!V2_ENABLED) {
-    return (
-      <div className='p-6 space-y-2'>
-        <Typography variant='h2'>Rules & Recurring</Typography>
-        <p className='text-sm text-muted-foreground'>
-          Enable <code>VITE_FINANCE_V2=true</code> to use rule automation and recurring schedules.
-        </p>
-      </div>
-    )
-  }
 
   return (
     <div className='space-y-6 p-6'>

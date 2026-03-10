@@ -1,8 +1,8 @@
 from django.urls import include, path
 
-from .v2_routers import router
+from .finance_routers import router
 
-app_name = "pft-v2"
+app_name = "pft-finance"
 
 urlpatterns = [
     path("", include(router.urls)),

@@ -69,22 +69,22 @@ export interface BudgetMutationPayload {
   amount_limit: string | number
 }
 
-interface V2BudgetFile {
+interface FinanceBudgetFile {
   id: number
   is_default: boolean
 }
 
-interface V2Account {
+interface FinanceAccount {
   id: number
 }
 
-interface V2Category {
+interface FinanceCategory {
   id: number
   name: string
   kind: TypeEnum
 }
 
-interface V2Posting {
+interface FinancePosting {
   id: number
   account: number | null
   category: number | null
@@ -93,31 +93,29 @@ interface V2Posting {
   sort_order: number
 }
 
-interface V2LedgerTransaction {
+interface FinanceLedgerTransaction {
   id: number
   budget_file: number
   transaction_date: string
   memo: string
-  posting_lines: V2Posting[]
+  posting_lines: FinancePosting[]
   created_at: string
   updated_at: string
 }
 
-interface V2BudgetMonth {
+interface FinanceBudgetMonth {
   id: number
   budget_file: number
   year: number
   month: number
 }
 
-interface V2EnvelopeAssignment {
+interface FinanceEnvelopeAssignment {
   id: number
   budget_month: number
   category: number
   assigned_amount: string
 }
-
-const V2_ENABLED = String(import.meta.env.VITE_FINANCE_V2 || 'false').toLowerCase() === 'true'
 
 let budgetFileCache: number | null = null
 let accountCache: Record<number, number> = {}
@@ -204,12 +202,12 @@ const amountAbs = (value: string | number) => Math.abs(Number(value || 0))
 const resolveDefaultBudgetFileId = async () => {
   if (budgetFileCache) return budgetFileCache
 
-  const response = await get<PaginatedResponse<V2BudgetFile> | V2BudgetFile[]>('/api/v2/budget-files/')
-  const files = asPaginated<V2BudgetFile>(response).results
+  const response = await get<PaginatedResponse<FinanceBudgetFile> | FinanceBudgetFile[]>('/api/v1/finance/budget-files/')
+  const files = asPaginated<FinanceBudgetFile>(response).results
 
   let selected = files.find((file) => file.is_default) || files[0]
   if (!selected) {
-    selected = await post<V2BudgetFile>('/api/v2/budget-files/', {
+    selected = await post<FinanceBudgetFile>('/api/v1/finance/budget-files/', {
       name: 'Primary Budget',
       currency_code: 'USD',
       is_default: true,
@@ -223,14 +221,14 @@ const resolveDefaultBudgetFileId = async () => {
 const resolveDefaultAccountId = async (budgetFileId: number) => {
   if (accountCache[budgetFileId]) return accountCache[budgetFileId]
 
-  const response = await get<PaginatedResponse<V2Account> | V2Account[]>(
-    `/api/v2/accounts/${toQueryString({ budget_file: budgetFileId })}`,
+  const response = await get<PaginatedResponse<FinanceAccount> | FinanceAccount[]>(
+    `/api/v1/finance/accounts/${toQueryString({ budget_file: budgetFileId })}`,
   )
-  const accounts = asPaginated<V2Account>(response).results
+  const accounts = asPaginated<FinanceAccount>(response).results
 
   let selected = accounts[0]
   if (!selected) {
-    selected = await post<V2Account>('/api/v2/accounts/', {
+    selected = await post<FinanceAccount>('/api/v1/finance/accounts/', {
       budget_file: budgetFileId,
       name: 'Cash',
       type: 'checking',
@@ -242,13 +240,13 @@ const resolveDefaultAccountId = async (budgetFileId: number) => {
   return selected.id
 }
 
-const v2CategoriesList = async (): Promise<PaginatedResponse<Category>> => {
+const financeCategoriesList = async (): Promise<PaginatedResponse<Category>> => {
   const budgetFileId = await resolveDefaultBudgetFileId()
-  const response = await get<PaginatedResponse<V2Category> | V2Category[]>(
-    `/api/v2/categories/${toQueryString({ budget_file: budgetFileId })}`,
+  const response = await get<PaginatedResponse<FinanceCategory> | FinanceCategory[]>(
+    `/api/v1/finance/categories/${toQueryString({ budget_file: budgetFileId })}`,
   )
 
-  const mapped = asPaginated<V2Category>(response).results.map((item) => ({
+  const mapped = asPaginated<FinanceCategory>(response).results.map((item) => ({
     id: item.id,
     name: item.name,
     type: item.kind,
@@ -270,11 +268,11 @@ const resolveCategoryId = async (
 ): Promise<number> => {
   if (categoryId) return categoryId
 
-  const categories = await v2CategoriesList()
+  const categories = await financeCategoriesList()
   const existing = categories.results.find((item) => item.type === type)
   if (existing) return existing.id
 
-  const created = await post<V2Category>('/api/v2/categories/', {
+  const created = await post<FinanceCategory>('/api/v1/finance/categories/', {
     budget_file: budgetFileId,
     name: type === 'income' ? 'Income' : 'Expense',
     kind: type,
@@ -282,7 +280,7 @@ const resolveCategoryId = async (
   return created.id
 }
 
-const mapV2Transaction = (tx: V2LedgerTransaction): Transaction => {
+const mapFinanceTransaction = (tx: FinanceLedgerTransaction): Transaction => {
   const categoryPosting = tx.posting_lines.find((line) => line.category !== null)
   const raw = Number(categoryPosting?.amount ?? tx.posting_lines[0]?.amount ?? '0')
   const type: TypeEnum = raw < 0 ? 'income' : 'expense'
@@ -300,25 +298,25 @@ const mapV2Transaction = (tx: V2LedgerTransaction): Transaction => {
   }
 }
 
-const v2TransactionsList = async (
+const financeTransactionsList = async (
   params: V1TransactionsListParams,
 ): Promise<PaginatedResponse<Transaction>> => {
   const budgetFileId = await resolveDefaultBudgetFileId()
   const query = toQueryString({ ...params, budget_file: budgetFileId })
-  const response = await get<PaginatedResponse<V2LedgerTransaction> | V2LedgerTransaction[]>(
-    `/api/v2/transactions/${query}`,
+  const response = await get<PaginatedResponse<FinanceLedgerTransaction> | FinanceLedgerTransaction[]>(
+    `/api/v1/finance/transactions/${query}`,
   )
-  const result = asPaginated<V2LedgerTransaction>(response)
+  const result = asPaginated<FinanceLedgerTransaction>(response)
 
   return {
     count: result.count,
     next: result.next,
     previous: result.previous,
-    results: result.results.map(mapV2Transaction),
+    results: result.results.map(mapFinanceTransaction),
   }
 }
 
-const createOrUpdateV2Transaction = async (
+const createOrUpdateFinanceTransaction = async (
   payload: TransactionMutationPayload,
   id?: string,
 ): Promise<Transaction> => {
@@ -353,20 +351,20 @@ const createOrUpdateV2Transaction = async (
   }
 
   const tx = id
-    ? await put<V2LedgerTransaction>(`/api/v2/transactions/${id}/`, body)
-    : await post<V2LedgerTransaction>('/api/v2/transactions/', body)
+    ? await put<FinanceLedgerTransaction>(`/api/v1/finance/transactions/${id}/`, body)
+    : await post<FinanceLedgerTransaction>('/api/v1/finance/transactions/', body)
 
-  return mapV2Transaction(tx)
+  return mapFinanceTransaction(tx)
 }
 
 const getOrCreateBudgetMonth = async (budgetFileId: number, year: number, month: number) => {
-  const response = await get<PaginatedResponse<V2BudgetMonth> | V2BudgetMonth[]>(
-    `/api/v2/budget-months/${toQueryString({ budget_file: budgetFileId, year, month })}`,
+  const response = await get<PaginatedResponse<FinanceBudgetMonth> | FinanceBudgetMonth[]>(
+    `/api/v1/finance/budget-months/${toQueryString({ budget_file: budgetFileId, year, month })}`,
   )
-  const months = asPaginated<V2BudgetMonth>(response).results
+  const months = asPaginated<FinanceBudgetMonth>(response).results
   if (months[0]) return months[0]
 
-  return post<V2BudgetMonth>('/api/v2/budget-months/', {
+  return post<FinanceBudgetMonth>('/api/v1/finance/budget-months/', {
     budget_file: budgetFileId,
     year,
     month,
@@ -375,8 +373,8 @@ const getOrCreateBudgetMonth = async (budgetFileId: number, year: number, month:
 }
 
 const mapAssignmentToBudget = (
-  assignment: V2EnvelopeAssignment,
-  budgetMonth: V2BudgetMonth,
+  assignment: FinanceEnvelopeAssignment,
+  budgetMonth: FinanceBudgetMonth,
 ): Budget => ({
   id: assignment.id,
   user: 0,
@@ -386,24 +384,24 @@ const mapAssignmentToBudget = (
   amount_limit: assignment.assigned_amount,
 })
 
-const v2BudgetsList = async (): Promise<PaginatedResponse<Budget>> => {
+const financeBudgetsList = async (): Promise<PaginatedResponse<Budget>> => {
   const budgetFileId = await resolveDefaultBudgetFileId()
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
 
-  const monthResponse = await get<PaginatedResponse<V2BudgetMonth> | V2BudgetMonth[]>(
-    `/api/v2/budget-months/${toQueryString({ budget_file: budgetFileId, year, month })}`,
+  const monthResponse = await get<PaginatedResponse<FinanceBudgetMonth> | FinanceBudgetMonth[]>(
+    `/api/v1/finance/budget-months/${toQueryString({ budget_file: budgetFileId, year, month })}`,
   )
-  const budgetMonth = asPaginated<V2BudgetMonth>(monthResponse).results[0]
+  const budgetMonth = asPaginated<FinanceBudgetMonth>(monthResponse).results[0]
   if (!budgetMonth) {
     return { count: 0, next: null, previous: null, results: [] }
   }
 
-  const assignmentsResponse = await get<PaginatedResponse<V2EnvelopeAssignment> | V2EnvelopeAssignment[]>(
-    `/api/v2/envelope-assignments/${toQueryString({ budget_month: budgetMonth.id })}`,
+  const assignmentsResponse = await get<PaginatedResponse<FinanceEnvelopeAssignment> | FinanceEnvelopeAssignment[]>(
+    `/api/v1/finance/envelope-assignments/${toQueryString({ budget_month: budgetMonth.id })}`,
   )
-  const assignments = asPaginated<V2EnvelopeAssignment>(assignmentsResponse).results
+  const assignments = asPaginated<FinanceEnvelopeAssignment>(assignmentsResponse).results
   const mapped = assignments.map((assignment) => mapAssignmentToBudget(assignment, budgetMonth))
 
   return {
@@ -414,17 +412,17 @@ const v2BudgetsList = async (): Promise<PaginatedResponse<Budget>> => {
   }
 }
 
-const createOrUpdateV2Budget = async (payload: BudgetMutationPayload): Promise<Budget> => {
+const createOrUpdateFinanceBudget = async (payload: BudgetMutationPayload): Promise<Budget> => {
   const budgetFileId = await resolveDefaultBudgetFileId()
   const budgetMonth = await getOrCreateBudgetMonth(budgetFileId, payload.year, payload.month)
 
-  const existingResponse = await get<PaginatedResponse<V2EnvelopeAssignment> | V2EnvelopeAssignment[]>(
-    `/api/v2/envelope-assignments/${toQueryString({
+  const existingResponse = await get<PaginatedResponse<FinanceEnvelopeAssignment> | FinanceEnvelopeAssignment[]>(
+    `/api/v1/finance/envelope-assignments/${toQueryString({
       budget_month: budgetMonth.id,
       category: payload.category,
     })}`,
   )
-  const existing = asPaginated<V2EnvelopeAssignment>(existingResponse).results[0]
+  const existing = asPaginated<FinanceEnvelopeAssignment>(existingResponse).results[0]
 
   const body = {
     budget_month: budgetMonth.id,
@@ -436,8 +434,8 @@ const createOrUpdateV2Budget = async (payload: BudgetMutationPayload): Promise<B
   }
 
   const assignment = existing
-    ? await put<V2EnvelopeAssignment>(`/api/v2/envelope-assignments/${existing.id}/`, body)
-    : await post<V2EnvelopeAssignment>('/api/v2/envelope-assignments/', body)
+    ? await put<FinanceEnvelopeAssignment>(`/api/v1/finance/envelope-assignments/${existing.id}/`, body)
+    : await post<FinanceEnvelopeAssignment>('/api/v1/finance/envelope-assignments/', body)
 
   return mapAssignmentToBudget(assignment, budgetMonth)
 }
@@ -450,10 +448,7 @@ export const useV1TransactionsList = (
   const url = `/api/v1/transactions/${query}`
   return useSWR<PaginatedResponse<Transaction>>(
     url,
-    async (key: string) => {
-      if (!V2_ENABLED) return get<PaginatedResponse<Transaction>>(key)
-      return v2TransactionsList(params)
-    },
+    async () => financeTransactionsList(params),
     options?.swr,
   )
 }
@@ -466,10 +461,7 @@ export const useV1CategoriesList = (
   const url = `/api/v1/categories/${query}`
   return useSWR<PaginatedResponse<Category>>(
     url,
-    async (key: string) => {
-      if (!V2_ENABLED) return get<PaginatedResponse<Category>>(key)
-      return v2CategoriesList()
-    },
+    async () => financeCategoriesList(),
     options?.swr,
   )
 }
@@ -482,10 +474,7 @@ export const useV1BudgetsList = (
   const url = `/api/v1/budgets/${query}`
   return useSWR<PaginatedResponse<Budget>>(
     url,
-    async (key: string) => {
-      if (!V2_ENABLED) return get<PaginatedResponse<Budget>>(key)
-      return v2BudgetsList()
-    },
+    async () => financeBudgetsList(),
     options?.swr,
   )
 }
@@ -493,10 +482,7 @@ export const useV1BudgetsList = (
 export const useV1TransactionsCreate = () => {
   return useSWRMutation(
     '/api/v1/transactions/',
-    async (_, { arg }: { arg: TransactionMutationPayload }) => {
-      if (!V2_ENABLED) return post<Transaction>('/api/v1/transactions/', arg)
-      return createOrUpdateV2Transaction(arg)
-    },
+    async (_, { arg }: { arg: TransactionMutationPayload }) => createOrUpdateFinanceTransaction(arg),
   )
 }
 
@@ -508,10 +494,7 @@ export const useV1TransactionsUpdate = (id?: string) => {
       if (!id) {
         throw new Error('Transaction id is required for update')
       }
-      if (!V2_ENABLED) {
-        return put<Transaction>(`/api/v1/transactions/${id}/`, arg)
-      }
-      return createOrUpdateV2Transaction(arg, id)
+      return createOrUpdateFinanceTransaction(arg, id)
     },
   )
 }
@@ -524,11 +507,7 @@ export const useV1TransactionsDestroy = (id?: string) => {
       if (!id) {
         throw new Error('Transaction id is required for delete')
       }
-      if (!V2_ENABLED) {
-        await del(`/api/v1/transactions/${id}/`)
-        return
-      }
-      await del(`/api/v2/transactions/${id}/`)
+      await del(`/api/v1/finance/transactions/${id}/`)
     },
   )
 }
@@ -537,11 +516,8 @@ export const useV1CategoriesCreate = () => {
   return useSWRMutation(
     '/api/v1/categories/',
     async (_, { arg }: { arg: CategoryMutationPayload }) => {
-      if (!V2_ENABLED) {
-        return post<Category>('/api/v1/categories/', arg)
-      }
       const budgetFileId = await resolveDefaultBudgetFileId()
-      const created = await post<V2Category>('/api/v2/categories/', {
+      const created = await post<FinanceCategory>('/api/v1/finance/categories/', {
         budget_file: budgetFileId,
         name: arg.name,
         kind: arg.type,
@@ -559,18 +535,12 @@ export const useV1CategoriesCreate = () => {
 export const useV1BudgetsCreate = () => {
   return useSWRMutation(
     '/api/v1/budgets/',
-    async (_, { arg }: { arg: BudgetMutationPayload }) => {
-      if (!V2_ENABLED) return post<Budget>('/api/v1/budgets/', arg)
-      return createOrUpdateV2Budget(arg)
-    },
+    async (_, { arg }: { arg: BudgetMutationPayload }) => createOrUpdateFinanceBudget(arg),
   )
 }
 
 export const v1CategoriesUpdate = async (id: string, payload: CategoryMutationPayload) => {
-  if (!V2_ENABLED) {
-    return put<Category>(`/api/v1/categories/${id}/`, payload)
-  }
-  const updated = await put<V2Category>(`/api/v2/categories/${id}/`, {
+  const updated = await put<FinanceCategory>(`/api/v1/finance/categories/${id}/`, {
     name: payload.name,
     kind: payload.type,
   })
@@ -583,20 +553,13 @@ export const v1CategoriesUpdate = async (id: string, payload: CategoryMutationPa
 }
 
 export const v1CategoriesDestroy = (id: string) => {
-  if (!V2_ENABLED) {
-    return del(`/api/v1/categories/${id}/`)
-  }
-  return del(`/api/v2/categories/${id}/`)
+  return del(`/api/v1/finance/categories/${id}/`)
 }
 
 export const v1BudgetsUpdate = async (id: string, payload: BudgetMutationPayload) => {
-  if (!V2_ENABLED) {
-    return put<Budget>(`/api/v1/budgets/${id}/`, payload)
-  }
-
   const budgetFileId = await resolveDefaultBudgetFileId()
   const budgetMonth = await getOrCreateBudgetMonth(budgetFileId, payload.year, payload.month)
-  const assignment = await put<V2EnvelopeAssignment>(`/api/v2/envelope-assignments/${id}/`, {
+  const assignment = await put<FinanceEnvelopeAssignment>(`/api/v1/finance/envelope-assignments/${id}/`, {
     budget_month: budgetMonth.id,
     category: payload.category,
     assigned_amount: formatAmount(payload.amount_limit),

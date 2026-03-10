@@ -1,8 +1,5 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
 
-export const V2_ENABLED =
-  String(import.meta.env.VITE_FINANCE_V2 || 'false').toLowerCase() === 'true'
-
 export interface PaginatedResponse<T> {
   count: number
   next: string | null
@@ -17,7 +14,7 @@ export interface BudgetFile {
   is_default: boolean
 }
 
-export interface V2Account {
+export interface FinanceAccount {
   id: number
   budget_file: number
   name: string
@@ -27,7 +24,7 @@ export interface V2Account {
   is_archived: boolean
 }
 
-export interface V2Category {
+export interface FinanceCategory {
   id: number
   budget_file: number
   name: string
@@ -69,7 +66,7 @@ export interface ScheduledTransaction {
   last_run_at?: string | null
 }
 
-export interface V2Transaction {
+export interface FinanceTransaction {
   id: number
   budget_file: number
   transaction_date: string
@@ -154,12 +151,12 @@ let budgetFileCache: number | null = null
 export const getDefaultBudgetFileId = async () => {
   if (budgetFileCache) return budgetFileCache
 
-  const response = await get<PaginatedResponse<BudgetFile> | BudgetFile[]>('/api/v2/budget-files/')
+  const response = await get<PaginatedResponse<BudgetFile> | BudgetFile[]>('/api/v1/finance/budget-files/')
   const files = asPaginated<BudgetFile>(response).results
 
   let selected = files.find((item) => item.is_default) || files[0]
   if (!selected) {
-    selected = await post<BudgetFile>('/api/v2/budget-files/', {
+    selected = await post<BudgetFile>('/api/v1/finance/budget-files/', {
       name: 'Primary Budget',
       currency_code: 'USD',
       is_default: true,
@@ -170,20 +167,20 @@ export const getDefaultBudgetFileId = async () => {
   return selected.id
 }
 
-export const listV2Accounts = async (budgetFileId?: number) => {
+export const listAccounts = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
-  const response = await get<PaginatedResponse<V2Account> | V2Account[]>(
-    `/api/v2/accounts/${toQueryString({ budget_file: resolved })}`,
+  const response = await get<PaginatedResponse<FinanceAccount> | FinanceAccount[]>(
+    `/api/v1/finance/accounts/${toQueryString({ budget_file: resolved })}`,
   )
-  return asPaginated<V2Account>(response).results
+  return asPaginated<FinanceAccount>(response).results
 }
 
-export const listV2Categories = async (budgetFileId?: number) => {
+export const listCategories = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
-  const response = await get<PaginatedResponse<V2Category> | V2Category[]>(
-    `/api/v2/categories/${toQueryString({ budget_file: resolved })}`,
+  const response = await get<PaginatedResponse<FinanceCategory> | FinanceCategory[]>(
+    `/api/v1/finance/categories/${toQueryString({ budget_file: resolved })}`,
   )
-  return asPaginated<V2Category>(response).results
+  return asPaginated<FinanceCategory>(response).results
 }
 
 export const createTransferTransaction = async (payload: {
@@ -200,7 +197,7 @@ export const createTransferTransaction = async (payload: {
       ? crypto.randomUUID()
       : undefined
 
-  return post<V2Transaction>('/api/v2/transactions/', {
+  return post<FinanceTransaction>('/api/v1/finance/transactions/', {
     budget_file: budgetFileId,
     transaction_date: payload.transactionDate,
     memo: payload.memo || 'Transfer',
@@ -228,7 +225,7 @@ export const createTransferTransaction = async (payload: {
 export const listSavedReports = async (params?: { pinned?: boolean }) => {
   const budgetFileId = await getDefaultBudgetFileId()
   const response = await get<PaginatedResponse<SavedReport> | SavedReport[]>(
-    `/api/v2/reports/${toQueryString({ budget_file: budgetFileId })}`,
+    `/api/v1/finance/reports/${toQueryString({ budget_file: budgetFileId })}`,
   )
   let results = asPaginated<SavedReport>(response).results
   if (params?.pinned !== undefined) {
@@ -239,7 +236,7 @@ export const listSavedReports = async (params?: { pinned?: boolean }) => {
 
 export const runAdhocReport = async (payload: Record<string, unknown>) => {
   const budgetFileId = await getDefaultBudgetFileId()
-  return post<Record<string, unknown>>('/api/v2/reports/run/', {
+  return post<Record<string, unknown>>('/api/v1/finance/reports/run/', {
     budget_file: budgetFileId,
     ...payload,
   })
@@ -252,7 +249,7 @@ export const createSavedReport = async (payload: {
   pinned?: boolean
 }) => {
   const budgetFileId = await getDefaultBudgetFileId()
-  return post<SavedReport>('/api/v2/reports/', {
+  return post<SavedReport>('/api/v1/finance/reports/', {
     budget_file: budgetFileId,
     name: payload.name,
     report_type: payload.report_type,
@@ -265,21 +262,21 @@ export const updateSavedReport = async (
   id: number,
   payload: Partial<Pick<SavedReport, 'name' | 'pinned' | 'definition' | 'report_type'>>,
 ) => {
-  return patch<SavedReport>(`/api/v2/reports/${id}/`, payload)
+  return patch<SavedReport>(`/api/v1/finance/reports/${id}/`, payload)
 }
 
 export const runSavedReport = async (id: number) => {
-  return post<Record<string, unknown>>(`/api/v2/reports/${id}/run/`, {})
+  return post<Record<string, unknown>>(`/api/v1/finance/reports/${id}/run/`, {})
 }
 
 export const deleteSavedReport = async (id: number) => {
-  return del(`/api/v2/reports/${id}/`)
+  return del(`/api/v1/finance/reports/${id}/`)
 }
 
 export const listTransactionRules = async () => {
   const budgetFileId = await getDefaultBudgetFileId()
   const response = await get<PaginatedResponse<TransactionRule> | TransactionRule[]>(
-    `/api/v2/rules/${toQueryString({ budget_file: budgetFileId })}`,
+    `/api/v1/finance/rules/${toQueryString({ budget_file: budgetFileId })}`,
   )
   return asPaginated<TransactionRule>(response).results
 }
@@ -292,7 +289,7 @@ export const createTransactionRule = async (payload: {
   actions: Record<string, unknown>
 }) => {
   const budgetFileId = await getDefaultBudgetFileId()
-  return post<TransactionRule>('/api/v2/rules/', {
+  return post<TransactionRule>('/api/v1/finance/rules/', {
     budget_file: budgetFileId,
     ...payload,
   })
@@ -302,17 +299,17 @@ export const updateTransactionRule = async (
   id: number,
   payload: Partial<Pick<TransactionRule, 'name' | 'is_active' | 'priority' | 'conditions' | 'actions'>>,
 ) => {
-  return patch<TransactionRule>(`/api/v2/rules/${id}/`, payload)
+  return patch<TransactionRule>(`/api/v1/finance/rules/${id}/`, payload)
 }
 
 export const deleteTransactionRule = async (id: number) => {
-  return del(`/api/v2/rules/${id}/`)
+  return del(`/api/v1/finance/rules/${id}/`)
 }
 
 export const listScheduledTransactions = async () => {
   const budgetFileId = await getDefaultBudgetFileId()
   const response = await get<PaginatedResponse<ScheduledTransaction> | ScheduledTransaction[]>(
-    `/api/v2/scheduled-transactions/${toQueryString({ budget_file: budgetFileId })}`,
+    `/api/v1/finance/scheduled-transactions/${toQueryString({ budget_file: budgetFileId })}`,
   )
   return asPaginated<ScheduledTransaction>(response).results
 }
@@ -327,7 +324,7 @@ export const createScheduledTransaction = async (payload: {
   transaction_template: Record<string, unknown>
 }) => {
   const budgetFileId = await getDefaultBudgetFileId()
-  return post<ScheduledTransaction>('/api/v2/scheduled-transactions/', {
+  return post<ScheduledTransaction>('/api/v1/finance/scheduled-transactions/', {
     budget_file: budgetFileId,
     ...payload,
   })
@@ -348,15 +345,15 @@ export const updateScheduledTransaction = async (
     >
   >,
 ) => {
-  return patch<ScheduledTransaction>(`/api/v2/scheduled-transactions/${id}/`, payload)
+  return patch<ScheduledTransaction>(`/api/v1/finance/scheduled-transactions/${id}/`, payload)
 }
 
 export const deleteScheduledTransaction = async (id: number) => {
-  return del(`/api/v2/scheduled-transactions/${id}/`)
+  return del(`/api/v1/finance/scheduled-transactions/${id}/`)
 }
 
 export const runDueScheduledTransactions = async (runDate?: string) => {
-  return post<{ created_transaction_ids: number[] }>('/api/v2/scheduled-transactions/run-due/', {
+  return post<{ created_transaction_ids: number[] }>('/api/v1/finance/scheduled-transactions/run-due/', {
     run_date: runDate,
   })
 }
@@ -374,5 +371,5 @@ export const replaceScheduledTransaction = async (
     transaction_template: Record<string, unknown>
   },
 ) => {
-  return put<ScheduledTransaction>(`/api/v2/scheduled-transactions/${id}/`, payload)
+  return put<ScheduledTransaction>(`/api/v1/finance/scheduled-transactions/${id}/`, payload)
 }

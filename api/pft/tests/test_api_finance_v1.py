@@ -11,11 +11,11 @@ from pft.models import Account, BudgetFile, CategoryV2, ImportJob, LedgerPosting
 User = get_user_model()
 
 
-class V2FinanceApiTests(APITestCase):
+class FinanceApiV1Tests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="v2-user@example.com",
-            username="v2-user@example.com",
+            email="finance-user@example.com",
+            username="finance-user@example.com",
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
@@ -31,7 +31,7 @@ class V2FinanceApiTests(APITestCase):
             kind=CategoryV2.KIND_INCOME,
         ).first()
 
-    def test_user_bootstrap_creates_default_v2_objects(self):
+    def test_user_bootstrap_creates_default_finance_objects(self):
         self.assertEqual(BudgetFile.objects.filter(user=self.user).count(), 1)
         self.assertEqual(Account.objects.filter(budget_file=self.budget_file).count(), 1)
         self.assertGreaterEqual(
@@ -61,7 +61,7 @@ class V2FinanceApiTests(APITestCase):
                 },
             ],
         }
-        response = self.client.post("/api/v2/transactions/", payload, format="json")
+        response = self.client.post("/api/v1/finance/transactions/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(LedgerTransaction.objects.filter(budget_file=self.budget_file).count(), 1)
         self.assertEqual(LedgerPosting.objects.filter(transaction_id=response.data["id"]).count(), 2)
@@ -86,12 +86,12 @@ class V2FinanceApiTests(APITestCase):
                 },
             ],
         }
-        response = self.client.post("/api/v2/transactions/", payload, format="json")
+        response = self.client.post("/api/v1/finance/transactions/", payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_budget_month_snapshot_and_helpers(self):
         budget_month_response = self.client.post(
-            "/api/v2/budget-months/",
+            "/api/v1/finance/budget-months/",
             {
                 "budget_file": self.budget_file.id,
                 "year": 2026,
@@ -104,7 +104,7 @@ class V2FinanceApiTests(APITestCase):
         budget_month_id = budget_month_response.data["id"]
 
         assignment_response = self.client.post(
-            "/api/v2/envelope-assignments/",
+            "/api/v1/finance/envelope-assignments/",
             {
                 "budget_month": budget_month_id,
                 "category": self.expense_category.id,
@@ -118,12 +118,12 @@ class V2FinanceApiTests(APITestCase):
         )
         self.assertEqual(assignment_response.status_code, status.HTTP_201_CREATED)
 
-        snapshot_response = self.client.get(f"/api/v2/budget-months/{budget_month_id}/snapshot/")
+        snapshot_response = self.client.get(f"/api/v1/finance/budget-months/{budget_month_id}/snapshot/")
         self.assertEqual(snapshot_response.status_code, status.HTTP_200_OK)
         self.assertIn("available_to_budget", snapshot_response.data)
 
         zero_out_response = self.client.post(
-            f"/api/v2/budget-months/{budget_month_id}/zero-out/",
+            f"/api/v1/finance/budget-months/{budget_month_id}/zero-out/",
             {},
             format="json",
         )
@@ -149,10 +149,10 @@ class V2FinanceApiTests(APITestCase):
                 },
             ],
         }
-        self.client.post("/api/v2/transactions/", create_tx, format="json")
+        self.client.post("/api/v1/finance/transactions/", create_tx, format="json")
 
         export_response = self.client.post(
-            "/api/v2/exports/",
+            "/api/v1/finance/exports/",
             {
                 "budget_file": self.budget_file.id,
                 "format": "csv",
@@ -164,14 +164,14 @@ class V2FinanceApiTests(APITestCase):
         self.assertEqual(export_response.data["status"], "completed")
 
         download_response = self.client.get(
-            f"/api/v2/exports/{export_response.data['id']}/download/"
+            f"/api/v1/finance/exports/{export_response.data['id']}/download/"
         )
         self.assertEqual(download_response.status_code, status.HTTP_200_OK)
         self.assertIn("text/csv", download_response["Content-Type"])
 
     def test_backup_bundle_create_and_latest(self):
         backup_response = self.client.post(
-            "/api/v2/backups/",
+            "/api/v1/finance/backups/",
             {
                 "budget_file": self.budget_file.id,
                 "salt": "salt-base64",
@@ -184,7 +184,7 @@ class V2FinanceApiTests(APITestCase):
         self.assertEqual(backup_response.status_code, status.HTTP_201_CREATED)
 
         latest_response = self.client.get(
-            f"/api/v2/backups/latest/?budget_file={self.budget_file.id}"
+            f"/api/v1/finance/backups/latest/?budget_file={self.budget_file.id}"
         )
         self.assertEqual(latest_response.status_code, status.HTTP_200_OK)
         self.assertEqual(latest_response.data["budget_file"], self.budget_file.id)
@@ -193,7 +193,7 @@ class V2FinanceApiTests(APITestCase):
         source_payload = "date,payee,memo,amount\n2026-03-01,Employer,Salary,500.00\n2026-03-02,Cafe,Coffee,-5.00\n"
 
         import_response = self.client.post(
-            "/api/v2/imports/",
+            "/api/v1/finance/imports/",
             {
                 "budget_file": self.budget_file.id,
                 "format": ImportJob.FORMAT_CSV,
@@ -206,7 +206,7 @@ class V2FinanceApiTests(APITestCase):
         import_job_id = import_response.data["id"]
 
         preview_response = self.client.post(
-            f"/api/v2/imports/{import_job_id}/preview/",
+            f"/api/v1/finance/imports/{import_job_id}/preview/",
             {},
             format="json",
         )
@@ -214,7 +214,7 @@ class V2FinanceApiTests(APITestCase):
         self.assertEqual(preview_response.data["detected_rows"], 2)
 
         execute_response = self.client.post(
-            f"/api/v2/imports/{import_job_id}/execute/",
+            f"/api/v1/finance/imports/{import_job_id}/execute/",
             {},
             format="json",
         )
@@ -244,7 +244,7 @@ class V2FinanceApiTests(APITestCase):
             (ImportJob.FORMAT_NYNAB, ynab_payload),
         ]:
             import_response = self.client.post(
-                "/api/v2/imports/",
+                "/api/v1/finance/imports/",
                 {
                     "budget_file": self.budget_file.id,
                     "format": fmt,
@@ -256,7 +256,7 @@ class V2FinanceApiTests(APITestCase):
             self.assertEqual(import_response.status_code, status.HTTP_201_CREATED)
 
             preview_response = self.client.post(
-                f"/api/v2/imports/{import_response.data['id']}/preview/",
+                f"/api/v1/finance/imports/{import_response.data['id']}/preview/",
                 {},
                 format="json",
             )
@@ -267,7 +267,7 @@ class V2FinanceApiTests(APITestCase):
     def test_reports_endpoint_net_worth_and_cash_flow(self):
         # Income leg
         self.client.post(
-            "/api/v2/transactions/",
+            "/api/v1/finance/transactions/",
             {
                 "budget_file": self.budget_file.id,
                 "transaction_date": "2026-03-01",
@@ -291,7 +291,7 @@ class V2FinanceApiTests(APITestCase):
         )
         # Expense leg
         self.client.post(
-            "/api/v2/transactions/",
+            "/api/v1/finance/transactions/",
             {
                 "budget_file": self.budget_file.id,
                 "transaction_date": "2026-03-02",
@@ -315,7 +315,7 @@ class V2FinanceApiTests(APITestCase):
         )
 
         cash_flow_response = self.client.post(
-            "/api/v2/reports/run/",
+            "/api/v1/finance/reports/run/",
             {
                 "budget_file": self.budget_file.id,
                 "report_type": "cash_flow",
@@ -329,7 +329,7 @@ class V2FinanceApiTests(APITestCase):
         self.assertEqual(Decimal(cash_flow_response.data["expenses"]), Decimal("100.00"))
 
         net_worth_response = self.client.post(
-            "/api/v2/reports/run/",
+            "/api/v1/finance/reports/run/",
             {
                 "budget_file": self.budget_file.id,
                 "report_type": "net_worth",

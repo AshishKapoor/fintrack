@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom'
 import { Pin, Play } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { V2_ENABLED, listSavedReports, runSavedReport, type SavedReport } from '@/lib/v2-client'
+import { listSavedReports, runSavedReport, type SavedReport } from '@/lib/finance-client'
 import { Button } from '@/components/ui/button'
 
 export function PinnedReports() {
@@ -13,7 +13,6 @@ export function PinnedReports() {
   const [runningId, setRunningId] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!V2_ENABLED) return
     let canceled = false
 
     const load = async () => {
@@ -30,12 +29,6 @@ export function PinnedReports() {
       canceled = true
     }
   }, [])
-
-  if (!V2_ENABLED) {
-    return (
-      <div className='text-sm text-muted-foreground'>Enable v2 mode to view pinned reports.</div>
-    )
-  }
 
   if (!reports.length) {
     return (

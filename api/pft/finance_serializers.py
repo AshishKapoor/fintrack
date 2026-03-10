@@ -253,7 +253,7 @@ class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFi
                 budget_file=ledger_transaction.budget_file,
                 transaction=ledger_transaction,
                 operation=TransactionEvent.OP_CREATE,
-                payload={"created_via": "api_v2"},
+                payload={"created_via": "api_v1_finance"},
             )
 
         return ledger_transaction
@@ -281,7 +281,7 @@ class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFi
                 budget_file=instance.budget_file,
                 transaction=instance,
                 operation=TransactionEvent.OP_UPDATE,
-                payload={"updated_via": "api_v2"},
+                payload={"updated_via": "api_v1_finance"},
             )
 
         return instance

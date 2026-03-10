@@ -519,14 +519,14 @@ def run_export_job(export_job: ExportJob):
 
         if export_job.format == ExportJob.FORMAT_JSON:
             export_job.content_text = json.dumps(rows, indent=2)
-            export_job.file_name = f"fintrack-v2-export-{timestamp}.json"
+            export_job.file_name = f"fintrack-export-{timestamp}.json"
         elif export_job.format == ExportJob.FORMAT_CSV:
             export_job.content_text = _csv_content(rows)
-            export_job.file_name = f"fintrack-v2-export-{timestamp}.csv"
+            export_job.file_name = f"fintrack-export-{timestamp}.csv"
         else:
             payload = _xlsx_content(rows)
             export_job.set_binary_content(payload)
-            export_job.file_name = f"fintrack-v2-export-{timestamp}.xlsx"
+            export_job.file_name = f"fintrack-export-{timestamp}.xlsx"
 
         export_job.status = ExportJob.STATUS_COMPLETED
         export_job.completed_at = timezone.now()

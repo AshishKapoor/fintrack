@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 
-import { createTransferTransaction, listV2Accounts, V2_ENABLED, type V2Account } from '@/lib/v2-client'
+import { createTransferTransaction, listAccounts, type FinanceAccount } from '@/lib/finance-client'
 import { cn } from '@/lib/utils'
 
 import { Button } from '@/components/ui/button'
@@ -38,7 +38,7 @@ export function AddTransferDialog({
   onOpenChange: (open: boolean) => void
   onCreated?: () => void
 }) {
-  const [accounts, setAccounts] = useState<V2Account[]>([])
+  const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [fromAccountId, setFromAccountId] = useState('')
   const [toAccountId, setToAccountId] = useState('')
@@ -47,13 +47,13 @@ export function AddTransferDialog({
   const [transferDate, setTransferDate] = useState<Date>(new Date())
 
   useEffect(() => {
-    if (!open || !V2_ENABLED) return
+    if (!open) return
     let cancelled = false
 
     const load = async () => {
       try {
         setIsLoading(true)
-        const data = await listV2Accounts()
+        const data = await listAccounts()
         if (!cancelled) {
           setAccounts(data)
           if (data.length >= 2) {
@@ -83,11 +83,6 @@ export function AddTransferDialog({
   }
 
   const handleCreateTransfer = async () => {
-    if (!V2_ENABLED) {
-      toast.error('Transfers are available only in v2 mode')
-      return
-    }
-
     const parsedAmount = Number(amount)
     if (!fromAccountId || !toAccountId || !parsedAmount || parsedAmount <= 0) {
       toast.error('Select source/destination accounts and a valid amount')
@@ -114,8 +109,6 @@ export function AddTransferDialog({
       toast.error('Failed to create transfer')
     }
   }
-
-  if (!V2_ENABLED) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

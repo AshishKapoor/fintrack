@@ -1,4 +1,4 @@
-const VERSION = 'fintrack-v2-pwa-20260310'
+const VERSION = 'fintrack-v1-pwa-20260310'
 const APP_SHELL_CACHE = `${VERSION}-app-shell`
 const APP_SHELL_FILES = ['/', '/index.html', '/manifest.webmanifest', '/favicon.ico']
 

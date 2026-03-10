@@ -25,7 +25,7 @@ from .models import (
     TransactionEvent,
     TransactionRule,
 )
-from .v2_serializers import (
+from .finance_serializers import (
     AccountSerializer,
     BudgetFileSerializer,
     BudgetMonthSerializer,
@@ -43,7 +43,7 @@ from .v2_serializers import (
     TagSerializer,
     TransactionRuleSerializer,
 )
-from .v2_services import (
+from .finance_services import (
     account_balances,
     apply_rules,
     apply_three_month_average,

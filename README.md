@@ -27,7 +27,7 @@ password: fintrack
 - 🌗 Light/Dark mode UI
 - 📱 Responsive design (mobile + desktop)
 - 🔌 API-first architecture
-- 🧱 `/api/v2/*` finance domain with double-entry ledger, envelope budgeting primitives, reports, exports, imports, and encrypted backup bundles
+- 🧱 `/api/v1/finance/*` finance domain with double-entry ledger, envelope budgeting primitives, reports, exports, imports, and encrypted backup bundles
 
 ---
 
@@ -163,7 +163,6 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```env
 # web/.env
 VITE_BASE_DOMAIN=http://localhost:8000
-VITE_FINANCE_V2=false
 ```
 
 ---
@@ -211,15 +210,14 @@ The API documentation is available at:
 - Swagger UI: http://localhost:8000/api/docs/
 - ReDoc: http://localhost:8000/api/redoc/
 
-## 🧩 API Versions
+## 🧩 API Surface
 
-- `/api/v1/*`: legacy endpoints kept stable for existing clients
-- `/api/v2/*`: new finance domain resources
+- `/api/v1/*`: core auth/profile and compatibility endpoints
+- `/api/v1/finance/*`: finance domain resources
   - `budget-files`, `accounts`, `category-groups`, `categories`, `payees`, `tags`
   - `transactions`, `postings`, `scheduled-transactions`, `rules`
   - `budget-months`, `envelope-assignments`, `reports`
   - `exports`, `imports`, `backups`
-- Frontend compatibility switch: set `VITE_FINANCE_V2=true` to route existing v1 UI hooks through v2 resources.
 
 ---
 

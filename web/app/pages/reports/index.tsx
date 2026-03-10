@@ -5,7 +5,6 @@ import { Pin, PinOff, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
-  V2_ENABLED,
   createSavedReport,
   deleteSavedReport,
   listSavedReports,
@@ -13,7 +12,7 @@ import {
   runSavedReport,
   updateSavedReport,
   type SavedReport,
-} from '@/lib/v2-client'
+} from '@/lib/finance-client'
 
 import Typography from '@/components/ui/typography'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -85,7 +84,6 @@ export default function ReportsPage() {
   }
 
   useEffect(() => {
-    if (!V2_ENABLED) return
     void refreshSavedReports()
   }, [])
 
@@ -154,17 +152,6 @@ export default function ReportsPage() {
     } catch {
       toast.error('Failed to delete saved report')
     }
-  }
-
-  if (!V2_ENABLED) {
-    return (
-      <div className='p-6 space-y-2'>
-        <Typography variant='h2'>Reports</Typography>
-        <p className='text-sm text-muted-foreground'>
-          Enable <code>VITE_FINANCE_V2=true</code> to use reports, saved report pinning, and v2 analytics.
-        </p>
-      </div>
-    )
   }
 
   return (

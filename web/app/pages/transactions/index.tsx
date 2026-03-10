@@ -39,7 +39,6 @@ import {
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
 import { formatDateForApi } from '@/lib/date'
-import { V2_ENABLED } from '@/lib/v2-client'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -220,12 +219,10 @@ export default function TransactionsPage() {
       <div className='flex items-center justify-between'>
         <Typography variant='h2'>Transactions</Typography>
         <div className='flex items-center gap-2'>
-          {V2_ENABLED && (
-            <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
-              <Repeat className='mr-2 h-4 w-4' />
-              Add Transfer
-            </Button>
-          )}
+          <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
+            <Repeat className='mr-2 h-4 w-4' />
+            Add Transfer
+          </Button>
           <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
         </div>
       </div>

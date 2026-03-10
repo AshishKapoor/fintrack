@@ -5,22 +5,38 @@ from .models import Category
 
 User = get_user_model()
 
+DEFAULT_INCOME_CATEGORIES = [
+    "Salary",
+    "Freelance",
+    "Business",
+    "Investments",
+    "Bonus",
+]
+
+DEFAULT_EXPENSE_CATEGORIES = [
+    "Housing",
+    "Groceries",
+    "Transportation",
+    "Utilities",
+    "Entertainment",
+]
+
 @receiver(post_save, sender=User)
 def create_default_categories(sender, instance, created, **kwargs):
     """
     Signal to create default categories for new users
     """
     if created:
-        # Create default income category
-        Category.objects.create(
-            name="Salary",
-            type="income",
-            user=instance
-        )
-        
-        # Create default expense category
-        Category.objects.create(
-            name="Groceries",
-            type="expense",
-            user=instance
-        )
+        categories_to_create = []
+
+        for name in DEFAULT_INCOME_CATEGORIES:
+            categories_to_create.append(
+                Category(name=name, type="income", user=instance)
+            )
+
+        for name in DEFAULT_EXPENSE_CATEGORIES:
+            categories_to_create.append(
+                Category(name=name, type="expense", user=instance)
+            )
+
+        Category.objects.bulk_create(categories_to_create)

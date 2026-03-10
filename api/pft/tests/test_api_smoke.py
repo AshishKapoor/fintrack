@@ -23,6 +23,29 @@ class AuthSmokeTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(User.objects.filter(email="new-user@example.com").exists())
 
+        user = User.objects.get(email="new-user@example.com")
+        user_categories = Category.objects.filter(user=user)
+        self.assertEqual(user_categories.count(), 10)
+        self.assertEqual(user_categories.filter(type="income").count(), 5)
+        self.assertEqual(user_categories.filter(type="expense").count(), 5)
+
+        expected_income = {"Salary", "Freelance", "Business", "Investments", "Bonus"}
+        expected_expense = {
+            "Housing",
+            "Groceries",
+            "Transportation",
+            "Utilities",
+            "Entertainment",
+        }
+        self.assertSetEqual(
+            set(user_categories.filter(type="income").values_list("name", flat=True)),
+            expected_income,
+        )
+        self.assertSetEqual(
+            set(user_categories.filter(type="expense").values_list("name", flat=True)),
+            expected_expense,
+        )
+
     def test_token_obtain_and_refresh(self):
         User.objects.create_user(
             email="auth-user@example.com",

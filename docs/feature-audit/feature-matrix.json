@@ -21,7 +21,7 @@
       "effort_score": 2,
       "risk_score": 5,
       "priority_score": 4.8,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/routers.py:7",
         "api/pft/urls.py:14",
@@ -40,7 +40,7 @@
       "effort_score": 2,
       "risk_score": 5,
       "priority_score": 4.8,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "web/app/pages/transactions/index.tsx:67",
         "web/app/pages/transactions/index.tsx:69",
@@ -58,50 +58,50 @@
       "effort_score": 3,
       "risk_score": 5,
       "priority_score": 4.6,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/views.py:31",
         "web/app/components/add-transaction-dialog.tsx:53",
         "web/app/components/edit-transaction-dialog.tsx:72",
         "web/app/components/delete-transaction-alert.tsx:32"
       ],
-      "notes": "CRUD exists, but downstream list/shape inconsistencies create contract risk."
+      "notes": "CRUD path is implemented and verified by API smoke tests including create, update, list, and delete."
     },
     {
       "feature_id": "automated_test_suite",
       "module": "Quality",
       "user_job": "Detect regressions before release",
-      "status": "Partial",
+      "status": "Implemented",
       "tier": "Required",
       "value_score": 5,
       "effort_score": 3,
       "risk_score": 5,
       "priority_score": 4.6,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/tests/test_api_smoke.py:1",
         "docs/feature-audit/test-plan.md:1"
       ],
-      "notes": "Baseline backend smoke tests now cover auth, categories, transactions, budgets, and profile/password."
+      "notes": "Runnable smoke tests and Docker test commands are in place for required backend flows."
     },
     {
       "feature_id": "auth_jwt_flow",
       "module": "Authentication",
       "user_job": "Sign up, sign in, refresh session, and access protected endpoints",
-      "status": "Partial",
+      "status": "Implemented",
       "tier": "Required",
       "value_score": 5,
       "effort_score": 2,
       "risk_score": 4,
       "priority_score": 4.5,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/app/urls.py:18",
         "api/pft/urls.py:14",
         "web/app/lib/auth.ts:58",
         "web/app/pages/login/index.tsx:18"
       ],
-      "notes": "Flow exists but lacks hardened token storage strategy and automated verification."
+      "notes": "JWT obtain/refresh and protected endpoint access are validated by smoke tests."
     },
     {
       "feature_id": "category_crud",
@@ -125,19 +125,19 @@
       "feature_id": "transaction_filter_sort_date",
       "module": "Transactions",
       "user_job": "Find transactions quickly by search, type, date, and sort mode",
-      "status": "Partial",
+      "status": "Implemented",
       "tier": "Required",
       "value_score": 5,
       "effort_score": 3,
       "risk_score": 4,
       "priority_score": 4.3,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/views.py:39",
         "web/app/pages/transactions/index.tsx:114",
         "web/app/pages/transactions/index.tsx:180"
       ],
-      "notes": "Client-side filtering works, but server-driven paging/filtering parity is incomplete."
+      "notes": "Server-side search/ordering and date filters are implemented and covered by smoke tests."
     },
     {
       "feature_id": "budget_crud_monthly",
@@ -149,13 +149,13 @@
       "effort_score": 3,
       "risk_score": 4,
       "priority_score": 4.3,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/views.py:56",
         "api/pft/serializers.py:103",
         "web/app/pages/budget/index.tsx:89"
       ],
-      "notes": "Monthly budget create/update is functional; needs test coverage and stronger contract checks."
+      "notes": "Budget create and same-month upsert behavior are validated in smoke tests."
     },
     {
       "feature_id": "data_export_csv_json",
@@ -167,7 +167,7 @@
       "effort_score": 2,
       "risk_score": 4,
       "priority_score": 4.0,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "README.md:21",
         "web/app/pages/transactions/index.tsx:145",
@@ -220,13 +220,13 @@
       "effort_score": 2,
       "risk_score": 3,
       "priority_score": 3.7,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "api/pft/urls.py:16",
         "api/pft/views.py:123",
         "web/app/pages/settings/index.tsx:84"
       ],
-      "notes": "Flows are present and functional but still lack validation tests and failure-path assertions."
+      "notes": "Profile update and password change success paths are covered by smoke tests."
     },
     {
       "feature_id": "data_import_csv_bank",

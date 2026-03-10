@@ -33,6 +33,8 @@ This directory is the source of truth for feature status, prioritization, and re
 Run:
 
 ```bash
+make bootstrap
+make test-api
 python3 scripts/feature_audit.py
 ```
 

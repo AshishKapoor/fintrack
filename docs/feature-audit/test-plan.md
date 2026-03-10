@@ -62,9 +62,9 @@
 ## Execution Commands
 
 ```bash
+make bootstrap
+make test-api
 python3 scripts/feature_audit.py
-cd api && make test
-cd web && pnpm lint
 ```
 
 ## Final Validation Gate

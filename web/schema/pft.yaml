@@ -707,7 +707,6 @@ components:
         - title
         - amount
         - type
-        - category
         - transaction_date
       properties:
         user:
@@ -721,6 +720,7 @@ components:
           $ref: '#/components/schemas/TypeEnum'
         category:
           type: integer
+          nullable: true
         transaction_date:
           type: string
           format: date

@@ -203,6 +203,20 @@ class CoreFinanceSmokeTests(APITestCase):
         self.assertEqual(len(page_2.data["results"]), 8)
         self.assertIsNotNone(page_2.data["previous"])
 
+    def test_transaction_create_allows_null_category(self):
+        payload = {
+            "user": self.user.id,
+            "title": "Uncategorized expense",
+            "amount": "42.00",
+            "type": "expense",
+            "category": None,
+            "transaction_date": "2026-03-10",
+        }
+
+        response = self.client.post("/api/v1/transactions/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNone(response.data["category"])
+
     def test_profile_and_password_update_flows(self):
         profile_payload = {
             "first_name": "Smoke",

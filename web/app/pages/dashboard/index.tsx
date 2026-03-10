@@ -22,35 +22,39 @@ import { DatePickerWithRange } from '@/components/date-range-picker'
 import { useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
 import { useDateStore } from '@/hooks/use-date-store'
+import { formatDateForApi, parseApiDate } from '@/lib/date'
 
 export default function DashboardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { dateRange, setDateRange } = useDateStore()
+  const startParam = searchParams.get('start')
+  const endParam = searchParams.get('end')
 
   // On mount or when query params change, update store
   useEffect(() => {
-    const startParam = searchParams.get('start')
-    const endParam = searchParams.get('end')
     if (startParam && endParam) {
-      const from = new Date(startParam)
-      const to = new Date(endParam)
+      const from = parseApiDate(startParam)
+      const to = parseApiDate(endParam)
+      if (!from || !to) return
+
+      const currentStart = dateRange?.from ? formatDateForApi(dateRange.from) : undefined
+      const currentEnd = dateRange?.to ? formatDateForApi(dateRange.to) : undefined
+
       if (
         !dateRange ||
-        dateRange.from?.toISOString().slice(0, 10) !== startParam ||
-        dateRange.to?.toISOString().slice(0, 10) !== endParam
+        currentStart !== startParam ||
+        currentEnd !== endParam
       ) {
         setDateRange({ from, to })
       }
     }
-    // Only depend on the string values, not the object
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.get('start'), searchParams.get('end'), setDateRange])
+  }, [startParam, endParam, dateRange, setDateRange])
 
   // When store changes, update query params
   useEffect(() => {
     if (dateRange?.from && dateRange?.to) {
-      const start = dateRange.from.toISOString().slice(0, 10)
-      const end = dateRange.to.toISOString().slice(0, 10)
+      const start = formatDateForApi(dateRange.from)
+      const end = formatDateForApi(dateRange.to)
       if (searchParams.get('start') !== start || searchParams.get('end') !== end) {
         const params = new URLSearchParams(searchParams)
         params.set('start', start)
@@ -65,8 +69,8 @@ export default function DashboardPage() {
   // Use dateRange from store for filtering
   const selectedStart = dateRange?.from
   const selectedEnd = dateRange?.to
-  const selectedStartParam = selectedStart?.toISOString().slice(0, 10)
-  const selectedEndParam = selectedEnd?.toISOString().slice(0, 10)
+  const selectedStartParam = selectedStart ? formatDateForApi(selectedStart) : undefined
+  const selectedEndParam = selectedEnd ? formatDateForApi(selectedEnd) : undefined
 
   let prevStartParam: string | undefined = undefined
   let prevEndParam: string | undefined = undefined
@@ -77,8 +81,8 @@ export default function DashboardPage() {
     prevStart.setDate(prevStart.getDate() - rangeDays)
     const prevEnd = new Date(selectedStart)
     prevEnd.setDate(prevEnd.getDate() - 1)
-    prevStartParam = prevStart.toISOString().slice(0, 10)
-    prevEndParam = prevEnd.toISOString().slice(0, 10)
+    prevStartParam = formatDateForApi(prevStart)
+    prevEndParam = formatDateForApi(prevEnd)
   }
   const hasPreviousRange = Boolean(prevStartParam && prevEndParam)
 

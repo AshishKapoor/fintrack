@@ -53,7 +53,7 @@ export interface TransactionMutationPayload {
   title: string
   amount: string | number
   type: TypeEnum
-  category: number
+  category?: number | null
   transaction_date: string
 }
 
@@ -69,13 +69,15 @@ export interface BudgetMutationPayload {
   amount_limit: string | number
 }
 
-const toQueryString = (params: Record<string, string | number | undefined>) => {
+const toQueryString = (params: object) => {
   const search = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      search.set(key, String(value))
-    }
-  })
+  Object.entries(params as Record<string, string | number | undefined | null>).forEach(
+    ([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        search.set(key, String(value))
+      }
+    },
+  )
   const query = search.toString()
   return query ? `?${query}` : ''
 }
@@ -197,4 +199,3 @@ export const v1CategoriesDestroy = (id: string) => {
 export const v1BudgetsUpdate = (id: string, payload: BudgetMutationPayload) => {
   return put<Budget>(`/api/v1/budgets/${id}/`, payload)
 }
-

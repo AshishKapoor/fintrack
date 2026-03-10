@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign, Plus } from 'lucide-react'
 import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { formatDateForApi } from '@/lib/date'
 
 export function BudgetProgress() {
   const currentMonth = new Date()
@@ -25,8 +26,8 @@ export function BudgetProgress() {
   const { data: budgets, isLoading } = useV1BudgetsList()
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
   const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList({
-    start_date: firstDayOfMonth.toISOString().slice(0, 10),
-    end_date: lastDayOfMonth.toISOString().slice(0, 10),
+    start_date: formatDateForApi(firstDayOfMonth),
+    end_date: formatDateForApi(lastDayOfMonth),
   })
 
   const calculateSpentAmount = (categoryId: number) => {

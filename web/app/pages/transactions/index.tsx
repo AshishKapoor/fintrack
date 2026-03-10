@@ -37,6 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
+import { formatDateForApi } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -122,14 +123,7 @@ export default function TransactionsPage() {
     ? transactions?.results
         ?.filter((transaction) => {
           const matchesSearch = transaction.title.toLowerCase().includes(searchQuery.toLowerCase())
-          const matchesType =
-            transactionType === 'all' ||
-            (transactionType === 'income' &&
-              categories?.results?.find((c) => c.id === transaction.category)?.type ===
-                TypeEnum.income) ||
-            (transactionType === 'expense' &&
-              categories?.results?.find((c) => c.id === transaction.category)?.type ===
-                TypeEnum.expense)
+          const matchesType = transactionType === 'all' || transaction.type === transactionType
           const matchesDate = !date || transaction.transaction_date === format(date, 'yyyy-MM-dd')
           return matchesSearch && matchesType && matchesDate
         })
@@ -150,7 +144,14 @@ export default function TransactionsPage() {
     : []
 
   const getCategoryName = (categoryId: number | null | undefined) =>
-    categories?.results?.find((category) => category.id === categoryId)?.name || ''
+    categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'
+
+  const escapeCsvCell = (value: string | number, sanitizeFormula = false) => {
+    const rawValue = String(value)
+    const safeValue =
+      sanitizeFormula && /^[=+\-@]/.test(rawValue.trimStart()) ? `'${rawValue}` : rawValue
+    return `"${safeValue.replace(/"/g, '""')}"`
+  }
 
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
@@ -167,7 +168,7 @@ export default function TransactionsPage() {
       amount: transaction.amount,
     }))
 
-    const dateStamp = new Date().toISOString().slice(0, 10)
+    const dateStamp = formatDateForApi(new Date())
     const baseFilename = `fintrack-transactions-${dateStamp}`
     let content = ''
     let mimeType = ''
@@ -180,9 +181,14 @@ export default function TransactionsPage() {
     } else {
       const header = ['id', 'date', 'title', 'category', 'type', 'amount']
       const lines = exportRows.map((row) =>
-        [row.id, row.date, row.title, row.category, row.type, row.amount]
-          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
-          .join(','),
+        [
+          escapeCsvCell(row.id),
+          escapeCsvCell(row.date),
+          escapeCsvCell(row.title, true),
+          escapeCsvCell(row.category, true),
+          escapeCsvCell(row.type),
+          escapeCsvCell(row.amount),
+        ].join(','),
       )
       content = [header.join(','), ...lines].join('\\n')
       mimeType = 'text/csv;charset=utf-8'
@@ -321,7 +327,7 @@ export default function TransactionsPage() {
             ) : (
               filteredTransactions?.map((transaction) => {
                 const category = categories?.results?.find((c) => c.id === transaction.category)
-                if (!category) return null
+                const categoryName = category?.name || 'Uncategorized'
 
                 return (
                   <TableRow key={transaction.id}>
@@ -329,10 +335,10 @@ export default function TransactionsPage() {
                       {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                     </TableCell>
                     <TableCell>{transaction.title}</TableCell>
-                    <TableCell>{category.name}</TableCell>
+                    <TableCell>{categoryName}</TableCell>
                     <TableCell>
                       <div className='flex items-center gap-2'>
-                        {category.type === TypeEnum.income ? (
+                        {transaction.type === TypeEnum.income ? (
                           <ArrowUpIcon className='h-4 w-4 text-emerald-600' />
                         ) : (
                           <ArrowDownIcon className='h-4 w-4 text-rose-600' />
@@ -340,7 +346,7 @@ export default function TransactionsPage() {
                         <span
                           className={cn(
                             'tabular-nums',
-                            category.type === TypeEnum.income
+                            transaction.type === TypeEnum.income
                               ? 'text-emerald-600'
                               : 'text-rose-600',
                           )}

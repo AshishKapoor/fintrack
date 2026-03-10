@@ -1,7 +1,7 @@
 'use client'
 
 import { TypeEnum } from '@/client/gen/pft/typeEnum'
-import { useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import { useV1CategoriesList, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
@@ -29,6 +29,7 @@ const categoryIcons: Record<string, any> = {
 
 export function RecentTransactions() {
   const { data: transactions, isLoading } = useV1TransactionsList()
+  const { data: categories } = useV1CategoriesList()
 
   if (isLoading) {
     return <AnimateSpinner size={64} />
@@ -52,7 +53,9 @@ export function RecentTransactions() {
   return (
     <div className='space-y-4'>
       {transactions.results.slice(0, 5).map((transaction: any) => {
-        const categoryInfo = categoryIcons[transaction?.category?.name || ''] || {
+        const categoryName =
+          categories?.results?.find((category) => category.id === transaction.category)?.name || ''
+        const categoryInfo = categoryIcons[categoryName] || {
           icon: ShoppingBag,
           color: 'text-gray-500 bg-gray-100',
         }
@@ -67,7 +70,7 @@ export function RecentTransactions() {
               <div>
                 <p className='text-sm font-medium leading-none'>{transaction.title}</p>
                 <p className='text-xs text-muted-foreground'>
-                  {transaction.category ? transaction.category.name : ''} •{' '}
+                  {categoryName} •{' '}
                   {new Date(transaction.transaction_date).toLocaleDateString()}
                 </p>
               </div>

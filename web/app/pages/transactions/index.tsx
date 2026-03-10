@@ -66,7 +66,9 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList()
+  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList({
+    page: currentPage,
+  })
 
   useEffect(() => {
     if (transactions?.count === 0 && currentPage > 1) {

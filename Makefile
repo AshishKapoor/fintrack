@@ -1,4 +1,4 @@
-.PHONY: up down build logs clean
+.PHONY: up down build logs clean feature-audit
 
 up:
 	docker compose up -d
@@ -14,3 +14,6 @@ logs:
 
 clean:
 	docker compose down -v --remove-orphans
+
+feature-audit:
+	python3 scripts/feature_audit.py

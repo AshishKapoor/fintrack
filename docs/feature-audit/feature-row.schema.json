@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fintrack.local/feature-row.schema.json",
+  "title": "FinTrack Feature Audit Row",
+  "description": "Single feature row used for prioritization and readiness tracking.",
+  "type": "object",
+  "required": [
+    "feature_id",
+    "module",
+    "user_job",
+    "status",
+    "tier",
+    "value_score",
+    "effort_score",
+    "risk_score",
+    "priority_score",
+    "acceptance_status",
+    "evidence_refs",
+    "notes"
+  ],
+  "properties": {
+    "feature_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9_]+$"
+    },
+    "module": {
+      "type": "string",
+      "minLength": 1
+    },
+    "user_job": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Implemented", "Partial", "Missing", "Broken"]
+    },
+    "tier": {
+      "type": "string",
+      "enum": ["Required", "AddNext", "Optional"]
+    },
+    "value_score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "effort_score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "risk_score": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "priority_score": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "acceptance_status": {
+      "type": "string",
+      "enum": ["Accepted", "AtRisk"]
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

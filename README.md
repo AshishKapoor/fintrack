@@ -182,6 +182,24 @@ pnpm test
 
 ---
 
+## 🧭 Feature Audit
+
+The budgeting-core audit artifacts and prioritized roadmap live in:
+
+- `docs/feature-audit/README.md`
+- `docs/feature-audit/feature-matrix.json`
+- `docs/feature-audit/prioritized-roadmap.md`
+- `docs/feature-audit/parity-report.md`
+- `docs/feature-audit/test-plan.md`
+
+Run the audit validator and parity report generator:
+
+```bash
+make feature-audit
+```
+
+---
+
 ## 📤 API Documentation
 
 The API documentation is available at:

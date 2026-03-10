@@ -6,7 +6,7 @@ Generated on `2026-03-10` by `scripts/feature_audit.py`.
 
 - Required features tracked: **12**
 - Required features currently Broken: **0**
-- Status counts: `{'Implemented': 7, 'Missing': 12, 'Partial': 5, 'Broken': 1}`
+- Status counts: `{'Implemented': 8, 'Partial': 6, 'Missing': 11}`
 - Tier counts: `{'Required': 12, 'AddNext': 5, 'Optional': 8}`
 - Acceptance counts: `{'AtRisk': 23, 'Accepted': 2}`
 
@@ -31,10 +31,7 @@ Matrix validation errors:
 
 ## Parity Findings
 
-| Severity | Finding | Detail | Evidence |
-|---|---|---|---|
-| P2 | Download control has no export action bound | Transactions page shows export icon button with no onClick/export implementation. | `web/app/pages/transactions/index.tsx`<br>`README.md` |
-| P2 | Automated regression tests are missing for core flows | No meaningful API/UI test files found for budgeting core features. | `api/pft/tests/__init__.py`<br>`README.md` |
+No parity findings.
 
 
 ## Schema Endpoints Not in Active Backend

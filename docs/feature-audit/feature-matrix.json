@@ -71,7 +71,7 @@
       "feature_id": "automated_test_suite",
       "module": "Quality",
       "user_job": "Detect regressions before release",
-      "status": "Missing",
+      "status": "Partial",
       "tier": "Required",
       "value_score": 5,
       "effort_score": 3,
@@ -79,10 +79,10 @@
       "priority_score": 4.6,
       "acceptance_status": "AtRisk",
       "evidence_refs": [
-        "api/pft/tests/__init__.py:1",
-        "README.md:174"
+        "api/pft/tests/test_api_smoke.py:1",
+        "docs/feature-audit/test-plan.md:1"
       ],
-      "notes": "No meaningful backend or frontend tests are present despite test commands in docs."
+      "notes": "Baseline backend smoke tests now cover auth, categories, transactions, budgets, and profile/password."
     },
     {
       "feature_id": "auth_jwt_flow",
@@ -161,7 +161,7 @@
       "feature_id": "data_export_csv_json",
       "module": "Data Portability",
       "user_job": "Export financial records for backup and analysis",
-      "status": "Broken",
+      "status": "Implemented",
       "tier": "AddNext",
       "value_score": 4,
       "effort_score": 2,
@@ -170,10 +170,10 @@
       "acceptance_status": "AtRisk",
       "evidence_refs": [
         "README.md:21",
-        "web/app/pages/transactions/index.tsx:223",
-        "api/pft/urls.py:9"
+        "web/app/pages/transactions/index.tsx:145",
+        "web/app/pages/transactions/index.tsx:275"
       ],
-      "notes": "Export is promised in README but there is no backend export endpoint and download button has no handler."
+      "notes": "Client-side export is implemented from the filtered transaction dataset with CSV and JSON options."
     },
     {
       "feature_id": "budget_progress_tracking",

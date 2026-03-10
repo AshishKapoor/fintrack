@@ -168,16 +168,19 @@ VITE_API_URL=http://localhost:8000
 
 ## 🧪 Tests
 
-### API Tests
+### Bootstrap (first run)
 ```bash
-cd api
-poetry run python manage.py test
+make bootstrap
 ```
 
-### Web Tests
+### API Tests
 ```bash
-cd web
-pnpm test
+make test-api
+```
+
+### Full API Suite
+```bash
+make test-api-all
 ```
 
 ---

@@ -54,6 +54,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
@@ -148,6 +149,58 @@ export default function TransactionsPage() {
         })
     : []
 
+  const getCategoryName = (categoryId: number | null | undefined) =>
+    categories?.results?.find((category) => category.id === categoryId)?.name || ''
+
+  const exportTransactions = (format: 'csv' | 'json') => {
+    if (!filteredTransactions.length) {
+      toast.error('No transactions available for export')
+      return
+    }
+
+    const exportRows = filteredTransactions.map((transaction) => ({
+      id: transaction.id,
+      date: transaction.transaction_date,
+      title: transaction.title,
+      category: getCategoryName(transaction.category),
+      type: transaction.type,
+      amount: transaction.amount,
+    }))
+
+    const dateStamp = new Date().toISOString().slice(0, 10)
+    const baseFilename = `fintrack-transactions-${dateStamp}`
+    let content = ''
+    let mimeType = ''
+    let extension = ''
+
+    if (format === 'json') {
+      content = JSON.stringify(exportRows, null, 2)
+      mimeType = 'application/json'
+      extension = 'json'
+    } else {
+      const header = ['id', 'date', 'title', 'category', 'type', 'amount']
+      const lines = exportRows.map((row) =>
+        [row.id, row.date, row.title, row.category, row.type, row.amount]
+          .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+          .join(','),
+      )
+      content = [header.join(','), ...lines].join('\\n')
+      mimeType = 'text/csv;charset=utf-8'
+      extension = 'csv'
+    }
+
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${baseFilename}.${extension}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success(`Transactions exported as ${extension.toUpperCase()}`)
+  }
+
   return (
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
@@ -221,9 +274,21 @@ export default function TransactionsPage() {
               <SelectItem value='lowest'>Lowest amount</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant='outline' size='icon'>
-            <Download className='h-4 w-4' />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='icon' className='h-9 w-9'>
+                <Download className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={() => exportTransactions('csv')}>
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportTransactions('json')}>
+                Export JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -255,11 +255,14 @@ def build_findings() -> tuple[list[Finding], set[str], set[str]]:
             )
         )
 
-    download_pattern = re.compile(
-        r"<Button\s+variant='outline'\s+size='icon'\s*>\s*<Download",
-        re.MULTILINE,
+    has_download_icon = "<Download" in transactions_page
+    has_export_action = (
+        "exportTransactions(" in transactions_page
+        or "Export CSV" in transactions_page
+        or "Export JSON" in transactions_page
+        or "onClick={() => export" in transactions_page
     )
-    if download_pattern.search(transactions_page):
+    if has_download_icon and not has_export_action:
         findings.append(
             Finding(
                 severity="P2",

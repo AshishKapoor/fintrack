@@ -9,12 +9,12 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 | 1 | `api_ui_contract_integrity` | Required | 4.8 | Implemented |
 | 2 | `pagination_end_to_end` | Required | 4.8 | Implemented |
 | 3 | `transaction_crud` | Required | 4.6 | Implemented |
-| 4 | `automated_test_suite` | Required | 4.6 | Missing |
+| 4 | `automated_test_suite` | Required | 4.6 | Partial |
 | 5 | `auth_jwt_flow` | Required | 4.5 | Partial |
 | 6 | `category_crud` | Required | 4.5 | Implemented |
 | 7 | `transaction_filter_sort_date` | Required | 4.3 | Partial |
 | 8 | `budget_crud_monthly` | Required | 4.3 | Implemented |
-| 9 | `data_export_csv_json` | AddNext | 4.0 | Broken |
+| 9 | `data_export_csv_json` | AddNext | 4.0 | Implemented |
 | 10 | `budget_progress_tracking` | Required | 3.8 | Partial |
 
 ## Required Core (Must Stabilize First)
@@ -37,6 +37,11 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 - Schema now matches active backend route surface (`/api/token/*`, `/api/v1/{register,me,profile,categories,transactions,budgets}`).
 - Generated API client compatibility files are present under `web/app/client/gen/pft`.
 - Transactions pagination now sends `page` query parameter via `useV1TransactionsList({ page: currentPage })`.
+
+## Phase 2 Completed
+
+- Transactions export now supports CSV and JSON from current filtered results.
+- Initial backend smoke test suite added for registration, category/transaction/budget flows, and profile/password updates.
 
 ## Add Next (After Core Is Reliable)
 

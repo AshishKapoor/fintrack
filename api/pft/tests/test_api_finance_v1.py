@@ -39,6 +39,13 @@ class FinanceApiV1Tests(APITestCase):
             10,
         )
 
+    def test_accounts_list_returns_current_balance(self):
+        response = self.client.get(f"/api/v1/finance/accounts/?budget_file={self.budget_file.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], self.account.id)
+        self.assertEqual(response.data[0]["current_balance"], "0.00")
+
     def test_create_balanced_ledger_transaction(self):
         payload = {
             "budget_file": self.budget_file.id,

@@ -46,9 +46,7 @@ class BudgetFileSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
-    current_balance = serializers.DecimalField(
-        max_digits=14, decimal_places=2, source="current_balance", read_only=True
-    )
+    current_balance = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
 
     class Meta:
         model = Account

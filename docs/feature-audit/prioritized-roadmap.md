@@ -15,7 +15,7 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 | 7 | `transaction_filter_sort_date` | Required | 4.3 | Implemented |
 | 8 | `budget_crud_monthly` | Required | 4.3 | Implemented |
 | 9 | `data_export_csv_json` | AddNext | 4.0 | Implemented |
-| 10 | `budget_progress_tracking` | Required | 3.8 | Partial |
+| 10 | `budget_progress_tracking` | Required | 3.8 | Implemented |
 
 ## Required Core (Must Stabilize First)
 
@@ -27,8 +27,8 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 - `category_crud`: retain as baseline; keep accepted with regression coverage.
 - `transaction_filter_sort_date`: server-side search/ordering and date filters completed and validated.
 - `budget_crud_monthly`: create and same-month upsert behavior validated.
-- `budget_progress_tracking`: validate current-month calculations and edge cases.
-- `dashboard_metrics_overview`: unify range filtering between summary cards/charts/recent activity.
+- `budget_progress_tracking`: current-month budget/transaction scoping completed for deterministic progress calculations.
+- `dashboard_metrics_overview`: range-filtered summary cards and overview chart now share the same dataset source.
 - `profile_password_management`: update/password success paths validated.
 - `responsive_theme_currency`: maintain as accepted non-blocking baseline.
 
@@ -49,6 +49,7 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 - Added server-side transaction `search_fields` and `ordering_fields`.
 - Added Docker-runnable test commands (`make bootstrap`, `make test-api`, `make test-api-all`).
 - Expanded smoke tests to cover JWT obtain/refresh, protected route auth, filtering, ordering, pagination, and CRUD/update paths.
+- Unified dashboard metric sourcing and current-month budget progress calculations to close remaining Required data-consistency risks.
 
 ## Add Next (After Core Is Reliable)
 

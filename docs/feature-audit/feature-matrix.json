@@ -179,36 +179,36 @@
       "feature_id": "budget_progress_tracking",
       "module": "Budgets",
       "user_job": "Track category spending against budget limits in real time",
-      "status": "Partial",
+      "status": "Implemented",
       "tier": "Required",
       "value_score": 4,
       "effort_score": 3,
       "risk_score": 4,
       "priority_score": 3.8,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
         "web/app/components/budget-progress.tsx:24",
-        "web/app/pages/budget/index.tsx:68"
+        "web/app/components/budget-progress.tsx:55"
       ],
-      "notes": "Progress UI works for current-month expense categories, but behavior is narrow and untested."
+      "notes": "Budget progress now scopes to current-month budgets and current-month transactions with deterministic calculations."
     },
     {
       "feature_id": "dashboard_metrics_overview",
       "module": "Dashboard",
       "user_job": "Understand balance, income, expenses, and savings trend by date range",
-      "status": "Partial",
+      "status": "Implemented",
       "tier": "Required",
       "value_score": 4,
       "effort_score": 3,
       "risk_score": 4,
       "priority_score": 3.8,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
-        "web/app/pages/dashboard/index.tsx:73",
-        "web/app/components/overview.tsx:38",
-        "web/app/components/recent-transactions.tsx:55"
+        "web/app/pages/dashboard/index.tsx:95",
+        "web/app/components/overview.tsx:34",
+        "web/app/pages/dashboard/index.tsx:247"
       ],
-      "notes": "Core metrics exist, but data-shape assumptions and inconsistent filtering need hardening."
+      "notes": "Dashboard cards and overview chart now consume the same selected-range dataset and previous-period comparison dataset."
     },
     {
       "feature_id": "profile_password_management",

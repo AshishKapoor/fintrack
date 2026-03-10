@@ -65,17 +65,55 @@ export default function DashboardPage() {
   // Use dateRange from store for filtering
   const selectedStart = dateRange?.from
   const selectedEnd = dateRange?.to
+  const selectedStartParam = selectedStart?.toISOString().slice(0, 10)
+  const selectedEndParam = selectedEnd?.toISOString().slice(0, 10)
+
+  let prevStartParam: string | undefined = undefined
+  let prevEndParam: string | undefined = undefined
+  if (selectedStart && selectedEnd) {
+    const rangeDays =
+      Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+    const prevStart = new Date(selectedStart)
+    prevStart.setDate(prevStart.getDate() - rangeDays)
+    const prevEnd = new Date(selectedStart)
+    prevEnd.setDate(prevEnd.getDate() - 1)
+    prevStartParam = prevStart.toISOString().slice(0, 10)
+    prevEndParam = prevEnd.toISOString().slice(0, 10)
+  }
+  const hasPreviousRange = Boolean(prevStartParam && prevEndParam)
+
   const { isLoading: isLoadingCategories, data: categories } = useV1CategoriesList(
     {},
     { swr: { revalidateOnMount: true } },
   )
   const { isLoading: isLoadingBudgets } = useV1BudgetsList({}, { swr: { revalidateOnMount: true } })
   const { isLoading: isLoadingTransactions, data: transactions } = useV1TransactionsList(
-    {},
+    {
+      start_date: selectedStartParam,
+      end_date: selectedEndParam,
+    },
     { swr: { revalidateOnMount: true } },
   )
+  const { isLoading: isLoadingPreviousTransactions, data: previousTransactions } =
+    useV1TransactionsList(
+      {
+        start_date: prevStartParam,
+        end_date: prevEndParam,
+      },
+      {
+        swr: {
+          revalidateOnMount: true,
+          isPaused: () => !hasPreviousRange,
+        },
+      },
+    )
 
-  if (isLoadingCategories || isLoadingBudgets || isLoadingTransactions) {
+  if (
+    isLoadingCategories ||
+    isLoadingBudgets ||
+    isLoadingTransactions ||
+    (hasPreviousRange && isLoadingPreviousTransactions)
+  ) {
     return <AnimateSpinner size={64} />
   }
 
@@ -99,13 +137,7 @@ export default function DashboardPage() {
     )
   }
 
-  // Filter transactions by selected date range
-  const filteredTransactions =
-    transactions?.results?.filter((transaction: Transaction) => {
-      if (!selectedStart || !selectedEnd) return false
-      const transactionDate = new Date(transaction.transaction_date)
-      return transactionDate >= selectedStart && transactionDate <= selectedEnd
-    }) || []
+  const filteredTransactions = transactions?.results || []
 
   // Calculate stats for selected range
   const stats = filteredTransactions.reduce(
@@ -128,23 +160,10 @@ export default function DashboardPage() {
   )
 
   // For comparison, calculate stats for previous period of same length
-  let rangeDays = 0
-  let prevStart: Date | undefined = undefined
-  let prevEnd: Date | undefined = undefined
   let prevTransactions: Transaction[] = []
   let prevStats = { prevMonthIncome: 0, prevMonthExpenses: 0 }
-  if (selectedStart && selectedEnd) {
-    rangeDays =
-      Math.ceil((selectedEnd.getTime() - selectedStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    prevStart = new Date(selectedStart)
-    prevStart.setDate(prevStart.getDate() - rangeDays)
-    prevEnd = new Date(selectedStart)
-    prevEnd.setDate(prevEnd.getDate() - 1)
-    prevTransactions =
-      transactions?.results?.filter((transaction: Transaction) => {
-        const transactionDate = new Date(transaction.transaction_date)
-        return transactionDate >= prevStart! && transactionDate <= prevEnd!
-      }) || []
+  if (hasPreviousRange) {
+    prevTransactions = previousTransactions?.results || []
     prevStats = prevTransactions.reduce(
       (acc, transaction: Transaction) => {
         const amount = Number(transaction.amount) || 0
@@ -183,8 +202,8 @@ export default function DashboardPage() {
       : 0
   const savingsRateChange = calculatePercentageChange(savingsRate, prevSavingsRate)
 
-  // Show empty state if no transactions exist
-  if (!transactions?.results?.length) {
+  // Show empty state if no transactions exist for the selected range
+  if (!filteredTransactions.length) {
     return (
       <div className='p-6'>
         <EmptyPlaceholder
@@ -268,10 +287,10 @@ export default function DashboardPage() {
             <Card className='md:col-span-4'>
               <CardHeader>
                 <CardTitle>Financial Overview</CardTitle>
-                <CardDescription>Your income and expenses for the selected period</CardDescription>
+              <CardDescription>Your income and expenses for the selected period</CardDescription>
               </CardHeader>
               <CardContent className=''>
-                <Overview />
+                <Overview transactions={filteredTransactions} />
               </CardContent>
             </Card>
             <Card className='md:col-span-4'>

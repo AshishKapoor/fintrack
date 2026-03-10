@@ -29,9 +29,10 @@ class CategoryViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Category.objects.filter(
-            user=self.request.user
-        ) | Category.objects.filter(user__isnull=True)
+        return (
+            Category.objects.filter(user=self.request.user)
+            | Category.objects.filter(user__isnull=True)
+        ).order_by("name", "id")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -43,9 +44,14 @@ class TransactionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["title", "category__name"]
+    ordering_fields = ["transaction_date", "amount", "created_at", "updated_at", "title"]
+    ordering = ["-transaction_date", "-id"]
 
     def get_queryset(self):
-        queryset = Transaction.objects.filter(user=self.request.user)
+        queryset = Transaction.objects.filter(user=self.request.user).order_by(
+            "-transaction_date", "-id"
+        )
 
         # Date range filtering
         start_date = self.request.query_params.get('start_date')
@@ -69,7 +75,7 @@ class BudgetViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user)
+        return Budget.objects.filter(user=self.request.user).order_by("-year", "-month", "id")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

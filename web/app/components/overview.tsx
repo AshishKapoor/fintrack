@@ -1,6 +1,6 @@
 'use client'
 
-import { useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import { Transaction } from '@/client/gen/pft/transaction'
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts'
 import {
   ChartConfig,
@@ -12,8 +12,6 @@ import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign } from 'lucide-react'
 import { useCurrency } from '@/context/currency-context'
 import { TypeEnum } from '@/client/gen/pft/typeEnum'
-import { useDateStore } from '@/hooks/use-date-store'
-import { formatDate } from 'date-fns'
 
 interface MonthlyData {
   name: string
@@ -32,19 +30,14 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function Overview() {
-  const { dateRange } = useDateStore()
-  const { from, to } = dateRange || {}
-  const { data: transactions } = useV1TransactionsList(
-    {
-      start_date: from ? formatDate(new Date(from), 'yyyy-MM-dd') : undefined,
-      end_date: to ? formatDate(new Date(to), 'yyyy-MM-dd') : undefined,
-    },
-    { swr: { revalidateOnMount: true } },
-  )
+interface OverviewProps {
+  transactions: Transaction[]
+}
+
+export function Overview({ transactions }: OverviewProps) {
   const { currency } = useCurrency()
 
-  if (!transactions?.results?.length) {
+  if (!transactions.length) {
     return (
       <EmptyPlaceholder
         icon={<CircleDollarSign className='w-12 h-12' />}
@@ -54,27 +47,26 @@ export function Overview() {
     )
   }
 
-  const monthlyData =
-    transactions?.results?.reduce((acc: MonthlyData[], transaction) => {
-      const date = new Date(transaction.transaction_date)
-      const monthYear = date.toLocaleString('default', { month: 'short', year: '2-digit' })
+  const monthlyData = transactions.reduce((acc: MonthlyData[], transaction) => {
+    const date = new Date(transaction.transaction_date)
+    const monthYear = date.toLocaleString('default', { month: 'short', year: '2-digit' })
 
-      const existingMonth = acc.find((item) => item.name === monthYear)
-      if (existingMonth) {
-        if (transaction.type === TypeEnum.income) {
-          existingMonth.income += Number(transaction.amount)
-        } else {
-          existingMonth.expenses += Number(transaction.amount)
-        }
+    const existingMonth = acc.find((item) => item.name === monthYear)
+    if (existingMonth) {
+      if (transaction.type === TypeEnum.income) {
+        existingMonth.income += Number(transaction.amount)
       } else {
-        acc.push({
-          name: monthYear,
-          income: transaction.type === TypeEnum.income ? Number(transaction.amount) : 0,
-          expenses: transaction.type === TypeEnum.income ? 0 : Number(transaction.amount),
-        })
+        existingMonth.expenses += Number(transaction.amount)
       }
-      return acc
-    }, []) || []
+    } else {
+      acc.push({
+        name: monthYear,
+        income: transaction.type === TypeEnum.income ? Number(transaction.amount) : 0,
+        expenses: transaction.type === TypeEnum.income ? 0 : Number(transaction.amount),
+      })
+    }
+    return acc
+  }, [])
 
   // Sort by date and take last 6 months
   const sortedData = monthlyData

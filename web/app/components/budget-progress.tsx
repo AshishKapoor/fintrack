@@ -14,33 +14,36 @@ import { Button } from '@/components/ui/button'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign, Plus } from 'lucide-react'
 import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { formatDateForApi } from '@/lib/date'
 
 export function BudgetProgress() {
+  const currentMonth = new Date()
+  const currentMonthNumber = currentMonth.getMonth() + 1
+  const currentYear = currentMonth.getFullYear()
+  const firstDayOfMonth = new Date(currentYear, currentMonth.getMonth(), 1)
+  const lastDayOfMonth = new Date(currentYear, currentMonth.getMonth() + 1, 0)
+
   const { data: budgets, isLoading } = useV1BudgetsList()
-  const { data: categories } = useV1CategoriesList()
-  const { data: transactions } = useV1TransactionsList()
+  const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
+  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList({
+    start_date: formatDateForApi(firstDayOfMonth),
+    end_date: formatDateForApi(lastDayOfMonth),
+  })
 
   const calculateSpentAmount = (categoryId: number) => {
     if (!Array.isArray(transactions?.results)) return 0
 
-    const currentMonth = new Date()
-    const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-    const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-
     return transactions.results
       .filter((transaction) => {
-        const transactionDate = new Date(transaction.transaction_date)
         return (
           transaction.category === categoryId &&
-          transactionDate >= firstDayOfMonth &&
-          transactionDate <= lastDayOfMonth &&
           categories?.results?.find((c) => c.id === transaction.category)?.type === TypeEnum.expense
         )
       })
       .reduce((total, transaction) => total + parseFloat(transaction.amount), 0)
   }
 
-  if (isLoading) {
+  if (isLoading || isLoadingCategories || isLoadingTransactions) {
     return <AnimateSpinner size={64} />
   }
 
@@ -62,12 +65,17 @@ export function BudgetProgress() {
     )
   }
 
-  // Then check for budgets
-  if (!budgets?.results?.length) {
+  const budgetsForCurrentMonth =
+    budgets?.results?.filter(
+      (budget) => budget.month === currentMonthNumber && budget.year === currentYear,
+    ) || []
+
+  // Then check for current-month budgets
+  if (!budgetsForCurrentMonth.length) {
     return (
       <EmptyPlaceholder
         icon={<CircleDollarSign className='w-12 h-12' />}
-        title='No budgets set'
+        title='No budgets set for this month'
         description='Track your spending by setting monthly budgets for your expense categories.'
         action={
           <Link to='/budgets'>
@@ -82,7 +90,7 @@ export function BudgetProgress() {
 
   return (
     <div className='space-y-6'>
-      {budgets?.results?.map((budget) => {
+      {budgetsForCurrentMonth.map((budget) => {
         const spent = calculateSpentAmount(budget.category) || 0
         const limit = parseFloat(budget.amount_limit)
         const percentage = limit ? Math.round((spent / limit) * 100) : 0

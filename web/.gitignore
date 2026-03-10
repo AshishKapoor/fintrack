@@ -11,6 +11,7 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +24,5 @@ dist-ssr
 *.sln
 *.sw?
 app/client/gen/*
+!app/client/gen/pft/
+!app/client/gen/pft/**

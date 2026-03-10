@@ -88,6 +88,9 @@ class TransactionSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'title', 'amount', 'type', 'category',
                  'transaction_date', 'created_at', 'updated_at']
         read_only_fields = ['created_at', 'updated_at']
+        extra_kwargs = {
+            "category": {"required": False, "allow_null": True},
+        }
 
     def to_representation(self, instance):
         # Ensure amount is always serialized as Decimal

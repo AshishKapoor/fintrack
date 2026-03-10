@@ -7,3157 +7,824 @@ paths:
   /api/token/:
     post:
       operationId: token_create
-      description: |-
-        Takes a set of user credentials and returns an access and refresh JSON web
-        token pair to prove the authentication of those credentials.
       tags:
-      - token
+        - auth
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenObtainPair'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenObtainPair'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenObtainPair'
-        required: true
+              $ref: '#/components/schemas/TokenObtainPairRequest'
       responses:
         '200':
+          description: JWT token pair
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenObtainPair'
-          description: ''
+                $ref: '#/components/schemas/TokenObtainPairResponse'
   /api/token/refresh/:
     post:
       operationId: token_refresh_create
-      description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
       tags:
-      - token
+        - auth
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TokenRefresh'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefresh'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenRefresh'
-        required: true
+              $ref: '#/components/schemas/TokenRefreshRequest'
       responses:
         '200':
+          description: Refreshed access token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TokenRefresh'
-          description: ''
-  /api/v1/analytics/:
-    get:
-      operationId: v1_analytics_list
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedAnalyticsReportList'
-          description: ''
-    post:
-      operationId: v1_analytics_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-  /api/v1/analytics/{id}/:
-    get:
-      operationId: v1_analytics_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-    put:
-      operationId: v1_analytics_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/AnalyticsReport'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-    patch:
-      operationId: v1_analytics_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedAnalyticsReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedAnalyticsReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedAnalyticsReport'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-    delete:
-      operationId: v1_analytics_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/analytics/monthly_summary/:
-    get:
-      operationId: v1_analytics_monthly_summary_retrieve
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnalyticsReport'
-          description: ''
-  /api/v1/bill-reminders/:
-    get:
-      operationId: v1_bill_reminders_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedBillReminderList'
-          description: ''
-    post:
-      operationId: v1_bill_reminders_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-  /api/v1/bill-reminders/{id}/:
-    get:
-      operationId: v1_bill_reminders_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-    put:
-      operationId: v1_bill_reminders_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-    patch:
-      operationId: v1_bill_reminders_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedBillReminder'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedBillReminder'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedBillReminder'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-    delete:
-      operationId: v1_bill_reminders_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/bill-reminders/{id}/mark_paid/:
-    post:
-      operationId: v1_bill_reminders_mark_paid_create
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BillReminder'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-  /api/v1/bill-reminders/upcoming/:
-    get:
-      operationId: v1_bill_reminders_upcoming_retrieve
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BillReminder'
-          description: ''
-  /api/v1/budgets/:
-    get:
-      operationId: v1_budgets_list
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedBudgetList'
-          description: ''
-    post:
-      operationId: v1_budgets_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Budget'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Budget'
-          description: ''
-  /api/v1/budgets/{id}/:
-    get:
-      operationId: v1_budgets_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Budget'
-          description: ''
-    put:
-      operationId: v1_budgets_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Budget'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Budget'
-          description: ''
-    patch:
-      operationId: v1_budgets_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedBudget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedBudget'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedBudget'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Budget'
-          description: ''
-    delete:
-      operationId: v1_budgets_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/categories/:
-    get:
-      operationId: v1_categories_list
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedCategoryList'
-          description: ''
-    post:
-      operationId: v1_categories_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Category'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Category'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Category'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Category'
-          description: ''
-  /api/v1/categories/{id}/:
-    get:
-      operationId: v1_categories_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Category'
-          description: ''
-    put:
-      operationId: v1_categories_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Category'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Category'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Category'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Category'
-          description: ''
-    patch:
-      operationId: v1_categories_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCategory'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCategory'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedCategory'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Category'
-          description: ''
-    delete:
-      operationId: v1_categories_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/debt-accounts/:
-    get:
-      operationId: v1_debt_accounts_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedDebtAccountList'
-          description: ''
-    post:
-      operationId: v1_debt_accounts_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DebtAccount'
-          description: ''
-  /api/v1/debt-accounts/{id}/:
-    get:
-      operationId: v1_debt_accounts_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DebtAccount'
-          description: ''
-    put:
-      operationId: v1_debt_accounts_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DebtAccount'
-          description: ''
-    patch:
-      operationId: v1_debt_accounts_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedDebtAccount'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedDebtAccount'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedDebtAccount'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DebtAccount'
-          description: ''
-    delete:
-      operationId: v1_debt_accounts_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/debt-accounts/{id}/record_payment/:
-    post:
-      operationId: v1_debt_accounts_record_payment_create
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/DebtAccount'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DebtAccount'
-          description: ''
-  /api/v1/investments/:
-    get:
-      operationId: v1_investments_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedInvestmentList'
-          description: ''
-    post:
-      operationId: v1_investments_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Investment'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-  /api/v1/investments/{id}/:
-    get:
-      operationId: v1_investments_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-    put:
-      operationId: v1_investments_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Investment'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-    patch:
-      operationId: v1_investments_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedInvestment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedInvestment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedInvestment'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-    delete:
-      operationId: v1_investments_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/investments/{id}/update_value/:
-    post:
-      operationId: v1_investments_update_value_create
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Investment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Investment'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-  /api/v1/investments/portfolio_summary/:
-    get:
-      operationId: v1_investments_portfolio_summary_retrieve
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Investment'
-          description: ''
-  /api/v1/me/:
-    get:
-      operationId: v1_me_retrieve
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/v1/profile/change-password/:
-    post:
-      operationId: v1_profile_change_password_create
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          description: No response body
-  /api/v1/profile/update/:
-    put:
-      operationId: v1_profile_update_update
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserProfile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserProfile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserProfile'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
-    patch:
-      operationId: v1_profile_update_partial_update
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfile'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/UserProfile'
-          description: ''
+                $ref: '#/components/schemas/TokenRefreshResponse'
   /api/v1/register/:
     post:
       operationId: v1_register_create
       tags:
-      - v1
+        - v1
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRegistration'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRegistration'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserRegistration'
-        required: true
-      security:
-      - jwtAuth: []
-      - {}
+              $ref: '#/components/schemas/RegisterRequest'
       responses:
         '201':
+          description: User registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserRegistration'
-          description: ''
-  /api/v1/savings-goals/:
+                $ref: '#/components/schemas/RegisterResponse'
+  /api/v1/me/:
     get:
-      operationId: v1_savings_goals_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
+      operationId: v1_me_retrieve
       tags:
-      - v1
+        - v1
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
         '200':
+          description: Current user profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedSavingsGoalList'
-          description: ''
-    post:
-      operationId: v1_savings_goals_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SavingsGoal'
-          description: ''
-  /api/v1/savings-goals/{id}/:
-    get:
-      operationId: v1_savings_goals_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SavingsGoal'
-          description: ''
+                $ref: '#/components/schemas/UserProfile'
+  /api/v1/profile/update/:
     put:
-      operationId: v1_savings_goals_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
+      operationId: v1_profile_update_update
       tags:
-      - v1
+        - v1
+      security:
+        - jwtAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-        required: true
-      security:
-      - jwtAuth: []
+              $ref: '#/components/schemas/UserProfileUpdateRequest'
       responses:
         '200':
+          description: Updated profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavingsGoal'
-          description: ''
+                $ref: '#/components/schemas/UserProfile'
     patch:
-      operationId: v1_savings_goals_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
+      operationId: v1_profile_update_partial_update
       tags:
-      - v1
+        - v1
+      security:
+        - jwtAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedSavingsGoal'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSavingsGoal'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSavingsGoal'
-      security:
-      - jwtAuth: []
+              $ref: '#/components/schemas/UserProfileUpdateRequest'
       responses:
         '200':
+          description: Updated profile
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SavingsGoal'
-          description: ''
-    delete:
-      operationId: v1_savings_goals_destroy
+                $ref: '#/components/schemas/UserProfile'
+  /api/v1/profile/change-password/:
+    post:
+      operationId: v1_profile_change_password_create
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+  /api/v1/categories/:
+    get:
+      operationId: v1_categories_list
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
       parameters:
-      - in: path
-        name: id
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+    post:
+      operationId: v1_categories_create
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+  /api/v1/categories/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
         schema:
           type: string
-        required: true
+    get:
+      operationId: v1_categories_retrieve
       tags:
-      - v1
+        - v1
       security:
-      - jwtAuth: []
+        - jwtAuth: []
+      responses:
+        '200':
+          description: Category
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    put:
+      operationId: v1_categories_update
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    patch:
+      operationId: v1_categories_partial_update
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+    delete:
+      operationId: v1_categories_destroy
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
       responses:
         '204':
-          description: No response body
-  /api/v1/savings-goals/{id}/update_progress/:
-    post:
-      operationId: v1_savings_goals_update_progress_create
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavingsGoal'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SavingsGoal'
-          description: ''
-  /api/v1/subscriptionPlans/:
-    get:
-      operationId: v1_subscriptionPlans_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SubscriptionPlan'
-          description: ''
-    post:
-      operationId: v1_subscriptionPlans_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionPlan'
-          description: ''
-  /api/v1/subscriptionPlans/{id}/:
-    get:
-      operationId: v1_subscriptionPlans_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this subscription plan.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionPlan'
-          description: ''
-    put:
-      operationId: v1_subscriptionPlans_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this subscription plan.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SubscriptionPlan'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionPlan'
-          description: ''
-    patch:
-      operationId: v1_subscriptionPlans_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this subscription plan.
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscriptionPlan'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscriptionPlan'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscriptionPlan'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SubscriptionPlan'
-          description: ''
-    delete:
-      operationId: v1_subscriptionPlans_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this subscription plan.
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/subscriptions/:
-    get:
-      operationId: v1_subscriptions_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Subscription'
-          description: ''
-    post:
-      operationId: v1_subscriptions_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
-  /api/v1/subscriptions/{id}/:
-    get:
-      operationId: v1_subscriptions_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
-    put:
-      operationId: v1_subscriptions_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Subscription'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
-    patch:
-      operationId: v1_subscriptions_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscription'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscription'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSubscription'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
-    delete:
-      operationId: v1_subscriptions_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
-  /api/v1/subscriptions/statistics/:
-    get:
-      operationId: v1_subscriptions_statistics_retrieve
-      description: Get subscription statistics
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
-  /api/v1/subscriptions/upcoming_renewals/:
-    get:
-      operationId: v1_subscriptions_upcoming_renewals_retrieve
-      description: Get subscriptions that are due for renewal in the next 30 days
-      tags:
-      - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Subscription'
-          description: ''
+          description: Category deleted
   /api/v1/transactions/:
     get:
       operationId: v1_transactions_list
-      parameters:
-      - name: ordering
-        required: false
-        in: query
-        description: Which field to use when ordering the results.
-        schema:
-          type: string
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: search
-        required: false
-        in: query
-        description: A search term.
-        schema:
-          type: string
-      - name: start_date
-        required: false
-        in: query
-        description: Filter transactions from this date (YYYY-MM-DD format).
-        schema:
-          type: string
-          format: date
-      - name: end_date
-        required: false
-        in: query
-        description: Filter transactions until this date (YYYY-MM-DD format).
-        schema:
-          type: string
-          format: date
       tags:
-      - v1
+        - v1
       security:
-      - jwtAuth: []
+        - jwtAuth: []
+      parameters:
+        - name: ordering
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
       responses:
         '200':
+          description: Transaction list
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PaginatedTransactionList'
-          description: ''
     post:
       operationId: v1_transactions_create
       tags:
-      - v1
+        - v1
+      security:
+        - jwtAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Transaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-        required: true
-      security:
-      - jwtAuth: []
+              $ref: '#/components/schemas/TransactionRequest'
       responses:
         '201':
+          description: Transaction created
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-          description: ''
   /api/v1/transactions/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
     get:
       operationId: v1_transactions_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
       tags:
-      - v1
+        - v1
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
         '200':
+          description: Transaction
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-          description: ''
     put:
       operationId: v1_transactions_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
       tags:
-      - v1
+        - v1
+      security:
+        - jwtAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Transaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-        required: true
-      security:
-      - jwtAuth: []
+              $ref: '#/components/schemas/TransactionRequest'
       responses:
         '200':
+          description: Transaction updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-          description: ''
     patch:
       operationId: v1_transactions_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
       tags:
-      - v1
+        - v1
+      security:
+        - jwtAuth: []
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedTransaction'
-      security:
-      - jwtAuth: []
+              $ref: '#/components/schemas/TransactionRequest'
       responses:
         '200':
+          description: Transaction updated
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Transaction'
-          description: ''
     delete:
       operationId: v1_transactions_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
       tags:
-      - v1
+        - v1
       security:
-      - jwtAuth: []
+        - jwtAuth: []
       responses:
         '204':
-          description: No response body
+          description: Transaction deleted
+  /api/v1/budgets/:
+    get:
+      operationId: v1_budgets_list
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Budget list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBudgetList'
+    post:
+      operationId: v1_budgets_create
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+      responses:
+        '201':
+          description: Budget created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+  /api/v1/budgets/{id}/:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: v1_budgets_retrieve
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      responses:
+        '200':
+          description: Budget
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+    put:
+      operationId: v1_budgets_update
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+      responses:
+        '200':
+          description: Budget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+    patch:
+      operationId: v1_budgets_partial_update
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetRequest'
+      responses:
+        '200':
+          description: Budget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+    delete:
+      operationId: v1_budgets_destroy
+      tags:
+        - v1
+      security:
+        - jwtAuth: []
+      responses:
+        '204':
+          description: Budget deleted
 components:
-  schemas:
-    AccountTypeEnum:
-      enum:
-      - credit_card
-      - loan
-      - mortgage
-      type: string
-      description: |-
-        * `credit_card` - Credit Card
-        * `loan` - Loan
-        * `mortgage` - Mortgage
-    AnalyticsReport:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-        report_type:
-          $ref: '#/components/schemas/ReportTypeEnum'
-        data: {}
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - data
-      - end_date
-      - id
-      - report_type
-      - start_date
-      - user
-      - user_email
-    BillReminder:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        title:
-          type: string
-          maxLength: 100
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        due_date:
-          type: string
-          format: date
-        recurrence:
-          $ref: '#/components/schemas/RecurrenceEnum'
-        status:
-          $ref: '#/components/schemas/BillReminderStatusEnum'
-        notification_sent:
-          type: boolean
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - amount
-      - created_at
-      - due_date
-      - id
-      - notification_sent
-      - recurrence
-      - title
-      - updated_at
-      - user
-      - user_email
-    BillReminderStatusEnum:
-      enum:
-      - pending
-      - paid
-      - overdue
-      type: string
-      description: |-
-        * `pending` - Pending
-        * `paid` - Paid
-        * `overdue` - Overdue
-    BillingCycleEnum:
-      enum:
-      - monthly
-      - quarterly
-      - yearly
-      - custom
-      type: string
-      description: |-
-        * `monthly` - Monthly
-        * `quarterly` - Quarterly
-        * `yearly` - Yearly
-        * `custom` - Custom
-    Budget:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        month:
-          type: integer
-          maximum: 32767
-          minimum: 0
-        year:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-        amount_limit:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        user:
-          type: integer
-          readOnly: true
-        category:
-          type: integer
-      required:
-      - amount_limit
-      - category
-      - id
-      - month
-      - user
-      - year
-    Category:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        type:
-          $ref: '#/components/schemas/TypeEnum'
-        user:
-          type: integer
-          readOnly: true
-          nullable: true
-      required:
-      - id
-      - name
-      - type
-      - user
-    DebtAccount:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        balance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        interest_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
-        minimum_payment:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        due_date:
-          type: string
-          format: date
-        account_type:
-          $ref: '#/components/schemas/AccountTypeEnum'
-        status:
-          $ref: '#/components/schemas/DebtAccountStatusEnum'
-        payments:
-          type: array
-          items:
-            $ref: '#/components/schemas/DebtPayment'
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - account_type
-      - balance
-      - created_at
-      - due_date
-      - id
-      - interest_rate
-      - minimum_payment
-      - name
-      - payments
-      - updated_at
-      - user
-      - user_email
-    DebtAccountStatusEnum:
-      enum:
-      - active
-      - paid_off
-      - defaulted
-      type: string
-      description: |-
-        * `active` - Active
-        * `paid_off` - Paid Off
-        * `defaulted` - Defaulted
-    DebtPayment:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        debt_account:
-          type: integer
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        payment_date:
-          type: string
-          format: date
-        transaction:
-          type: integer
-          nullable: true
-        transaction_details:
-          allOf:
-          - $ref: '#/components/schemas/Transaction'
-          readOnly: true
-        notes:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - amount
-      - created_at
-      - debt_account
-      - id
-      - payment_date
-      - transaction_details
-    DepartmentEnum:
-      enum:
-      - engineering
-      - finance
-      - hr
-      - marketing
-      - sales
-      - other
-      type: string
-      description: |-
-        * `engineering` - Engineering
-        * `finance` - Finance
-        * `hr` - HR
-        * `marketing` - Marketing
-        * `sales` - Sales
-        * `other` - Other
-    Investment:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        symbol:
-          type: string
-          maxLength: 10
-        type:
-          $ref: '#/components/schemas/InvestmentTypeEnum'
-        purchase_price:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
-        purchase_date:
-          type: string
-          format: date
-        notes:
-          type: string
-        values:
-          type: array
-          items:
-            $ref: '#/components/schemas/InvestmentValue'
-          readOnly: true
-        current_value:
-          type: string
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - current_value
-      - id
-      - name
-      - purchase_date
-      - purchase_price
-      - quantity
-      - type
-      - updated_at
-      - user
-      - user_email
-      - values
-    InvestmentTypeEnum:
-      enum:
-      - stocks
-      - mutual_funds
-      - crypto
-      - bonds
-      - real_estate
-      - other
-      type: string
-      description: |-
-        * `stocks` - Stocks
-        * `mutual_funds` - Mutual Funds
-        * `crypto` - Cryptocurrency
-        * `bonds` - Bonds
-        * `real_estate` - Real Estate
-        * `other` - Other
-    InvestmentValue:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        date:
-          type: string
-          format: date
-        value:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - date
-      - id
-      - value
-    PaginatedAnalyticsReportList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/AnalyticsReport'
-    PaginatedBillReminderList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/BillReminder'
-    PaginatedBudgetList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Budget'
-    PaginatedCategoryList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Category'
-    PaginatedDebtAccountList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/DebtAccount'
-    PaginatedInvestmentList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Investment'
-    PaginatedSavingsGoalList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/SavingsGoal'
-    PaginatedTransactionList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Transaction'
-    PatchedAnalyticsReport:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-        report_type:
-          $ref: '#/components/schemas/ReportTypeEnum'
-        data: {}
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedBillReminder:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        title:
-          type: string
-          maxLength: 100
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        due_date:
-          type: string
-          format: date
-        recurrence:
-          $ref: '#/components/schemas/RecurrenceEnum'
-        status:
-          $ref: '#/components/schemas/BillReminderStatusEnum'
-        notification_sent:
-          type: boolean
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedBudget:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        month:
-          type: integer
-          maximum: 32767
-          minimum: 0
-        year:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-        amount_limit:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        user:
-          type: integer
-          readOnly: true
-        category:
-          type: integer
-    PatchedCategory:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        type:
-          $ref: '#/components/schemas/TypeEnum'
-        user:
-          type: integer
-          readOnly: true
-          nullable: true
-    PatchedDebtAccount:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        balance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        interest_rate:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
-        minimum_payment:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        due_date:
-          type: string
-          format: date
-        account_type:
-          $ref: '#/components/schemas/AccountTypeEnum'
-        status:
-          $ref: '#/components/schemas/DebtAccountStatusEnum'
-        payments:
-          type: array
-          items:
-            $ref: '#/components/schemas/DebtPayment'
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedInvestment:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        symbol:
-          type: string
-          maxLength: 10
-        type:
-          $ref: '#/components/schemas/InvestmentTypeEnum'
-        purchase_price:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        quantity:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,4})?$
-        purchase_date:
-          type: string
-          format: date
-        notes:
-          type: string
-        values:
-          type: array
-          items:
-            $ref: '#/components/schemas/InvestmentValue'
-          readOnly: true
-        current_value:
-          type: string
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedSavingsGoal:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        title:
-          type: string
-          maxLength: 100
-        target_amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        current_amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        target_date:
-          type: string
-          format: date
-        status:
-          $ref: '#/components/schemas/SavingsGoalStatusEnum'
-        progress_percentage:
-          type: number
-          format: double
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedSubscription:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        plan:
-          type: integer
-        plan_details:
-          allOf:
-          - $ref: '#/components/schemas/SubscriptionPlan'
-          readOnly: true
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-          nullable: true
-        auto_renewal:
-          type: boolean
-        status:
-          $ref: '#/components/schemas/SubscriptionStatusEnum'
-        next_billing_date:
-          type: string
-          format: date
-          nullable: true
-        notes:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedSubscriptionPlan:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        description:
-          type: string
-        type:
-          $ref: '#/components/schemas/SubscriptionPlanTypeEnum'
-        billing_cycle:
-          $ref: '#/components/schemas/BillingCycleEnum'
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedTransaction:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        title:
-          type: string
-          maxLength: 255
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        type:
-          $ref: '#/components/schemas/TypeEnum'
-        category:
-          type: integer
-          nullable: true
-        transaction_date:
-          type: string
-          format: date
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedUserProfile:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        email:
-          type: string
-          format: email
-          readOnly: true
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-        phone_number:
-          type: string
-          maxLength: 20
-        location:
-          type: string
-          maxLength: 100
-        bio:
-          type: string
-        department:
-          $ref: '#/components/schemas/DepartmentEnum'
-        role:
-          allOf:
-          - $ref: '#/components/schemas/RoleEnum'
-          readOnly: true
-    RecurrenceEnum:
-      enum:
-      - once
-      - weekly
-      - monthly
-      - yearly
-      type: string
-      description: |-
-        * `once` - One-time
-        * `weekly` - Weekly
-        * `monthly` - Monthly
-        * `yearly` - Yearly
-    ReportTypeEnum:
-      enum:
-      - monthly
-      - category
-      - trend
-      type: string
-      description: |-
-        * `monthly` - Monthly Summary
-        * `category` - Category Analysis
-        * `trend` - Spending Trends
-    RoleEnum:
-      enum:
-      - admin
-      - manager
-      - employee
-      type: string
-      description: |-
-        * `admin` - Admin
-        * `manager` - Manager
-        * `employee` - Employee
-    SavingsGoal:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        title:
-          type: string
-          maxLength: 100
-        target_amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        current_amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        target_date:
-          type: string
-          format: date
-        status:
-          $ref: '#/components/schemas/SavingsGoalStatusEnum'
-        progress_percentage:
-          type: number
-          format: double
-          readOnly: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - id
-      - progress_percentage
-      - target_amount
-      - target_date
-      - title
-      - updated_at
-      - user
-      - user_email
-    SavingsGoalStatusEnum:
-      enum:
-      - active
-      - completed
-      - abandoned
-      type: string
-      description: |-
-        * `active` - Active
-        * `completed` - Completed
-        * `abandoned` - Abandoned
-    Subscription:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        user_email:
-          type: string
-          format: email
-          readOnly: true
-        plan:
-          type: integer
-        plan_details:
-          allOf:
-          - $ref: '#/components/schemas/SubscriptionPlan'
-          readOnly: true
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
-        start_date:
-          type: string
-          format: date
-        end_date:
-          type: string
-          format: date
-          nullable: true
-        auto_renewal:
-          type: boolean
-        status:
-          $ref: '#/components/schemas/SubscriptionStatusEnum'
-        next_billing_date:
-          type: string
-          format: date
-          nullable: true
-        notes:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - amount
-      - created_at
-      - id
-      - plan
-      - plan_details
-      - start_date
-      - updated_at
-      - user
-      - user_email
-    SubscriptionPlan:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        name:
-          type: string
-          maxLength: 100
-        description:
-          type: string
-        type:
-          $ref: '#/components/schemas/SubscriptionPlanTypeEnum'
-        billing_cycle:
-          $ref: '#/components/schemas/BillingCycleEnum'
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - id
-      - name
-      - updated_at
-    SubscriptionPlanTypeEnum:
-      enum:
-      - ott
-      - product
-      - tool
-      - other
-      type: string
-      description: |-
-        * `ott` - OTT Platform
-        * `product` - Product
-        * `tool` - Tool
-        * `other` - Other
-    SubscriptionStatusEnum:
-      enum:
-      - active
-      - cancelled
-      - expired
-      - on_hold
-      type: string
-      description: |-
-        * `active` - Active
-        * `cancelled` - Cancelled
-        * `expired` - Expired
-        * `on_hold` - On Hold
-    TokenObtainPair:
-      type: object
-      properties:
-        email:
-          type: string
-          writeOnly: true
-        password:
-          type: string
-          writeOnly: true
-        access:
-          type: string
-          readOnly: true
-        refresh:
-          type: string
-          readOnly: true
-      required:
-      - access
-      - email
-      - password
-      - refresh
-    TokenRefresh:
-      type: object
-      properties:
-        access:
-          type: string
-          readOnly: true
-        refresh:
-          type: string
-          writeOnly: true
-      required:
-      - access
-      - refresh
-    Transaction:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        user:
-          type: integer
-        title:
-          type: string
-          maxLength: 255
-        amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
-        type:
-          $ref: '#/components/schemas/TypeEnum'
-        category:
-          type: integer
-          nullable: true
-        transaction_date:
-          type: string
-          format: date
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - amount
-      - created_at
-      - id
-      - title
-      - transaction_date
-      - type
-      - updated_at
-      - user
-    TypeEnum:
-      enum:
-      - income
-      - expense
-      type: string
-      description: |-
-        * `income` - Income
-        * `expense` - Expense
-    UserProfile:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        email:
-          type: string
-          format: email
-          readOnly: true
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-        phone_number:
-          type: string
-          maxLength: 20
-        location:
-          type: string
-          maxLength: 100
-        bio:
-          type: string
-        department:
-          $ref: '#/components/schemas/DepartmentEnum'
-        role:
-          allOf:
-          - $ref: '#/components/schemas/RoleEnum'
-          readOnly: true
-      required:
-      - email
-      - id
-      - role
-    UserRegistration:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          maxLength: 254
-        username:
-          type: string
-        password:
-          type: string
-          writeOnly: true
-        confirm_password:
-          type: string
-          writeOnly: true
-        first_name:
-          type: string
-          maxLength: 150
-        last_name:
-          type: string
-          maxLength: 150
-        phone_number:
-          type: string
-          maxLength: 20
-        location:
-          type: string
-          maxLength: 100
-        bio:
-          type: string
-        department:
-          $ref: '#/components/schemas/DepartmentEnum'
-      required:
-      - confirm_password
-      - email
-      - password
   securitySchemes:
     jwtAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+  schemas:
+    TypeEnum:
+      type: string
+      enum:
+        - income
+        - expense
+    DepartmentEnum:
+      type: string
+      enum:
+        - engineering
+        - finance
+        - hr
+        - marketing
+        - sales
+        - other
+    RoleEnum:
+      type: string
+      enum:
+        - admin
+        - manager
+        - employee
+    TokenObtainPairRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    TokenObtainPairResponse:
+      type: object
+      required:
+        - access
+        - refresh
+      properties:
+        access:
+          type: string
+        refresh:
+          type: string
+    TokenRefreshRequest:
+      type: object
+      required:
+        - refresh
+      properties:
+        refresh:
+          type: string
+    TokenRefreshResponse:
+      type: object
+      required:
+        - access
+      properties:
+        access:
+          type: string
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - confirm_password
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        password:
+          type: string
+        confirm_password:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_number:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        department:
+          $ref: '#/components/schemas/DepartmentEnum'
+    RegisterResponse:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_number:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        department:
+          $ref: '#/components/schemas/DepartmentEnum'
+    UserProfile:
+      type: object
+      required:
+        - id
+        - email
+        - role
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+          format: email
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_number:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        department:
+          $ref: '#/components/schemas/DepartmentEnum'
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+    UserProfileUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone_number:
+          type: string
+        location:
+          type: string
+        bio:
+          type: string
+        department:
+          $ref: '#/components/schemas/DepartmentEnum'
+    ChangePasswordRequest:
+      type: object
+      required:
+        - current_password
+        - new_password
+        - confirm_password
+      properties:
+        current_password:
+          type: string
+        new_password:
+          type: string
+        confirm_password:
+          type: string
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        error:
+          type: string
+    Category:
+      type: object
+      required:
+        - id
+        - name
+        - type
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        user:
+          type: integer
+          nullable: true
+    CategoryRequest:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+    Transaction:
+      type: object
+      required:
+        - id
+        - user
+        - title
+        - amount
+        - type
+        - transaction_date
+      properties:
+        id:
+          type: integer
+        user:
+          type: integer
+        title:
+          type: string
+        amount:
+          type: string
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        category:
+          type: integer
+          nullable: true
+        transaction_date:
+          type: string
+          format: date
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    TransactionRequest:
+      type: object
+      required:
+        - title
+        - amount
+        - type
+        - transaction_date
+      properties:
+        user:
+          type: integer
+        title:
+          type: string
+        amount:
+          type: string
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        category:
+          type: integer
+          nullable: true
+        transaction_date:
+          type: string
+          format: date
+    Budget:
+      type: object
+      required:
+        - id
+        - user
+        - category
+        - month
+        - year
+        - amount_limit
+      properties:
+        id:
+          type: integer
+        user:
+          type: integer
+        category:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        amount_limit:
+          type: string
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+    BudgetRequest:
+      type: object
+      required:
+        - category
+        - month
+        - year
+        - amount_limit
+      properties:
+        category:
+          type: integer
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        year:
+          type: integer
+        amount_limit:
+          type: string
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+    PaginatedCategoryList:
+      type: object
+      required:
+        - count
+        - next
+        - previous
+        - results
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedTransactionList:
+      type: object
+      required:
+        - count
+        - next
+        - previous
+        - results
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+    PaginatedBudgetList:
+      type: object
+      required:
+        - count
+        - next
+        - previous
+        - results
+      properties:
+        count:
+          type: integer
+        next:
+          type: string
+          nullable: true
+        previous:
+          type: string
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Budget'

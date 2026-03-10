@@ -37,6 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
+import { formatDateForApi } from '@/lib/date'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -54,6 +55,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
@@ -66,7 +68,9 @@ export default function TransactionsPage() {
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
   const [currentPage, setCurrentPage] = useState(1)
 
-  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList()
+  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList({
+    page: currentPage,
+  })
 
   useEffect(() => {
     if (transactions?.count === 0 && currentPage > 1) {
@@ -119,14 +123,7 @@ export default function TransactionsPage() {
     ? transactions?.results
         ?.filter((transaction) => {
           const matchesSearch = transaction.title.toLowerCase().includes(searchQuery.toLowerCase())
-          const matchesType =
-            transactionType === 'all' ||
-            (transactionType === 'income' &&
-              categories?.results?.find((c) => c.id === transaction.category)?.type ===
-                TypeEnum.income) ||
-            (transactionType === 'expense' &&
-              categories?.results?.find((c) => c.id === transaction.category)?.type ===
-                TypeEnum.expense)
+          const matchesType = transactionType === 'all' || transaction.type === transactionType
           const matchesDate = !date || transaction.transaction_date === format(date, 'yyyy-MM-dd')
           return matchesSearch && matchesType && matchesDate
         })
@@ -145,6 +142,70 @@ export default function TransactionsPage() {
           }
         })
     : []
+
+  const getCategoryName = (categoryId: number | null | undefined) =>
+    categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'
+
+  const escapeCsvCell = (value: string | number, sanitizeFormula = false) => {
+    const rawValue = String(value)
+    const safeValue =
+      sanitizeFormula && /^[=+\-@]/.test(rawValue.trimStart()) ? `'${rawValue}` : rawValue
+    return `"${safeValue.replace(/"/g, '""')}"`
+  }
+
+  const exportTransactions = (format: 'csv' | 'json') => {
+    if (!filteredTransactions.length) {
+      toast.error('No transactions available for export')
+      return
+    }
+
+    const exportRows = filteredTransactions.map((transaction) => ({
+      id: transaction.id,
+      date: transaction.transaction_date,
+      title: transaction.title,
+      category: getCategoryName(transaction.category),
+      type: transaction.type,
+      amount: transaction.amount,
+    }))
+
+    const dateStamp = formatDateForApi(new Date())
+    const baseFilename = `fintrack-transactions-${dateStamp}`
+    let content = ''
+    let mimeType = ''
+    let extension = ''
+
+    if (format === 'json') {
+      content = JSON.stringify(exportRows, null, 2)
+      mimeType = 'application/json'
+      extension = 'json'
+    } else {
+      const header = ['id', 'date', 'title', 'category', 'type', 'amount']
+      const lines = exportRows.map((row) =>
+        [
+          escapeCsvCell(row.id),
+          escapeCsvCell(row.date),
+          escapeCsvCell(row.title, true),
+          escapeCsvCell(row.category, true),
+          escapeCsvCell(row.type),
+          escapeCsvCell(row.amount),
+        ].join(','),
+      )
+      content = [header.join(','), ...lines].join('\\n')
+      mimeType = 'text/csv;charset=utf-8'
+      extension = 'csv'
+    }
+
+    const blob = new Blob([content], { type: mimeType })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${baseFilename}.${extension}`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success(`Transactions exported as ${extension.toUpperCase()}`)
+  }
 
   return (
     <div className='space-y-4 p-6'>
@@ -219,9 +280,21 @@ export default function TransactionsPage() {
               <SelectItem value='lowest'>Lowest amount</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant='outline' size='icon'>
-            <Download className='h-4 w-4' />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='icon' className='h-9 w-9'>
+                <Download className='h-4 w-4' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={() => exportTransactions('csv')}>
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => exportTransactions('json')}>
+                Export JSON
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -254,7 +327,7 @@ export default function TransactionsPage() {
             ) : (
               filteredTransactions?.map((transaction) => {
                 const category = categories?.results?.find((c) => c.id === transaction.category)
-                if (!category) return null
+                const categoryName = category?.name || 'Uncategorized'
 
                 return (
                   <TableRow key={transaction.id}>
@@ -262,10 +335,10 @@ export default function TransactionsPage() {
                       {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                     </TableCell>
                     <TableCell>{transaction.title}</TableCell>
-                    <TableCell>{category.name}</TableCell>
+                    <TableCell>{categoryName}</TableCell>
                     <TableCell>
                       <div className='flex items-center gap-2'>
-                        {category.type === TypeEnum.income ? (
+                        {transaction.type === TypeEnum.income ? (
                           <ArrowUpIcon className='h-4 w-4 text-emerald-600' />
                         ) : (
                           <ArrowDownIcon className='h-4 w-4 text-rose-600' />
@@ -273,7 +346,7 @@ export default function TransactionsPage() {
                         <span
                           className={cn(
                             'tabular-nums',
-                            category.type === TypeEnum.income
+                            transaction.type === TypeEnum.income
                               ? 'text-emerald-600'
                               : 'text-rose-600',
                           )}

@@ -1,0 +1,454 @@
+{
+  "audit_date": "2026-03-10",
+  "audience": "solo_users",
+  "strategy": "self_hosted_oss_web_first",
+  "prioritization_model": "value_effort_risk",
+  "weights": {
+    "value": 0.5,
+    "risk": 0.3,
+    "inverse_effort": 0.2,
+    "formula": "0.5*value_score + 0.3*risk_score + 0.2*(6-effort_score)"
+  },
+  "acceptance_gate": "All Required features must be Accepted and none can remain Broken.",
+  "rows": [
+    {
+      "feature_id": "api_ui_contract_integrity",
+      "module": "Platform",
+      "user_job": "Trust API contracts and generated client usage to stay in sync with backend reality",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 2,
+      "risk_score": 5,
+      "priority_score": 4.8,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/routers.py:7",
+        "api/pft/urls.py:14",
+        "web/schema/pft.yaml:1",
+        "web/app/client/gen/pft/v1/v1.ts:1"
+      ],
+      "notes": "Schema surface now matches active backend and generated-client compatibility files exist in repo."
+    },
+    {
+      "feature_id": "pagination_end_to_end",
+      "module": "Transactions",
+      "user_job": "Navigate large transaction history reliably page by page",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 2,
+      "risk_score": 5,
+      "priority_score": 4.8,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "web/app/pages/transactions/index.tsx:67",
+        "web/app/pages/transactions/index.tsx:69",
+        "web/schema/pft.yaml"
+      ],
+      "notes": "Transactions query now receives current page parameter from UI state."
+    },
+    {
+      "feature_id": "transaction_crud",
+      "module": "Transactions",
+      "user_job": "Create, edit, and delete financial transactions without data loss",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 3,
+      "risk_score": 5,
+      "priority_score": 4.6,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/views.py:31",
+        "web/app/components/add-transaction-dialog.tsx:53",
+        "web/app/components/edit-transaction-dialog.tsx:72",
+        "web/app/components/delete-transaction-alert.tsx:32"
+      ],
+      "notes": "CRUD path is implemented and verified by API smoke tests including create, update, list, and delete."
+    },
+    {
+      "feature_id": "automated_test_suite",
+      "module": "Quality",
+      "user_job": "Detect regressions before release",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 3,
+      "risk_score": 5,
+      "priority_score": 4.6,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/tests/test_api_smoke.py:1",
+        "docs/feature-audit/test-plan.md:1"
+      ],
+      "notes": "Runnable smoke tests and Docker test commands are in place for required backend flows."
+    },
+    {
+      "feature_id": "auth_jwt_flow",
+      "module": "Authentication",
+      "user_job": "Sign up, sign in, refresh session, and access protected endpoints",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 2,
+      "risk_score": 4,
+      "priority_score": 4.5,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/app/urls.py:18",
+        "api/pft/urls.py:14",
+        "web/app/lib/auth.ts:58",
+        "web/app/pages/login/index.tsx:18"
+      ],
+      "notes": "JWT obtain/refresh and protected endpoint access are validated by smoke tests."
+    },
+    {
+      "feature_id": "category_crud",
+      "module": "Categories",
+      "user_job": "Organize expenses and income with custom categories",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 2,
+      "risk_score": 4,
+      "priority_score": 4.5,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/views.py:16",
+        "api/pft/serializers.py:64",
+        "web/app/pages/category/index.tsx:53"
+      ],
+      "notes": "Core category management is complete and wired through API and UI."
+    },
+    {
+      "feature_id": "transaction_filter_sort_date",
+      "module": "Transactions",
+      "user_job": "Find transactions quickly by search, type, date, and sort mode",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 3,
+      "risk_score": 4,
+      "priority_score": 4.3,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/views.py:39",
+        "web/app/pages/transactions/index.tsx:114",
+        "web/app/pages/transactions/index.tsx:180"
+      ],
+      "notes": "Server-side search/ordering and date filters are implemented and covered by smoke tests."
+    },
+    {
+      "feature_id": "budget_crud_monthly",
+      "module": "Budgets",
+      "user_job": "Set and adjust monthly category spending limits",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 5,
+      "effort_score": 3,
+      "risk_score": 4,
+      "priority_score": 4.3,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/views.py:56",
+        "api/pft/serializers.py:103",
+        "web/app/pages/budget/index.tsx:89"
+      ],
+      "notes": "Budget create and same-month upsert behavior are validated in smoke tests."
+    },
+    {
+      "feature_id": "data_export_csv_json",
+      "module": "Data Portability",
+      "user_job": "Export financial records for backup and analysis",
+      "status": "Implemented",
+      "tier": "AddNext",
+      "value_score": 4,
+      "effort_score": 2,
+      "risk_score": 4,
+      "priority_score": 4.0,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "README.md:21",
+        "web/app/pages/transactions/index.tsx:145",
+        "web/app/pages/transactions/index.tsx:275"
+      ],
+      "notes": "Client-side export is implemented from the filtered transaction dataset with CSV and JSON options."
+    },
+    {
+      "feature_id": "budget_progress_tracking",
+      "module": "Budgets",
+      "user_job": "Track category spending against budget limits in real time",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 4,
+      "effort_score": 3,
+      "risk_score": 4,
+      "priority_score": 3.8,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "web/app/components/budget-progress.tsx:24",
+        "web/app/components/budget-progress.tsx:55"
+      ],
+      "notes": "Budget progress now scopes to current-month budgets and current-month transactions with deterministic calculations."
+    },
+    {
+      "feature_id": "dashboard_metrics_overview",
+      "module": "Dashboard",
+      "user_job": "Understand balance, income, expenses, and savings trend by date range",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 4,
+      "effort_score": 3,
+      "risk_score": 4,
+      "priority_score": 3.8,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "web/app/pages/dashboard/index.tsx:95",
+        "web/app/components/overview.tsx:34",
+        "web/app/pages/dashboard/index.tsx:247"
+      ],
+      "notes": "Dashboard cards and overview chart now consume the same selected-range dataset and previous-period comparison dataset."
+    },
+    {
+      "feature_id": "profile_password_management",
+      "module": "Account",
+      "user_job": "Update profile fields and change password safely",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 4,
+      "effort_score": 2,
+      "risk_score": 3,
+      "priority_score": 3.7,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "api/pft/urls.py:16",
+        "api/pft/views.py:123",
+        "web/app/pages/settings/index.tsx:84"
+      ],
+      "notes": "Profile update and password change success paths are covered by smoke tests."
+    },
+    {
+      "feature_id": "data_import_csv_bank",
+      "module": "Data Portability",
+      "user_job": "Import existing transaction history from external files/providers",
+      "status": "Missing",
+      "tier": "AddNext",
+      "value_score": 4,
+      "effort_score": 4,
+      "risk_score": 3,
+      "priority_score": 3.3,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "landing/components/faq-accordion.tsx:14",
+        "api/pft/urls.py:9"
+      ],
+      "notes": "No import endpoints or UI workflows exist yet."
+    },
+    {
+      "feature_id": "account_delete_flow",
+      "module": "Account",
+      "user_job": "Permanently delete account and associated records",
+      "status": "Partial",
+      "tier": "AddNext",
+      "value_score": 3,
+      "effort_score": 3,
+      "risk_score": 4,
+      "priority_score": 3.3,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/app/pages/settings/index.tsx:388",
+        "api/pft/urls.py:9"
+      ],
+      "notes": "Danger-zone UI exists but is disabled and there is no API implementation."
+    },
+    {
+      "feature_id": "budget_alerts_notifications",
+      "module": "Budgets",
+      "user_job": "Receive warnings when spending approaches or exceeds limits",
+      "status": "Missing",
+      "tier": "AddNext",
+      "value_score": 3,
+      "effort_score": 4,
+      "risk_score": 4,
+      "priority_score": 3.1,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "landing/app/page.tsx:364",
+        "web/app/components/budget-progress.tsx:85"
+      ],
+      "notes": "UI shows percentage only; no alerting, notifications, or threshold actions."
+    },
+    {
+      "feature_id": "responsive_theme_currency",
+      "module": "Experience",
+      "user_job": "Use app comfortably across devices with preferred theme and display currency",
+      "status": "Implemented",
+      "tier": "Required",
+      "value_score": 3,
+      "effort_score": 2,
+      "risk_score": 2,
+      "priority_score": 2.9,
+      "acceptance_status": "Accepted",
+      "evidence_refs": [
+        "web/app/components/dashboard-layout.tsx:14",
+        "web/app/components/mode-toggle.tsx:10",
+        "web/app/context/currency-context.tsx:35"
+      ],
+      "notes": "Responsive layout and UX preferences are implemented and stable for current scope."
+    },
+    {
+      "feature_id": "recurring_transactions",
+      "module": "Transactions",
+      "user_job": "Automate repeated monthly/weekly entries",
+      "status": "Missing",
+      "tier": "AddNext",
+      "value_score": 3,
+      "effort_score": 4,
+      "risk_score": 3,
+      "priority_score": 2.8,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "api/pft/models.py:68",
+        "web/app/components/add-transaction-dialog.tsx:86"
+      ],
+      "notes": "No recurrence fields, scheduler, or UI support exists."
+    },
+    {
+      "feature_id": "pwa_offline_support",
+      "module": "Platform",
+      "user_job": "Access core tracking flows with poor connectivity",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 4,
+      "risk_score": 2,
+      "priority_score": 2.0,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/package.json:13",
+        "web/vite.config.ts:1"
+      ],
+      "notes": "No service worker/offline storage strategy exists."
+    },
+    {
+      "feature_id": "savings_goals",
+      "module": "Advanced Planning",
+      "user_job": "Define and track savings goals over time",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 4,
+      "risk_score": 2,
+      "priority_score": 2.0,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:1183",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:67"
+      ],
+      "notes": "Previously modeled but removed from active backend."
+    },
+    {
+      "feature_id": "subscriptions_tracking",
+      "module": "Advanced Planning",
+      "user_job": "Track active subscriptions and upcoming renewals",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 4,
+      "risk_score": 2,
+      "priority_score": 2.0,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:1523",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:73"
+      ],
+      "notes": "OpenAPI still lists endpoints but current backend has no implementation."
+    },
+    {
+      "feature_id": "debt_tracking",
+      "module": "Advanced Planning",
+      "user_job": "Manage debt balances and payment progress",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 4,
+      "risk_score": 2,
+      "priority_score": 2.0,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:701",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:55"
+      ],
+      "notes": "Module was removed and should remain optional for budgeting-core roadmap."
+    },
+    {
+      "feature_id": "bill_reminders",
+      "module": "Advanced Planning",
+      "user_job": "Track due bills and mark them paid",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 4,
+      "risk_score": 2,
+      "priority_score": 2.0,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:217",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:52"
+      ],
+      "notes": "Not needed for initial budgeting core; stale schema entries should be cleaned."
+    },
+    {
+      "feature_id": "investments_portfolio",
+      "module": "Advanced Planning",
+      "user_job": "Track portfolio holdings and valuation changes",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 5,
+      "risk_score": 2,
+      "priority_score": 1.8,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:887",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:61"
+      ],
+      "notes": "High effort and outside current budgeting-core target."
+    },
+    {
+      "feature_id": "native_mobile_apps",
+      "module": "Platform",
+      "user_job": "Use dedicated iOS/Android apps",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 5,
+      "risk_score": 2,
+      "priority_score": 1.8,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "landing/components/faq-accordion.tsx:19",
+        "README.md:25"
+      ],
+      "notes": "Web-first strategy makes native apps optional for now."
+    },
+    {
+      "feature_id": "advanced_analytics_reports",
+      "module": "Advanced Planning",
+      "user_job": "Generate deeper category/trend analytics reports",
+      "status": "Missing",
+      "tier": "Optional",
+      "value_score": 2,
+      "effort_score": 5,
+      "risk_score": 2,
+      "priority_score": 1.8,
+      "acceptance_status": "AtRisk",
+      "evidence_refs": [
+        "web/schema/pft.yaml:61",
+        "api/pft/migrations/0003_remove_billreminder_user_remove_debtaccount_user_and_more.py:49"
+      ],
+      "notes": "Useful long-term, but not required for core budgeting reliability."
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import {
 } from '@/client/gen/pft/v1/v1'
 import { BudgetProgress } from '@/components/budget-progress'
 import { Overview } from '@/components/overview'
+import { PinnedReports } from '@/components/pinned-reports'
 import { RecentTransactions } from '@/components/recent-transactions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -304,6 +305,15 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <RecentTransactions />
+              </CardContent>
+            </Card>
+            <Card className='md:col-span-8'>
+              <CardHeader>
+                <CardTitle>Pinned Reports</CardTitle>
+                <CardDescription>Quick access to saved and pinned analytics.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <PinnedReports />
               </CardContent>
             </Card>
           </div>

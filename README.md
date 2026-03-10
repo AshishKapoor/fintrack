@@ -27,6 +27,7 @@ password: fintrack
 - 🌗 Light/Dark mode UI
 - 📱 Responsive design (mobile + desktop)
 - 🔌 API-first architecture
+- 🧱 `/api/v1/finance/*` finance domain with double-entry ledger, envelope budgeting primitives, reports, exports, imports, and encrypted backup bundles
 
 ---
 
@@ -161,7 +162,7 @@ CORS_ALLOWED_ORIGINS=http://localhost:5173
 
 ```env
 # web/.env
-VITE_API_URL=http://localhost:8000
+VITE_BASE_DOMAIN=http://localhost:8000
 ```
 
 ---
@@ -208,6 +209,15 @@ make feature-audit
 The API documentation is available at:
 - Swagger UI: http://localhost:8000/api/docs/
 - ReDoc: http://localhost:8000/api/redoc/
+
+## 🧩 API Surface
+
+- `/api/v1/*`: core auth/profile and compatibility endpoints
+- `/api/v1/finance/*`: finance domain resources
+  - `budget-files`, `accounts`, `category-groups`, `categories`, `payees`, `tags`
+  - `transactions`, `postings`, `scheduled-transactions`, `rules`
+  - `budget-months`, `envelope-assignments`, `reports`
+  - `exports`, `imports`, `backups`
 
 ---
 

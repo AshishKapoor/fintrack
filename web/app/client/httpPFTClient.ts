@@ -3,10 +3,23 @@ import Axios, { type AxiosRequestConfig, AxiosError, InternalAxiosRequestConfig 
 import { toast } from 'sonner'
 
 export const PFT_BASE_URL = import.meta.env.VITE_BASE_DOMAIN || window.location.origin
+const OFFLINE_QUEUE_KEY = 'fintrack_offline_request_queue_v1'
+const OFFLINE_REPLAY_HEADER = 'x-fintrack-offline-replay'
+const MAX_OFFLINE_QUEUE_SIZE = 100
 
 // Add retry property to AxiosRequestConfig
 interface CustomInternalAxiosRequestConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
+}
+
+interface OfflineQueuedRequest {
+  id: string
+  method: string
+  url: string
+  data?: unknown
+  params?: Record<string, unknown>
+  headers?: Record<string, unknown>
+  created_at: string
 }
 
 export const AXIOS_INSTANCE = Axios.create({
@@ -20,6 +33,93 @@ export const AXIOS_INSTANCE = Axios.create({
 // Store failed requests that need to be retried after token refresh
 let failedQueue: { resolve: (value?: unknown) => void; reject: (reason?: unknown) => void }[] = []
 let isRefreshing = false
+let isFlushingOfflineQueue = false
+
+const isBrowser = typeof window !== 'undefined'
+
+const loadOfflineQueue = (): OfflineQueuedRequest[] => {
+  if (!isBrowser) return []
+  try {
+    const raw = localStorage.getItem(OFFLINE_QUEUE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+const saveOfflineQueue = (queue: OfflineQueuedRequest[]) => {
+  if (!isBrowser) return
+  localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue.slice(-MAX_OFFLINE_QUEUE_SIZE)))
+}
+
+const isMutationMethod = (method?: string) => {
+  const m = String(method || '').toUpperCase()
+  return m === 'POST' || m === 'PUT' || m === 'PATCH' || m === 'DELETE'
+}
+
+const isAuthEndpoint = (url?: string) => {
+  return Boolean(url?.includes('/api/token/'))
+}
+
+const toPlainHeaders = (headers?: InternalAxiosRequestConfig['headers']) => {
+  if (!headers) return undefined
+  if (typeof (headers as { toJSON?: () => unknown }).toJSON === 'function') {
+    return (headers as { toJSON: () => Record<string, unknown> }).toJSON()
+  }
+  return headers as unknown as Record<string, unknown>
+}
+
+const enqueueOfflineRequest = (config: CustomInternalAxiosRequestConfig) => {
+  if (!isMutationMethod(config.method) || isAuthEndpoint(config.url)) return
+
+  const queue = loadOfflineQueue()
+  queue.push({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    method: String(config.method || 'GET').toUpperCase(),
+    url: String(config.url || ''),
+    data: config.data,
+    params: config.params,
+    headers: toPlainHeaders(config.headers),
+    created_at: new Date().toISOString(),
+  })
+  saveOfflineQueue(queue)
+}
+
+const flushOfflineQueue = async () => {
+  if (!isBrowser || !navigator.onLine || isFlushingOfflineQueue) return
+  const queue = loadOfflineQueue()
+  if (!queue.length) return
+
+  isFlushingOfflineQueue = true
+  const remaining: OfflineQueuedRequest[] = []
+
+  for (const item of queue) {
+    try {
+      await AXIOS_INSTANCE.request({
+        url: item.url,
+        method: item.method,
+        data: item.data,
+        params: item.params,
+        headers: {
+          ...(item.headers || {}),
+          [OFFLINE_REPLAY_HEADER]: '1',
+        },
+      })
+    } catch {
+      remaining.push(item)
+      break
+    }
+  }
+
+  saveOfflineQueue(remaining)
+  if (!remaining.length) {
+    toast.success('Offline changes synced')
+  }
+
+  isFlushingOfflineQueue = false
+}
 
 AXIOS_INSTANCE.interceptors.request.use(async function (config) {
   try {
@@ -112,6 +212,13 @@ AXIOS_INSTANCE.interceptors.response.use(
     }
 
     if (error.message === 'Network Error') {
+      const replaying = Boolean(originalRequest.headers?.[OFFLINE_REPLAY_HEADER])
+      if (!replaying && isMutationMethod(originalRequest.method) && !isAuthEndpoint(originalRequest.url)) {
+        enqueueOfflineRequest(originalRequest)
+        toast.info('Offline. Change queued and will sync when connection returns.')
+        throw { errorMessage: 'Queued offline', queued: true }
+      }
+
       toast.error('Network Error')
       throw { errorMessage: 'Network Error' }
     }
@@ -123,6 +230,13 @@ AXIOS_INSTANCE.interceptors.response.use(
 export const httpPFTClient = async <T>(config: AxiosRequestConfig): Promise<T> => {
   const { data } = await AXIOS_INSTANCE(config)
   return data
+}
+
+if (isBrowser) {
+  window.addEventListener('online', () => {
+    void flushOfflineQueue()
+  })
+  void flushOfflineQueue()
 }
 
 export default httpPFTClient

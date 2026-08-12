@@ -12,6 +12,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// Where the running FinTrack app lives. Self-hosters can point this page at
+// their own instance with NEXT_PUBLIC_APP_URL.
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://fintrack.sannty.in";
+
+const GITHUB_URL = "https://github.com/AshishKapoor/fintrack";
+
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -73,12 +79,12 @@ export default function LandingPage() {
                 <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
               </svg>
             </a>
-            <Link href="https://fintrack.sannty.in/">
+            <Link href={APP_URL}>
               <Button variant="ghost" className="hidden md:inline-flex">
                 Log in
               </Button>
             </Link>
-            <Link href="https://fintrack.sannty.in/register">
+            <Link href={`${APP_URL}/register`}>
               <Button>Get Started</Button>
             </Link>
           </div>
@@ -101,7 +107,7 @@ export default function LandingPage() {
                 tools.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center md:justify-start">
-                <Link href="https://fintrack.sannty.in/register">
+                <Link href={`${APP_URL}/register`}>
                   <Button size="lg" className="w-full sm:w-auto">
                     Start for Free
                   </Button>
@@ -180,28 +186,6 @@ export default function LandingPage() {
       </section>
 
       {/* Trusted By Section */}
-      {/* <section className="py-12 bg-gray-50 border-y">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-8">
-            <h2 className="text-lg font-medium text-gray-600">
-              Trusted by thousands of users worldwide
-            </h2>
-          </div>
-          <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-70">
-            {[
-              "Company 1",
-              "Company 2",
-              "Company 3",
-              "Company 4",
-              "Company 5",
-            ].map((company, index) => (
-              <div key={index} className="text-xl font-bold text-gray-400">
-                {company}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section> */}
 
       {/* Features Section */}
       <section id="features" className="py-16 md:py-24">
@@ -429,7 +413,7 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-16 text-center">
-            <Link href="https://fintrack.sannty.in/register">
+            <Link href={`${APP_URL}/register`}>
               <Button size="lg" className="gap-2">
                 Get Started Now <ArrowRight className="h-4 w-4" />
               </Button>
@@ -437,40 +421,6 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
-
-      {/* Testimonials Section */}
-      {/* <section id="testimonials" className="py-16 md:py-24">
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">What Our Users Say</h2>
-            <p className="text-xl text-gray-600 max-w-[800px] mx-auto">
-              Thousands of people have transformed their financial lives with
-              FinTrack
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <TestimonialCard
-              quote="FinTrack has completely changed how I manage my money. I finally have clarity on where every dollar goes."
-              author="Sarah Johnson"
-              role="Small Business Owner"
-              rating={5}
-            />
-            <TestimonialCard
-              quote="The budgeting features are incredible. I've saved over $5,000 in the past year just by tracking my expenses."
-              author="Michael Chen"
-              role="Software Engineer"
-              rating={5}
-            />
-            <TestimonialCard
-              quote="I love how easy it is to use. The reports give me insights I never had before about my spending habits."
-              author="Emma Rodriguez"
-              role="Marketing Manager"
-              rating={4}
-            />
-          </div>
-        </div>
-      </section> */}
 
       {/* FAQ Section */}
       <section id="faq" className="py-16 md:py-24">
@@ -498,11 +448,11 @@ export default function LandingPage() {
               Start Your Financial Journey Today
             </h2>
             <p className="text-xl text-gray-600 mb-8">
-              Join thousands of users who trust FinTrack with their finances.
+              Self-host FinTrack in a few minutes and keep your financial data on your own server.
               Completely free, open source, and always will be.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="https://fintrack.sannty.in/register">
+              <Link href={`${APP_URL}/register`}>
                 <Button size="lg" className="w-full sm:w-auto">
                   Get Started Free
                 </Button>
@@ -600,18 +550,18 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href={`${GITHUB_URL}#-api`}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
-                    Integrations
+                    API
                   </a>
                 </li>
                 <li>
                   <a
-                    href="#"
+                    href={`${GITHUB_URL}/releases`}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
-                    Changelog
+                    Releases
                   </a>
                 </li>
               </ul>

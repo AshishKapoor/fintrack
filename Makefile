@@ -3,7 +3,6 @@
 COMPOSE_DEV := docker compose -f docker-compose.yml -f docker-compose.dev.yml
 
 help:
-	@echo "bootstrap      - create .env files from the examples (run this first)"
 	@echo "up             - start the stack (production-style settings)"
 	@echo "dev            - start the stack with hot reload and dev settings"
 	@echo "down           - stop the stack"
@@ -13,22 +12,21 @@ help:
 	@echo "test-api       - run the backend smoke tests"
 	@echo "test-api-all   - run the full backend test suite"
 	@echo "feature-audit  - validate the feature matrix and regenerate the parity report"
+	@echo "bootstrap      - create missing .env files (runs automatically before docker targets)"
 
 bootstrap:
-	@test -f .env || cp .env.example .env
-	@test -f web/.env || cp web/.env.example web/.env
-	@echo "Bootstrap complete. Review .env before exposing this instance publicly."
+	@./setup.sh configure
 
-up:
+up: bootstrap
 	docker compose up -d
 
-dev:
+dev: bootstrap
 	$(COMPOSE_DEV) up
 
 down:
 	docker compose down
 
-build:
+build: bootstrap
 	docker compose build
 
 logs:
@@ -37,10 +35,10 @@ logs:
 clean:
 	docker compose down -v --remove-orphans
 
-test-api:
+test-api: bootstrap
 	$(COMPOSE_DEV) run --rm --entrypoint sh migrate -lc "uv run manage.py test pft.tests.test_api_smoke"
 
-test-api-all:
+test-api-all: bootstrap
 	$(COMPOSE_DEV) run --rm --entrypoint sh migrate -lc "uv run manage.py test"
 
 feature-audit:

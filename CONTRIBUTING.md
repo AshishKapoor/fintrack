@@ -35,11 +35,12 @@ biggest open piece of work.
 The fastest path is Docker:
 
 ```bash
-make bootstrap && make dev
+make dev
 ```
 
-That starts Postgres, the API with autoreload on http://localhost:8000, and the web
-app on http://localhost:5173.
+That creates any missing `.env` files from their examples, then starts Postgres,
+the API with autoreload on http://localhost:8000, and the web app on
+http://localhost:5173.
 
 ### Backend without Docker
 
@@ -80,7 +81,7 @@ docker compose up -d && cd web && pnpm exec playwright install chromium && pnpm 
 And, if you touched anything in the Docker or settings layer:
 
 ```bash
-make bootstrap && docker compose build && docker compose up -d && curl -fsS http://localhost:8000/healthz/
+make build && make up && curl -fsS http://localhost:8000/healthz/
 ```
 
 Optionally install the git hooks so formatting and secret scanning run locally:

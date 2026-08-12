@@ -32,50 +32,79 @@ class TransactionAdminForm(forms.ModelForm):
 
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = "__all__"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
-            self.fields['amount'].initial = self.instance.amount
+            self.fields["amount"].initial = self.instance.amount
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        amount = self.cleaned_data.get('amount')
+        amount = self.cleaned_data.get("amount")
         if amount is not None:
             instance.amount = str(amount)
         if commit:
             instance.save()
         return instance
 
+
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
     """Custom User admin"""
-    list_display = ('email', 'first_name', 'last_name', 'phone_number', 'department', 'role', 'is_staff')
-    search_fields = ('email', 'first_name', 'last_name', 'phone_number')
-    ordering = ('email',)
+
+    list_display = (
+        "email",
+        "first_name",
+        "last_name",
+        "phone_number",
+        "department",
+        "role",
+        "is_staff",
+    )
+    search_fields = ("email", "first_name", "last_name", "phone_number")
+    ordering = ("email",)
 
     fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'phone_number', 'location', 'bio')}),
-        ('Organization', {'fields': ('department', 'role')}),
-        ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login', 'date_joined')}),
+        (None, {"fields": ("email", "password")}),
+        (
+            "Personal info",
+            {"fields": ("first_name", "last_name", "phone_number", "location", "bio")},
+        ),
+        ("Organization", {"fields": ("department", "role")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "is_active",
+                    "is_staff",
+                    "is_superuser",
+                    "groups",
+                    "user_permissions",
+                )
+            },
+        ),
+        ("Important dates", {"fields": ("last_login", "date_joined")}),
     )
 
     add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'department', 'role'),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "password1", "password2", "department", "role"),
+            },
+        ),
     )
+
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
     form = TransactionAdminForm
-    list_display = ('title', 'amount', 'type', 'user', 'category', 'transaction_date')
-    search_fields = ('title', 'user__email')
-    list_filter = ('type', 'category', 'user')
+    list_display = ("title", "amount", "type", "user", "category", "transaction_date")
+    search_fields = ("title", "user__email")
+    list_filter = ("type", "category", "user")
+
 
 admin.site.register(Category)
 admin.site.register(Budget)
@@ -133,7 +162,14 @@ class LedgerPostingInline(admin.TabularInline):
 
 @admin.register(LedgerTransaction)
 class LedgerTransactionAdmin(admin.ModelAdmin):
-    list_display = ("transaction_date", "payee", "memo", "budget_file", "cleared", "source_type")
+    list_display = (
+        "transaction_date",
+        "payee",
+        "memo",
+        "budget_file",
+        "cleared",
+        "source_type",
+    )
     list_filter = ("cleared", "imported", "source_type")
     search_fields = ("memo", "payee__name", "match_key")
     date_hierarchy = "transaction_date"
@@ -154,13 +190,26 @@ class BudgetMonthAdmin(admin.ModelAdmin):
 
 @admin.register(EnvelopeAssignment)
 class EnvelopeAssignmentAdmin(admin.ModelAdmin):
-    list_display = ("budget_month", "category", "assigned_amount", "carryover_amount", "goal_type")
+    list_display = (
+        "budget_month",
+        "category",
+        "assigned_amount",
+        "carryover_amount",
+        "goal_type",
+    )
     list_filter = ("goal_type",)
 
 
 @admin.register(ScheduledTransaction)
 class ScheduledTransactionAdmin(admin.ModelAdmin):
-    list_display = ("name", "budget_file", "frequency", "interval", "next_run_date", "is_active")
+    list_display = (
+        "name",
+        "budget_file",
+        "frequency",
+        "interval",
+        "next_run_date",
+        "is_active",
+    )
     list_filter = ("frequency", "is_active")
     search_fields = ("name",)
 

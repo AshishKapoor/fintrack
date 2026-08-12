@@ -29,9 +29,13 @@ router.register("tags", TagViewSet, basename="tag")
 router.register("transactions", LedgerTransactionViewSet, basename="transaction")
 router.register("postings", PostingViewSet, basename="posting")
 router.register("budget-months", BudgetMonthViewSet, basename="budget-month")
-router.register("envelope-assignments", EnvelopeAssignmentViewSet, basename="envelope-assignment")
 router.register(
-    "scheduled-transactions", ScheduledTransactionViewSet, basename="scheduled-transaction"
+    "envelope-assignments", EnvelopeAssignmentViewSet, basename="envelope-assignment"
+)
+router.register(
+    "scheduled-transactions",
+    ScheduledTransactionViewSet,
+    basename="scheduled-transaction",
 )
 router.register("rules", TransactionRuleViewSet, basename="rule")
 router.register("reports", ReportViewSet, basename="report")

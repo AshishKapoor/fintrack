@@ -1,3 +1,5 @@
+import os
+
 from .base import *  # noqa: F403
 
 DEBUG = env_bool("DEBUG", False)  # noqa: F405
@@ -18,25 +20,27 @@ _secure = env_bool("SECURE_SSL", True)  # noqa: F405
 CSRF_COOKIE_SECURE = _secure
 SESSION_COOKIE_SECURE = _secure
 SECURE_SSL_REDIRECT = _secure
-SECURE_HSTS_SECONDS = int(os.getenv("SECURE_HSTS_SECONDS", "31536000" if _secure else "0"))  # noqa: F405
+SECURE_HSTS_SECONDS = int(
+    os.getenv("SECURE_HSTS_SECONDS", "31536000" if _secure else "0")
+)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = _secure
 SECURE_HSTS_PRELOAD = _secure
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
 
 CORS_ALLOW_HEADERS = [
-    'accept',
-    'accept-encoding',
-    'authorization',
-    'content-type',
-    'dnt',
-    'origin',
-    'user-agent',
-    'x-csrftoken',
-    'x-requested-with',
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
 ]
 
 LOGGING = {

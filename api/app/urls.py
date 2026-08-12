@@ -26,7 +26,9 @@ urlpatterns = [
     ),
     path("api/v1/", include(("pft.urls"), namespace="pft")),
     path("api/v1/finance/", include(("pft.finance_urls"), namespace="pft-finance")),
-    path("api/token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path(
+        "api/token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain_pair"
+    ),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/logout/", LogoutView.as_view(), name="token_logout"),
 ]

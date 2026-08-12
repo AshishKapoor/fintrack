@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  api-lint:
+    name: API / ruff lint & format
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+      - name: Install dependencies (locked)
+        run: uv sync --locked
+      - name: Ruff lint
+        run: uv run ruff check --output-format=github .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+  api-test:
+    name: API / Django checks & tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fintrack
+          POSTGRES_USER: fintrack
+          POSTGRES_PASSWORD: fintrack
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fintrack"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DJANGO_SETTINGS_MODULE: app.settings.dev
+      SECRET_KEY: ci-only-not-a-real-secret
+      POSTGRES_DB: fintrack
+      POSTGRES_USER: fintrack
+      POSTGRES_PASSWORD: fintrack
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: "5432"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/uv.lock
+      - name: Install dependencies (locked)
+        run: uv sync --locked
+      - name: Django system checks
+        run: uv run manage.py check
+      - name: Ensure migrations are in sync with models
+        run: uv run manage.py makemigrations --check --dry-run
+      - name: Run test suite
+        run: uv run manage.py test --verbosity 2
+
+  web:
+    name: Web / lint, typecheck & build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: web/package.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: ESLint
+        run: pnpm lint
+      - name: Typecheck & build
+        run: pnpm build
+
+  landing:
+    name: Landing / build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: landing/pnpm-lock.yaml
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+      - name: Next.js build
+        run: pnpm build
+
+  docker:
+    name: Docker / compose config & image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config -q
+      - name: Build API image
+        run: docker build ./api
+      - name: Build Web image
+        run: docker build ./web

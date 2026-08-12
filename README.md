@@ -201,6 +201,19 @@ Contributions, issues, and feature requests are welcome! Please read the
 4. Push the branch (`git push origin feature/amazing-feature`)
 5. Open a pull request
 
+## 📚 Documentation
+
+| | |
+|---|---|
+| [How double-entry works, for developers](docs/blog/double-entry-for-developers.md) | The mental model behind the ledger — start here |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why there are two API surfaces |
+| [docs/self-hosting.md](docs/self-hosting.md) | Reverse proxy, TLS, backups, upgrades, monitoring |
+| [SECURITY.md](SECURITY.md) | Hardening checklist, private reporting, known limitations |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
+| [docs/adr/](docs/adr/) | Architecture decision records, including [licensing](docs/adr/0001-licensing.md) |
+
+---
+
 ## 🔒 Security
 
 FinTrack stores personal financial data — please report vulnerabilities

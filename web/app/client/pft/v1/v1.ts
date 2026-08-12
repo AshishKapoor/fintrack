@@ -3,7 +3,7 @@ import type { SWRConfiguration } from 'swr'
 import useSWR from 'swr'
 import useSWRMutation from 'swr/mutation'
 import type { Transaction } from '../transaction'
-import type { TypeEnum } from '../typeEnum'
+import { TypeEnum } from '../typeEnum'
 
 export interface PaginatedResponse<T> {
   count: number
@@ -118,7 +118,7 @@ interface FinanceEnvelopeAssignment {
 }
 
 let budgetFileCache: number | null = null
-let accountCache: Record<number, number> = {}
+const accountCache: Record<number, number> = {}
 
 const toQueryString = (params: object) => {
   const search = new URLSearchParams()
@@ -283,7 +283,7 @@ const resolveCategoryId = async (
 const mapFinanceTransaction = (tx: FinanceLedgerTransaction): Transaction => {
   const categoryPosting = tx.posting_lines.find((line) => line.category !== null)
   const raw = Number(categoryPosting?.amount ?? tx.posting_lines[0]?.amount ?? '0')
-  const type: TypeEnum = raw < 0 ? 'income' : 'expense'
+  const type: TypeEnum = raw < 0 ? TypeEnum.income : TypeEnum.expense
 
   return {
     id: tx.id,

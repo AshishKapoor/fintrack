@@ -1,13 +1,15 @@
-# 💰 Fintrack
+# 💰 FinTrack
 
-**Fintrack** is a privacy-first, self-hostable personal finance tracker built by [Sannty](https://sannty.in). Designed for individuals who want to take full control of their income, expenses, budgets, and financial goals without relying on third-party services.
+**A privacy-first, self-hostable personal finance tracker.** Track income and
+expenses, plan budgets, and keep your financial data on a server you control — no
+subscriptions, no vendor lock-in, no third-party data sharing.
 
-## [Self Host] Admin Credentials (change me!)
-URL: http://localhost:5173
-```
-email: admin@example.com
-password: fintrack
-```
+Built with Django + DRF and React. MIT licensed.
+
+> **Status: pre-1.0.** FinTrack is usable and actively worked on, but it has not
+> cut a stable release yet. Read [Known limitations](#-known-limitations) and
+> [SECURITY.md](SECURITY.md) before putting real data in it or exposing it to the
+> internet.
 
 ## Screenshot
 
@@ -15,235 +17,239 @@ password: fintrack
 
 ---
 
-## 🚀 Features
+## 🏁 Quick start
 
-- 📊 Track income and expenses with ease
-- 🧾 Add custom categories and tags
-- 📅 View transactions by day, week, or month
-- 📈 Budget planning and progress tracking
-- 🔒 100% self-hosted – your data, your server
-- 📦 Export data as CSV or JSON
-- 👤 Multi-user support (optional)
-- 🌗 Light/Dark mode UI
-- 📱 Responsive design (mobile + desktop)
-- 🔌 API-first architecture
-- 🧱 `/api/v1/finance/*` finance domain with double-entry ledger, envelope budgeting primitives, reports, exports, imports, and encrypted backup bundles
+Requires Docker and Docker Compose.
 
----
+```bash
+git clone https://github.com/AshishKapoor/fintrack.git && cd fintrack
+```
 
-## 🛠️ Tech Stack
+```bash
+make bootstrap && docker compose up -d
+```
 
-### 📱 Web (Frontend)
-- **Framework**: React 18
-- **Styling**: TailwindCSS
-- **State Management**: Zustand
-- **Build Tool**: Vite
-- **Package Manager**: pnpm
+That's it. Open **http://localhost:5173** and register your first account.
 
-### 🔧 API (Backend)
-- **Framework**: Django + Django REST Framework
-- **Database**: PostgreSQL
-- **Package Manager**: Poetry
-- **Authentication**: JWT-based
+| Service | URL |
+|---|---|
+| Web app | http://localhost:5173 |
+| API | http://localhost:8000 |
+| API docs (Swagger) | http://localhost:8000/api/docs/ |
+| API docs (ReDoc) | http://localhost:8000/api/redoc/ |
+| Health check | http://localhost:8000/healthz/ |
 
-### 🐳 Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Development**: Hot-reload enabled for both frontend and backend
+**There is no default admin account and no default password.** The first account
+you register through the UI is yours. To create a Django admin user instead, set
+`FINTRACK_ADMIN_EMAIL` and `FINTRACK_ADMIN_PASSWORD` in `.env` before the first
+start, or run:
+
+```bash
+docker compose exec api uv run manage.py createsuperuser
+```
+
+To stop: `make down`. To stop and delete all data: `make clean`.
 
 ---
 
-## 📁 Project Structure
+## 🛠️ Tech stack
+
+| | |
+|---|---|
+| **Backend** | Django 5.1 + Django REST Framework, PostgreSQL 16, JWT auth (SimpleJWT), gunicorn |
+| **Frontend** | React 19, Vite 6, TypeScript, TailwindCSS 4, shadcn/ui, SWR for data fetching, Zustand for UI state |
+| **Tooling** | `uv` for Python, `pnpm` for JavaScript, Ruff, ESLint |
+| **Infrastructure** | Docker Compose, nginx |
+| **Marketing site** | Next.js 15 (`landing/`, independent of the app) |
+
+---
+
+## 📁 Project structure
 
 ```
 fintrack/
-├── api/                # Django backend
-│   ├── app/            # Django project settings
-│   ├── pft/            # Main Django app
-│   └── manage.py       # Django CLI
-├── web/                # React frontend
-│   ├── app/            # Application source
-│   ├── public/         # Static assets
-│   └── schema/         # API schema
-└── README.md
+├── api/       Django backend
+│   ├── app/   Project settings, URLs, health check
+│   └── pft/   The application: models, views, serializers, services, tests
+├── web/       React single-page app
+├── landing/   Next.js marketing site (not part of the self-host stack)
+├── docs/      Feature audit artifacts
+└── scripts/   Repo tooling
 ```
 
 ---
 
-## 🏁 Getting Started
+## ✅ What works today
 
-### 📋 Prerequisites
+- Track income and expenses, with custom categories
+- Monthly budgets with progress tracking
+- Dashboard with balance, income and expense cards over a selectable date range
+- Transaction list with search, filtering, sorting and pagination
+- Export transactions as CSV or JSON from the UI
+- Rules and recurring (scheduled) transactions
+- Reports: net worth, cash flow, spending trends
+- Light/dark mode, responsive layout, currency symbol selection
+- Multi-user: every account's data is isolated, with a
+  [test suite](api/pft/tests/test_tenant_isolation.py) that proves it
 
-- [Node.js](https://nodejs.org/) >= 18.x
-- [Python](https://python.org/) >= 3.12
-- [pnpm](https://pnpm.io/) >= 8.x
-- [Poetry](https://python-poetry.org/) >= 1.7
-- [Docker](https://www.docker.com/) (optional but recommended)
+**Implemented in the API but not yet exposed in the UI** — these are good places to
+contribute, because the backend already works:
 
-### 🔧 Setup Instructions
+- Bank statement import (CSV, OFX, QFX, QIF, CAMT.053, YNAB)
+- Envelope budgeting with goals and carryover
+- Server-side exports including XLSX
+- Encrypted backup bundles
 
-#### Option 1: Using Docker (Recommended)
+**Not built yet:** account deletion, budget alerts and notifications, real
+multi-currency conversion, PWA offline mode, savings goals, investment tracking,
+native mobile apps.
+
+---
+
+## 🧑‍💻 Development
+
+### With Docker (hot reload)
 
 ```bash
-# Clone the repository
-git clone https://github.com/ashishkapoor/fintrack.git
-cd fintrack
-
-# Copy environment files
-cp api/.env.example api/.env
-cp web/.env.example web/.env
-
-# Start the services
-docker compose up --build
+make bootstrap && make dev
 ```
 
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/api/docs/
+The API reloads on change at http://localhost:8000; Postgres is exposed on 5432.
 
-#### Option 2: Manual Setup
+### Backend without Docker
 
-1. Clone the repository:
+Requires Python 3.12+, [uv](https://docs.astral.sh/uv/), and a local PostgreSQL.
+
 ```bash
-git clone https://github.com/ashishkapoor/fintrack.git
-cd fintrack
+cd api && cp .env.example .env && uv sync && uv run manage.py migrate && uv run manage.py runserver
 ```
 
-2. Setup API (Backend):
+`uv.lock` is the authoritative lockfile. Poetry is no longer used.
+
+### Frontend without Docker
+
+Requires Node 22+ and pnpm (via `corepack enable`).
+
 ```bash
-cd api
-
-# Install poetry if not already installed
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Install dependencies
-poetry install
-
-# Setup environment variables
-cp .env.example .env
-
-# Run migrations
-poetry run python manage.py migrate
-
-# Start the development server
-poetry run python manage.py runserver
-```
-
-3. Setup Web (Frontend):
-```bash
-cd web
-
-# Install dependencies
-pnpm install
-
-# Setup environment variables
-cp .env.example .env
-
-# Start the development server
-pnpm dev
+cd web && cp .env.example .env && pnpm install && pnpm dev
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-### API Environment Variables
+All settings come from the root `.env` file, created by `make bootstrap` from
+[`.env.example`](.env.example). The defaults are tuned for a local trial.
 
-```env
-# api/.env
-DEBUG=True
-SECRET_KEY=your_secure_secret_key
-DATABASE_URL=postgres://user:password@localhost:5432/fintrack
-ALLOWED_HOSTS=localhost,127.0.0.1
-CORS_ALLOWED_ORIGINS=http://localhost:5173
-```
+| Variable | Default | Notes |
+|---|---|---|
+| `SECRET_KEY` | *(generated)* | Left blank, one is generated and persisted on first boot. **Set it explicitly in production.** |
+| `DEBUG` | `False` | Parsed as a real boolean |
+| `DJANGO_ENV` | `production` | `development` selects the dev settings module |
+| `DJANGO_ALLOWED_HOSTS` | `localhost 127.0.0.1 [::1]` | Space- or comma-separated |
+| `CORS_ALLOWED_ORIGINS` | `http://localhost:5173` | Where the web UI is served from |
+| `CSRF_TRUSTED_ORIGINS` | `http://localhost:5173` | |
+| `SECURE_SSL` | `False` | Set `True` once TLS terminates in front of the stack |
+| `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` | `fintrack` | **Change the password for any real deployment** |
+| `FINTRACK_ADMIN_EMAIL` / `FINTRACK_ADMIN_PASSWORD` | *(unset)* | Both required to bootstrap an admin non-interactively |
+| `VITE_UMAMI_SCRIPT_URL` / `VITE_UMAMI_WEBSITE_ID` | *(unset)* | Optional analytics. Unset means the build reports to nobody. |
 
-### Web Environment Variables
+Postgres is **not** published to the host by default; the port mapping in
+`docker-compose.yml` is commented out deliberately.
 
-```env
-# web/.env
-VITE_BASE_DOMAIN=http://localhost:8000
-```
+---
+
+## 🔒 Security
+
+Read [SECURITY.md](SECURITY.md) before exposing an instance to the internet. It
+covers the hardening checklist, how to report a vulnerability privately, and the
+current known limitations (no rate limiting, no JWT revocation, unpaginated
+finance endpoints).
+
+If you ran a version of FinTrack from before this was fixed, note that a
+`SECRET_KEY` was previously committed to this repository and used as the default.
+Rotate your `SECRET_KEY` and delete any `admin@example.com` account.
 
 ---
 
 ## 🧪 Tests
 
-### Bootstrap (first run)
-```bash
-make bootstrap
-```
-
-### API Tests
 ```bash
 make test-api
 ```
 
-### Full API Suite
 ```bash
 make test-api-all
 ```
 
----
-
-## 🧭 Feature Audit
-
-The budgeting-core audit artifacts and prioritized roadmap live in:
-
-- `docs/feature-audit/README.md`
-- `docs/feature-audit/feature-matrix.json`
-- `docs/feature-audit/prioritized-roadmap.md`
-- `docs/feature-audit/parity-report.md`
-- `docs/feature-audit/test-plan.md`
-
-Run the audit validator and parity report generator:
+Or directly, without Docker:
 
 ```bash
-make feature-audit
+cd api && uv run ruff check . && uv run manage.py test
 ```
+
+```bash
+cd web && pnpm run lint && pnpm run build
+```
+
+CI runs all of the above on every pull request, plus a full `docker compose` smoke
+test that registers a user and creates a transaction.
+
+The frontend has no test harness yet — [contributions welcome](CONTRIBUTING.md).
 
 ---
 
-## 📤 API Documentation
+## 🧩 API
 
-The API documentation is available at:
-- Swagger UI: http://localhost:8000/api/docs/
-- ReDoc: http://localhost:8000/api/redoc/
+Two surfaces exist today:
 
-## 🧩 API Surface
+- **`/api/v1/*`** — the original flat model: `transactions`, `categories`,
+  `budgets`, plus `register`, `me` and profile endpoints.
+- **`/api/v1/finance/*`** — a double-entry ledger: `budget-files`, `accounts`,
+  `category-groups`, `categories`, `payees`, `tags`, `transactions`, `postings`,
+  `scheduled-transactions`, `rules`, `budget-months`, `envelope-assignments`,
+  `reports`, `exports`, `imports`, `backups`.
 
-- `/api/v1/*`: core auth/profile and compatibility endpoints
-- `/api/v1/finance/*`: finance domain resources
-  - `budget-files`, `accounts`, `category-groups`, `categories`, `payees`, `tags`
-  - `transactions`, `postings`, `scheduled-transactions`, `rules`
-  - `budget-months`, `envelope-assignments`, `reports`
-  - `exports`, `imports`, `backups`
+The web app reads through the legacy shapes and writes to the finance API, via an
+adapter in `web/app/client/pft/`. Consolidating the two is the largest open piece
+of work — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Authentication is JWT: `POST /api/token/` to obtain a pair, `POST /api/token/refresh/`
+to refresh.
+
+> Note: `web/schema/pft.yaml` currently documents only the legacy surface. The live
+> schema at `/api/schema/` is generated from the code and is authoritative.
+
+---
+
+## ⚠️ Known limitations
+
+- No rate limiting on login, registration or the Django admin.
+- JWTs cannot be revoked; a password change does not invalidate existing tokens.
+- The `/api/v1/finance/*` endpoints are not paginated.
+- Import and export run synchronously in the request, with no size cap.
+- Currency selection changes the displayed symbol only — it does not convert.
+- Transaction filtering and sorting in the UI operate on the current page.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!  
-Feel free to fork and submit a pull request.
+Issues and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md) covers
+setup, conventions, what CI checks, and a list of good first issues. Please also
+read the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
 ## 📄 License
 
-MIT License © 2025 [Sannty](https://github.com/ashishkapoor)
+MIT © [Sannty](https://github.com/AshishKapoor)
 
----
+## 💡 Why
 
-## 💡 Inspiration
+FinTrack exists to give privacy-conscious people a way to manage their finances
+independently — no subscription, no data sharing, no lock-in.
 
-FinTrack was built to give privacy-conscious users a simple but powerful way to manage their finances independently, free of subscription fees or vendor lock-in.
-
----
-
-## 🙌 Support
-
-If you find FinTrack useful, consider giving a ⭐ on GitHub or sharing it with others!
-
-## Star History
+If you find it useful, a ⭐ helps other people find it.
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ashishkapoor/fintrack&type=Date)](https://www.star-history.com/#ashishkapoor/fintrack&Date)

@@ -29,10 +29,10 @@ import {
   useV1CategoriesList,
   useV1TransactionsCreate,
   useV1TransactionsList,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { toast } from 'sonner'
 import { getUser } from '@/lib/auth'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 export function AddTransactionDialog({
   open,

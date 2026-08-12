@@ -1,35 +1,37 @@
 # Stage 1: Build
-FROM node:20-slim AS builder
+FROM node:22-slim AS builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# pnpm version comes from the "packageManager" field in package.json, so the
+# build is reproducible instead of tracking whatever "latest" happens to be.
+RUN corepack enable
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy manifests first so dependency installation is cached
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
-# Install dependencies
 RUN pnpm install --frozen-lockfile
 
-# Copy source files
 COPY . .
 
-# Build the application
-RUN pnpm orval && pnpm run build
+# Optional analytics. Empty by default: a self-hosted build reports to nobody.
+ARG VITE_UMAMI_SCRIPT_URL=""
+ARG VITE_UMAMI_WEBSITE_ID=""
+ENV VITE_UMAMI_SCRIPT_URL=$VITE_UMAMI_SCRIPT_URL
+ENV VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID
+
+# NOTE: `pnpm orval` is deliberately NOT run here. The API client under
+# app/client/pft is hand-maintained; regenerating it from schema/pft.yaml (which
+# does not describe /api/v1/finance/*) would overwrite the working client.
+RUN pnpm run build
 
 # Stage 2: Serve
 FROM nginx:alpine
 
-# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Expose port 80
 EXPOSE 80
 
-# Start the app
 CMD [ "nginx", "-g", "daemon off;" ]

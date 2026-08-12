@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useV1TransactionsDestroy, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import { useV1TransactionsDestroy, useV1TransactionsList } from '@/client/pft/v1/v1'
 import { toast } from 'sonner'
 
 export function DeleteTransactionAlert({

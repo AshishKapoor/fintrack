@@ -1,6 +1,6 @@
 'use client'
 
-import { Transaction } from '@/client/gen/pft/transaction'
+import { Transaction } from '@/client/pft/transaction'
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts'
 import {
   ChartConfig,
@@ -11,7 +11,7 @@ import {
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign } from 'lucide-react'
 import { useCurrency } from '@/context/currency-context'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 interface MonthlyData {
   name: string

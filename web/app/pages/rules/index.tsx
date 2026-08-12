@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useV1CategoriesList } from '@/client/gen/pft/v1/v1'
+import { useV1CategoriesList } from '@/client/pft/v1/v1'
 import {
   createScheduledTransaction,
   createTransactionRule,

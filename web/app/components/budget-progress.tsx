@@ -4,7 +4,7 @@ import {
   useV1BudgetsList,
   useV1CategoriesList,
   useV1TransactionsList,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
@@ -13,7 +13,7 @@ import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign, Plus } from 'lucide-react'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 import { formatDateForApi } from '@/lib/date'
 
 export function BudgetProgress() {

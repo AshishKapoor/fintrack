@@ -6,7 +6,7 @@ import {
   useV1CategoriesList,
   useV1TransactionsList,
   v1BudgetsUpdate,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,7 +43,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { Link } from 'react-router-dom'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 export default function BudgetsPage() {
   const [showAddBudget, setShowAddBudget] = useState(false)

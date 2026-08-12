@@ -1,6 +1,7 @@
 import '@/assets/styles/globals.css'
 import DashboardLayout from '@/components/dashboard-layout'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { Toaster } from '@/components/ui/toaster'
 import { isLoggedIn } from '@/lib/auth'
 import AuthenticationPage from '@/pages/authentication'
@@ -53,6 +54,9 @@ function App() {
         </div>
       )}
       <Toaster />
+      {/* Most of the app notifies through sonner; without this mount those
+          toasts - including every API error - render nothing. */}
+      <SonnerToaster />
     </ThemeProvider>
   )
 }

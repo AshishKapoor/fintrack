@@ -1,9 +1,9 @@
 'use client'
 
-import { Transaction } from '@/client/gen/pft/transaction'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { Transaction } from '@/client/pft/transaction'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
-import { useV1CategoriesList, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import { useV1CategoriesList, useV1TransactionsList } from '@/client/pft/v1/v1'
 import { AddTransactionDialog } from '@/components/add-transaction-dialog'
 import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
@@ -197,7 +197,7 @@ export default function TransactionsPage() {
           escapeCsvCell(row.amount),
         ].join(','),
       )
-      content = [header.join(','), ...lines].join('\\n')
+      content = [header.join(','), ...lines].join('\n')
       mimeType = 'text/csv;charset=utf-8'
       extension = 'csv'
     }

@@ -390,3 +390,27 @@ class UnauthenticatedAccessTests(APITestCase):
 
     def test_healthz_is_public(self):
         self.assertEqual(self.client.get("/healthz/").status_code, status.HTTP_200_OK)
+
+
+class LegacyDeprecationTests(TenantIsolationTestCase):
+    """The flat v1 resources announce that they are on the way out."""
+
+    LEGACY_URLS = [
+        "/api/v1/transactions/",
+        "/api/v1/categories/",
+        "/api/v1/budgets/",
+    ]
+
+    def test_legacy_endpoints_are_marked_deprecated(self):
+        for url in self.LEGACY_URLS:
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.headers["Deprecation"], "true")
+                self.assertIn("successor-version", response.headers["Link"])
+                self.assertIn("/api/v1/finance/", response.headers["Link"])
+
+    def test_finance_endpoints_are_not_marked_deprecated(self):
+        response = self.client.get("/api/v1/finance/transactions/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn("Deprecation", response.headers)

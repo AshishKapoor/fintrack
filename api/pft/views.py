@@ -34,6 +34,29 @@ class CustomPagination(PageNumberPagination):
     page_size = 100
 
 
+# The flat /api/v1/{transactions,categories,budgets} resources predate the
+# double-entry ledger at /api/v1/finance/*. Both are live, both are seeded on
+# signup, and nothing keeps them in sync - see ARCHITECTURE.md. The ledger is
+# the one being kept, so these announce themselves as deprecated to anything
+# scripting against them, per RFC 8594 and RFC 9745.
+LEGACY_SUNSET_VERSION = "v1.0.0"
+LEGACY_SUCCESSOR = "/api/v1/finance/"
+
+
+class DeprecatedLegacyEndpointMixin:
+    """Attach deprecation headers to the flat v1 resources."""
+
+    def finalize_response(self, request, response, *args, **kwargs):
+        response = super().finalize_response(request, response, *args, **kwargs)
+        response["Deprecation"] = "true"
+        response["Link"] = f'<{LEGACY_SUCCESSOR}>; rel="successor-version"'
+        response["Warning"] = (
+            f'299 - "This endpoint is deprecated and will be removed in '
+            f'{LEGACY_SUNSET_VERSION}. Use {LEGACY_SUCCESSOR} instead."'
+        )
+        return response
+
+
 def blacklist_all_refresh_tokens(user):
     """Revoke every outstanding refresh token for a user.
 
@@ -87,7 +110,7 @@ class LogoutView(APIView):
 
 
 # CATEGORY VIEWSET
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
@@ -111,7 +134,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
 
 # TRANSACTION VIEWSET
-class TransactionViewSet(viewsets.ModelViewSet):
+class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination
@@ -144,7 +167,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
 
 
 # BUDGET VIEWSET
-class BudgetViewSet(viewsets.ModelViewSet):
+class BudgetViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = BudgetSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = CustomPagination

@@ -104,11 +104,23 @@ produce this; it will overwrite it with something that does not compile.
 
 ### Where this is going
 
-The ledger model is the one to keep. The intended direction is:
+The ledger model is the one to keep.
 
-1. Move the UI onto `/api/v1/finance/*` directly, removing the adapter.
-2. Put a compatibility shim on `/api/v1/{transactions,categories,budgets}` with
-   a documented removal version, for anyone scripting against them.
+`/api/v1/{transactions,categories,budgets}` are **deprecated**. They keep
+working, but every response now carries deprecation headers naming the
+successor, so anything scripting against them finds out before they are removed:
+
+```http
+Deprecation: true
+Link: </api/v1/finance/>; rel="successor-version"
+Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
+```
+
+The remaining steps, not yet done:
+
+1. Move the UI onto `/api/v1/finance/*` directly, removing the adapter in
+   `web/app/client/pft/v1/v1.ts`.
+2. Remove the legacy endpoints and models in `v1.0.0`.
 3. Rename `CategoryV2` and `CategoryGroupV2` — the "V2" suffix is an accident of
    history that is currently baked into the public schema.
 

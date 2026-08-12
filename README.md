@@ -219,7 +219,9 @@ test that registers a user and creates a transaction.
 Two surfaces exist today:
 
 - **`/api/v1/*`** — the original flat model: `transactions`, `categories`,
-  `budgets`, plus `register`, `me` and profile endpoints.
+  `budgets`, plus `register`, `me` and profile endpoints. The three resource
+  endpoints are **deprecated** and send `Deprecation`/`Link` headers pointing at
+  their successor; they are scheduled for removal in `v1.0.0`.
 - **`/api/v1/finance/*`** — a double-entry ledger: `budget-files`, `accounts`,
   `category-groups`, `categories`, `payees`, `tags`, `transactions`, `postings`,
   `scheduled-transactions`, `rules`, `budget-months`, `envelope-assignments`,

@@ -161,10 +161,12 @@ VITE_BASE_DOMAIN=http://localhost:8000
 ## 🧪 Testing
 
 ```bash
-make bootstrap       # first run: create env files
 make test-api        # API smoke tests
 make test-api-all    # full API test suite
 ```
+
+Missing `.env` files are created automatically (via `./setup.sh configure`)
+before any Docker-based target runs — no separate bootstrap step is needed.
 
 ## 📤 API
 

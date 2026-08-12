@@ -34,24 +34,28 @@ require_docker() {
     fi
 }
 
+created_any=0
+
 copy_env() {
     src="$1"
     dest="$2"
-    if [ -f "$dest" ]; then
-        echo "  $dest already exists, leaving it untouched."
-    else
+    if [ ! -f "$dest" ]; then
         cp "$src" "$dest"
         echo "  Created $dest (from $src)."
+        created_any=1
     fi
 }
 
+# Idempotent: existing .env files are never touched, and runs that create
+# nothing stay quiet so this can be invoked before every start.
 configure() {
-    echo "Configuring environment files..."
     copy_env .env.example .env
     copy_env api/.env.example api/.env
     copy_env web/.env.example web/.env
-    echo "Done. Review the generated .env files before exposing this instance publicly"
-    echo "(at minimum, change POSTGRES_PASSWORD in .env)."
+    if [ "$created_any" = 1 ]; then
+        echo "Review the generated .env files before exposing this instance publicly"
+        echo "(at minimum, change POSTGRES_PASSWORD in .env)."
+    fi
 }
 
 start() {

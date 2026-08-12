@@ -180,7 +180,7 @@ export function AddTransferDialog({
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-auto p-0' align='start'>
-                <Calendar mode='single' selected={transferDate} onSelect={(d) => d && setTransferDate(d)} initialFocus />
+                <Calendar mode='single' selected={transferDate} onSelect={(d) => d && setTransferDate(d)} />
               </PopoverContent>
             </Popover>
           </div>

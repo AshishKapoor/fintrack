@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:20-slim AS builder
+FROM node:26-slim AS builder
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate

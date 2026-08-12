@@ -3,12 +3,12 @@ import csv
 import io
 import json
 import uuid
+import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from xml.sax.saxutils import escape as xml_escape
-import xml.etree.ElementTree as ET
 
 from django.db import transaction
 from django.db.models import Sum
@@ -176,7 +176,11 @@ def run_report(budget_file: BudgetFile, payload: dict):
         end_date = today
 
     if report_type == SavedReport.TYPE_NET_WORTH:
-        as_of = date.fromisoformat(payload.get("as_of")) if payload.get("as_of") else end_date
+        as_of = (
+            date.fromisoformat(payload.get("as_of"))
+            if payload.get("as_of")
+            else end_date
+        )
         return compute_net_worth(budget_file, as_of)
 
     if report_type == SavedReport.TYPE_CASH_FLOW:
@@ -234,25 +238,29 @@ def run_report(budget_file: BudgetFile, payload: dict):
 
 
 def build_envelope_snapshot(budget_file: BudgetFile, year: int, month: int):
-    budget_month = BudgetMonth.objects.get(budget_file=budget_file, year=year, month=month)
+    budget_month = BudgetMonth.objects.get(
+        budget_file=budget_file, year=year, month=month
+    )
     start_date, end_date = month_bounds(year, month)
 
-    assigned_total = (
-        budget_month.assignments.aggregate(total=Sum("assigned_amount")).get("total")
-        or Decimal("0.00")
-    )
+    assigned_total = budget_month.assignments.aggregate(
+        total=Sum("assigned_amount")
+    ).get("total") or Decimal("0.00")
 
-    cash_account_types = {Account.TYPE_CHECKING, Account.TYPE_SAVINGS, Account.TYPE_CASH}
+    cash_account_types = {
+        Account.TYPE_CHECKING,
+        Account.TYPE_SAVINGS,
+        Account.TYPE_CASH,
+    }
     cash_accounts = budget_file.accounts.filter(type__in=cash_account_types)
     account_ids = list(cash_accounts.values_list("id", flat=True))
-    cash_delta = (
-        LedgerPosting.objects.filter(
-            account_id__in=account_ids,
-            transaction__transaction_date__lte=end_date,
-        ).aggregate(total=Sum("amount")).get("total")
-        or Decimal("0.00")
-    )
-    opening = cash_accounts.aggregate(total=Sum("opening_balance")).get("total") or Decimal("0.00")
+    cash_delta = LedgerPosting.objects.filter(
+        account_id__in=account_ids,
+        transaction__transaction_date__lte=end_date,
+    ).aggregate(total=Sum("amount")).get("total") or Decimal("0.00")
+    opening = cash_accounts.aggregate(total=Sum("opening_balance")).get(
+        "total"
+    ) or Decimal("0.00")
     cash_on_hand = opening + cash_delta
 
     spent_by_category = {
@@ -285,7 +293,9 @@ def build_envelope_snapshot(budget_file: BudgetFile, year: int, month: int):
                 "remaining": str(remaining),
                 "overspent": str(overspent),
                 "goal_type": item.goal_type,
-                "goal_value": str(item.goal_value) if item.goal_value is not None else None,
+                "goal_value": str(item.goal_value)
+                if item.goal_value is not None
+                else None,
                 "priority": item.priority,
             }
         )
@@ -349,14 +359,12 @@ def apply_three_month_average(budget_month: BudgetMonth):
 
     changed = 0
     for assignment in budget_month.assignments.select_related("category"):
-        totals = (
-            LedgerPosting.objects.filter(
-                transaction__budget_file=budget_month.budget_file,
-                transaction__transaction_date__year__in=[x[0] for x in periods],
-                transaction__transaction_date__month__in=[x[1] for x in periods],
-                category=assignment.category,
-            ).aggregate(total=Sum("amount"))
-        )
+        totals = LedgerPosting.objects.filter(
+            transaction__budget_file=budget_month.budget_file,
+            transaction__transaction_date__year__in=[x[0] for x in periods],
+            transaction__transaction_date__month__in=[x[1] for x in periods],
+            category=assignment.category,
+        ).aggregate(total=Sum("amount"))
         total = totals.get("total") or Decimal("0.00")
         avg = total / Decimal("3")
         assignment.assigned_amount = abs(avg.quantize(Decimal("0.01")))
@@ -421,7 +429,9 @@ def _xlsx_sheet_xml(headers: list[str], rows: list[list[str]]):
         for col_index, value in enumerate(row, start=1):
             cell_ref = f"{_xlsx_col_name(col_index)}{row_index}"
             escaped = xml_escape(str(value or ""))
-            lines.append(f'<c r="{cell_ref}" t="inlineStr"><is><t>{escaped}</t></is></c>')
+            lines.append(
+                f'<c r="{cell_ref}" t="inlineStr"><is><t>{escaped}</t></is></c>'
+            )
         lines.append("</row>")
 
     lines.extend(["</sheetData>", "</worksheet>"])
@@ -443,7 +453,7 @@ def _xlsx_content(rows: list[dict]):
         'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
         '<Override PartName="/xl/styles.xml" '
         'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
-        '</Types>'
+        "</Types>"
     )
     rels = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -451,14 +461,14 @@ def _xlsx_content(rows: list[dict]):
         '<Relationship Id="rId1" '
         'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" '
         'Target="xl/workbook.xml"/>'
-        '</Relationships>'
+        "</Relationships>"
     )
     workbook = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
         'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
         '<sheets><sheet name="Export" sheetId="1" r:id="rId1"/></sheets>'
-        '</workbook>'
+        "</workbook>"
     )
     workbook_rels = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -469,7 +479,7 @@ def _xlsx_content(rows: list[dict]):
         '<Relationship Id="rId2" '
         'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" '
         'Target="styles.xml"/>'
-        '</Relationships>'
+        "</Relationships>"
     )
     styles = (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
@@ -479,7 +489,7 @@ def _xlsx_content(rows: list[dict]):
         '<borders count="1"><border/></borders>'
         '<cellStyleXfs count="1"><xf/></cellStyleXfs>'
         '<cellXfs count="1"><xf xfId="0"/></cellXfs>'
-        '</styleSheet>'
+        "</styleSheet>"
     )
 
     sheet = _xlsx_sheet_xml(headers, values)
@@ -510,9 +520,13 @@ def run_export_job(export_job: ExportJob):
         start_date = export_job.filters.get("start_date")
         end_date = export_job.filters.get("end_date")
         if start_date:
-            queryset = queryset.filter(transaction_date__gte=date.fromisoformat(start_date))
+            queryset = queryset.filter(
+                transaction_date__gte=date.fromisoformat(start_date)
+            )
         if end_date:
-            queryset = queryset.filter(transaction_date__lte=date.fromisoformat(end_date))
+            queryset = queryset.filter(
+                transaction_date__lte=date.fromisoformat(end_date)
+            )
 
         rows = _normalize_rows_for_export(queryset)
         timestamp = timezone.now().strftime("%Y%m%d-%H%M%S")
@@ -555,13 +569,18 @@ def decode_export_job_content(export_job: ExportJob):
     return export_job.content_text.encode("utf-8")
 
 
-def transaction_matches_rule(ledger_transaction: LedgerTransaction, rule: TransactionRule):
+def transaction_matches_rule(
+    ledger_transaction: LedgerTransaction, rule: TransactionRule
+):
     if not rule.is_active:
         return False
 
     conditions = rule.conditions or {}
     memo_contains = conditions.get("memo_contains")
-    if memo_contains and memo_contains.lower() not in (ledger_transaction.memo or "").lower():
+    if (
+        memo_contains
+        and memo_contains.lower() not in (ledger_transaction.memo or "").lower()
+    ):
         return False
 
     payee_contains = conditions.get("payee_contains")
@@ -571,10 +590,9 @@ def transaction_matches_rule(ledger_transaction: LedgerTransaction, rule: Transa
 
     min_abs_amount = conditions.get("min_abs_amount")
     if min_abs_amount is not None:
-        account_total = (
-            ledger_transaction.postings.filter(account__isnull=False).aggregate(total=Sum("amount")).get("total")
-            or Decimal("0.00")
-        )
+        account_total = ledger_transaction.postings.filter(
+            account__isnull=False
+        ).aggregate(total=Sum("amount")).get("total") or Decimal("0.00")
         if abs(account_total) < Decimal(str(min_abs_amount)):
             return False
 
@@ -582,13 +600,10 @@ def transaction_matches_rule(ledger_transaction: LedgerTransaction, rule: Transa
 
 
 def apply_rules(ledger_transaction: LedgerTransaction):
-    rules = (
-        TransactionRule.objects.filter(
-            budget_file=ledger_transaction.budget_file,
-            is_active=True,
-        )
-        .order_by("priority", "id")
-    )
+    rules = TransactionRule.objects.filter(
+        budget_file=ledger_transaction.budget_file,
+        is_active=True,
+    ).order_by("priority", "id")
 
     applied_rules = []
 
@@ -609,7 +624,9 @@ def apply_rules(ledger_transaction: LedgerTransaction):
 
         tag_ids = actions.get("tag_ids", [])
         if tag_ids:
-            tags = Tag.objects.filter(id__in=tag_ids, budget_file=ledger_transaction.budget_file)
+            tags = Tag.objects.filter(
+                id__in=tag_ids, budget_file=ledger_transaction.budget_file
+            )
             if tags.exists():
                 ledger_transaction.tags.add(*tags)
 
@@ -617,7 +634,9 @@ def apply_rules(ledger_transaction: LedgerTransaction):
 
     if applied_rules:
         ledger_transaction.source_type = LedgerTransaction.SOURCE_RULE
-        ledger_transaction.save(update_fields=["memo", "cleared", "imported", "source_type", "updated_at"])
+        ledger_transaction.save(
+            update_fields=["memo", "cleared", "imported", "source_type", "updated_at"]
+        )
         TransactionEvent.objects.create(
             budget_file=ledger_transaction.budget_file,
             transaction=ledger_transaction,
@@ -846,7 +865,9 @@ def _parse_camt053_rows(payload: str):
 
     for entry in root.findall(".//{*}Ntry"):
         amount_text = _find_text_with_suffix(entry, "Amt")
-        date_text = _find_text_with_suffix(entry, "Dt") or _find_text_with_suffix(entry, "DtTm")
+        date_text = _find_text_with_suffix(entry, "Dt") or _find_text_with_suffix(
+            entry, "DtTm"
+        )
         if not amount_text or not date_text:
             continue
 

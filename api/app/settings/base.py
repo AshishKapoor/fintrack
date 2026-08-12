@@ -84,16 +84,16 @@ SECRET_KEY = resolve_secret_key()
 DEBUG = env_bool("DEBUG", False)
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1", "[::1]"])
 
-AUTH_USER_MODEL = 'pft.User'  # Add this line to use custom user model
+AUTH_USER_MODEL = "pft.User"  # Add this line to use custom user model
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": datetime.timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": datetime.timedelta(days=1),
     # Rotation + blacklisting is what makes logout and "sign out everywhere"
     # actually invalidate a refresh token instead of merely forgetting it.
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
 
 # Application definition
@@ -105,52 +105,52 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    'pft',
-    'django_extensions',
-    'rest_framework',
-    'drf_spectacular',
-    'drf_spectacular_sidecar',
-    'rest_framework_simplejwt',
-    'rest_framework_simplejwt.token_blacklist',
-    'corsheaders',
+    "pft",
+    "django_extensions",
+    "rest_framework",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
+    "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
+    "corsheaders",
 ]
 
 # NOTE: pagination is set per-viewset (see pft/views.py) rather than globally.
 # The /api/v1/finance/* viewsets still return unpaginated lists; making pagination
 # global here changes their response shape and needs a matching frontend change.
 REST_FRAMEWORK = {
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
     # Throttling. Without this, /api/token/ and /api/v1/register/ are open to
     # brute force and mass account creation on every self-hosted instance.
-    'DEFAULT_THROTTLE_CLASSES': (
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
+    "DEFAULT_THROTTLE_CLASSES": (
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ),
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': os.getenv('THROTTLE_ANON', '60/min'),
-        'user': os.getenv('THROTTLE_USER', '1000/hour'),
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": os.getenv("THROTTLE_ANON", "60/min"),
+        "user": os.getenv("THROTTLE_USER", "1000/hour"),
         # Scoped rates for the endpoints worth guessing against.
-        'login': os.getenv('THROTTLE_LOGIN', '10/min'),
-        'register': os.getenv('THROTTLE_REGISTER', '5/hour'),
-        'password_change': os.getenv('THROTTLE_PASSWORD_CHANGE', '5/min'),
+        "login": os.getenv("THROTTLE_LOGIN", "10/min"),
+        "register": os.getenv("THROTTLE_REGISTER", "5/hour"),
+        "password_change": os.getenv("THROTTLE_PASSWORD_CHANGE", "5/min"),
     },
 }
 
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'pft',
-    'DESCRIPTION': 'Personal Finance Tracker API Documentation',
-    'VERSION': '1.0.0',
+    "TITLE": "pft",
+    "DESCRIPTION": "Personal Finance Tracker API Documentation",
+    "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
-    'SWAGGER_UI_DIST': 'SIDECAR',
-    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
-    'REDOC_DIST': 'SIDECAR'
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "REDOC_DIST": "SIDECAR",
 }
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -166,12 +166,12 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS", ["http://localhost:5173"
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
-    'DELETE',
-    'GET',
-    'OPTIONS',
-    'PATCH',
-    'POST',
-    'PUT',
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
 ]
 # CORS_ALLOW_HEADERS = [
 #     'accept',
@@ -249,7 +249,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # Import payloads and backup bundles are stored in the database as text and
 # processed inside the request, so they need a ceiling.
 FINTRACK_MAX_IMPORT_BYTES = int(os.getenv("FINTRACK_MAX_IMPORT_BYTES", 5 * 1024 * 1024))
-FINTRACK_MAX_BACKUP_BYTES = int(os.getenv("FINTRACK_MAX_BACKUP_BYTES", 20 * 1024 * 1024))
+FINTRACK_MAX_BACKUP_BYTES = int(
+    os.getenv("FINTRACK_MAX_BACKUP_BYTES", 20 * 1024 * 1024)
+)
 
 # How long finished import/export jobs keep their payloads. These hold plaintext
 # financial data; `manage.py prune_finance_jobs` clears anything older.

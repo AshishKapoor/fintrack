@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import (
-    Transaction, Category, Budget
-)
+
+from .models import Budget, Category, Transaction
 
 User = get_user_model()
 
@@ -85,9 +84,18 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ['id', 'user', 'title', 'amount', 'type', 'category',
-                 'transaction_date', 'created_at', 'updated_at']
-        read_only_fields = ['created_at', 'updated_at']
+        fields = [
+            "id",
+            "user",
+            "title",
+            "amount",
+            "type",
+            "category",
+            "transaction_date",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
         extra_kwargs = {
             "category": {"required": False, "allow_null": True},
         }
@@ -95,12 +103,12 @@ class TransactionSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         # Ensure amount is always serialized as Decimal
         ret = super().to_representation(instance)
-        ret['amount'] = str(instance.amount)
+        ret["amount"] = str(instance.amount)
         return ret
 
     def create(self, validated_data):
         # Handle the amount encryption during creation
-        amount = validated_data.pop('amount', None)
+        amount = validated_data.pop("amount", None)
         transaction = Transaction(**validated_data)
         if amount is not None:
             transaction.amount = str(amount)
@@ -109,13 +117,14 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # Handle the amount encryption during update
-        amount = validated_data.pop('amount', None)
+        amount = validated_data.pop("amount", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if amount is not None:
             instance.amount = str(amount)
         instance.save()
         return instance
+
 
 class BudgetSerializer(serializers.ModelSerializer):
     def validate(self, data):

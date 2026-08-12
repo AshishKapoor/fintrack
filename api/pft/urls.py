@@ -1,10 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
+
 from .routers import router
 from .views import (
-    RegisterUserAPIView,
-    MeView,
-    UpdateProfileView,
     ChangePasswordView,
+    MeView,
+    RegisterUserAPIView,
+    UpdateProfileView,
 )
 
 app_name = "pft"
@@ -14,5 +15,7 @@ urlpatterns = [
     path("register/", RegisterUserAPIView.as_view(), name="register"),
     path("me/", MeView.as_view(), name="me"),
     path("profile/update/", UpdateProfileView.as_view(), name="update-profile"),
-    path("profile/change-password/", ChangePasswordView.as_view(), name="change-password"),
+    path(
+        "profile/change-password/", ChangePasswordView.as_view(), name="change-password"
+    ),
 ]

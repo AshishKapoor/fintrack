@@ -46,7 +46,9 @@ class BudgetFileSerializer(serializers.ModelSerializer):
 
 
 class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
-    current_balance = serializers.DecimalField(max_digits=14, decimal_places=2, read_only=True)
+    current_balance = serializers.DecimalField(
+        max_digits=14, decimal_places=2, read_only=True
+    )
 
     class Meta:
         model = Account
@@ -103,7 +105,9 @@ class CategoryV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin
         read_only_fields = ["created_at", "updated_at"]
 
     def validate(self, attrs):
-        budget_file = attrs.get("budget_file") or getattr(self.instance, "budget_file", None)
+        budget_file = attrs.get("budget_file") or getattr(
+            self.instance, "budget_file", None
+        )
         if not budget_file:
             return attrs
 
@@ -111,7 +115,9 @@ class CategoryV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin
 
         group = attrs.get("group")
         if group and group.budget_file_id != budget_file.id:
-            raise serializers.ValidationError("Category group must belong to same budget file.")
+            raise serializers.ValidationError(
+                "Category group must belong to same budget file."
+            )
 
         return attrs
 
@@ -163,10 +169,16 @@ class LedgerPostingReadSerializer(serializers.ModelSerializer):
         ]
 
 
-class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class LedgerTransactionSerializer(
+    serializers.ModelSerializer, UserOwnedBudgetFileMixin
+):
     postings = LedgerPostingWriteSerializer(many=True, write_only=True, required=True)
-    posting_lines = LedgerPostingReadSerializer(source="postings", many=True, read_only=True)
-    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
+    posting_lines = LedgerPostingReadSerializer(
+        source="postings", many=True, read_only=True
+    )
+    tags = serializers.PrimaryKeyRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = LedgerTransaction
@@ -191,7 +203,9 @@ class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFi
 
     def _validate_postings(self, postings, budget_file):
         if len(postings) < 2:
-            raise serializers.ValidationError("At least two posting lines are required.")
+            raise serializers.ValidationError(
+                "At least two posting lines are required."
+            )
 
         total = Decimal("0.00")
         for posting in postings:
@@ -203,18 +217,26 @@ class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFi
                 )
 
             if account and account.budget_file_id != budget_file.id:
-                raise serializers.ValidationError("Posting account must belong to budget file.")
+                raise serializers.ValidationError(
+                    "Posting account must belong to budget file."
+                )
 
             if category and category.budget_file_id != budget_file.id:
-                raise serializers.ValidationError("Posting category must belong to budget file.")
+                raise serializers.ValidationError(
+                    "Posting category must belong to budget file."
+                )
 
             total += posting["amount"]
 
         if total != Decimal("0.00"):
-            raise serializers.ValidationError("Double-entry check failed: postings must sum to zero.")
+            raise serializers.ValidationError(
+                "Double-entry check failed: postings must sum to zero."
+            )
 
     def validate(self, attrs):
-        budget_file = attrs.get("budget_file") or getattr(self.instance, "budget_file", None)
+        budget_file = attrs.get("budget_file") or getattr(
+            self.instance, "budget_file", None
+        )
         if not budget_file:
             raise serializers.ValidationError("budget_file is required")
 
@@ -227,7 +249,9 @@ class LedgerTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFi
         tags = attrs.get("tags") or []
         for tag in tags:
             if tag.budget_file_id != budget_file.id:
-                raise serializers.ValidationError("Tag must belong to same budget file.")
+                raise serializers.ValidationError(
+                    "Tag must belong to same budget file."
+                )
 
         postings = attrs.get("postings")
         if postings:
@@ -334,12 +358,16 @@ class EnvelopeAssignmentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Budget month not found.")
 
         if category.budget_file_id != budget_month.budget_file_id:
-            raise serializers.ValidationError("Category and budget month must belong to same budget file.")
+            raise serializers.ValidationError(
+                "Category and budget month must belong to same budget file."
+            )
 
         return attrs
 
 
-class ScheduledTransactionSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class ScheduledTransactionSerializer(
+    serializers.ModelSerializer, UserOwnedBudgetFileMixin
+):
     class Meta:
         model = ScheduledTransaction
         fields = [
@@ -433,7 +461,9 @@ class ExportJobSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin)
         return value
 
 
-class EncryptedBackupBundleSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class EncryptedBackupBundleSerializer(
+    serializers.ModelSerializer, UserOwnedBudgetFileMixin
+):
     class Meta:
         model = EncryptedBackupBundle
         fields = [

@@ -6,4 +6,4 @@ class PftConfig(AppConfig):
     name = "pft"
 
     def ready(self):
-        import pft.signals
+        import pft.signals  # noqa: F401  (registers signal handlers)

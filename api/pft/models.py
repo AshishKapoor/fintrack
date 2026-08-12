@@ -8,11 +8,10 @@ from django.db import models
 from django.db.models import Q, Sum
 
 
-
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('The Email field must be set')
+            raise ValueError("The Email field must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         if password:
@@ -21,54 +20,56 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractUser):
     # Override the groups field with a unique related_name
     groups = models.ManyToManyField(
-        'auth.Group',
-        related_name='pft_user_set',
+        "auth.Group",
+        related_name="pft_user_set",
         blank=True,
-        help_text='The groups this user belongs to.',
-        verbose_name='groups',
+        help_text="The groups this user belongs to.",
+        verbose_name="groups",
     )
     # Override the user_permissions field with a unique related_name
     user_permissions = models.ManyToManyField(
-        'auth.Permission',
-        related_name='pft_user_set',
+        "auth.Permission",
+        related_name="pft_user_set",
         blank=True,
-        help_text='Specific permissions for this user.',
-        verbose_name='user permissions',
+        help_text="Specific permissions for this user.",
+        verbose_name="user permissions",
     )
 
     DEPARTMENT_CHOICES = (
-        ('engineering', 'Engineering'),
-        ('finance', 'Finance'),
-        ('hr', 'HR'),
-        ('marketing', 'Marketing'),
-        ('sales', 'Sales'),
-        ('other', 'Other'),
+        ("engineering", "Engineering"),
+        ("finance", "Finance"),
+        ("hr", "HR"),
+        ("marketing", "Marketing"),
+        ("sales", "Sales"),
+        ("other", "Other"),
     )
 
     ROLE_CHOICES = (
-        ('admin', 'Admin'),
-        ('manager', 'Manager'),
-        ('employee', 'Employee'),
+        ("admin", "Admin"),
+        ("manager", "Manager"),
+        ("employee", "Employee"),
     )
 
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=20, blank=True)
     location = models.CharField(max_length=100, blank=True)
     bio = models.TextField(blank=True)
-    department = models.CharField(max_length=20, choices=DEPARTMENT_CHOICES, default='other')
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee')
+    department = models.CharField(
+        max_length=20, choices=DEPARTMENT_CHOICES, default="other"
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default="employee")
 
     objects = CustomUserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
     def __str__(self):
@@ -188,7 +189,8 @@ class Account(models.Model):
         ordering = ["id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["budget_file", "name"], name="unique_account_name_per_budget_file"
+                fields=["budget_file", "name"],
+                name="unique_account_name_per_budget_file",
             )
         ]
 
@@ -197,7 +199,9 @@ class Account(models.Model):
 
     @property
     def current_balance(self):
-        postings_total = self.ledger_postings.aggregate(total=Sum("amount")).get("total")
+        postings_total = self.ledger_postings.aggregate(total=Sum("amount")).get(
+            "total"
+        )
         return (postings_total or Decimal("0.00")) + self.opening_balance
 
 
@@ -253,7 +257,8 @@ class CategoryV2(models.Model):
         ordering = ["id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["budget_file", "name"], name="unique_category_v2_name_per_budget_file"
+                fields=["budget_file", "name"],
+                name="unique_category_v2_name_per_budget_file",
             )
         ]
 
@@ -393,7 +398,9 @@ class LedgerTransactionTag(models.Model):
     transaction = models.ForeignKey(
         LedgerTransaction, on_delete=models.CASCADE, related_name="tag_links"
     )
-    tag = models.ForeignKey(Tag, on_delete=models.CASCADE, related_name="transaction_links")
+    tag = models.ForeignKey(
+        Tag, on_delete=models.CASCADE, related_name="transaction_links"
+    )
 
     class Meta:
         constraints = [
@@ -623,10 +630,16 @@ class ExportJob(models.Model):
         BudgetFile, on_delete=models.CASCADE, related_name="export_jobs"
     )
     requested_by = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="export_jobs"
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="export_jobs",
     )
     format = models.CharField(max_length=8, choices=FORMAT_CHOICES)
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    status = models.CharField(
+        max_length=12, choices=STATUS_CHOICES, default=STATUS_PENDING
+    )
     filters = models.JSONField(default=dict, blank=True)
     file_name = models.CharField(max_length=255, blank=True)
     content_text = models.TextField(blank=True)
@@ -704,10 +717,16 @@ class ImportJob(models.Model):
         BudgetFile, on_delete=models.CASCADE, related_name="import_jobs"
     )
     requested_by = models.ForeignKey(
-        User, null=True, blank=True, on_delete=models.SET_NULL, related_name="import_jobs"
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="import_jobs",
     )
     format = models.CharField(max_length=12, choices=FORMAT_CHOICES)
-    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=STATUS_UPLOADED)
+    status = models.CharField(
+        max_length=12, choices=STATUS_CHOICES, default=STATUS_UPLOADED
+    )
     source_filename = models.CharField(max_length=255, blank=True)
     source_payload = models.TextField(blank=True)
     preview_summary = models.JSONField(default=dict, blank=True)

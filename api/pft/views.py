@@ -234,6 +234,51 @@ class UpdateProfileView(generics.UpdateAPIView):
         return self.request.user
 
 
+class DeleteAccountView(APIView):
+    """Permanently delete the caller's account and everything it owns.
+
+    Requires the current password and an explicit confirmation string, because
+    the cascade takes every budget file, account, transaction and posting with
+    it and there is no undo.
+    """
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_change"
+
+    CONFIRMATION = "DELETE"
+
+    def post(self, request):
+        user = request.user
+        password = request.data.get("password")
+        confirmation = request.data.get("confirmation")
+
+        if not password:
+            return Response(
+                {"error": "Your password is required to delete your account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not user.check_password(password):
+            return Response(
+                {"error": "Password is incorrect"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if confirmation != self.CONFIRMATION:
+            return Response(
+                {"error": f"Type {self.CONFIRMATION} to confirm."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Revoke sessions before the rows disappear, so no token outlives the
+        # account it belonged to.
+        blacklist_all_refresh_tokens(user)
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
     throttle_classes = [ScopedRateThrottle]

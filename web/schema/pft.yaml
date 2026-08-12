@@ -3454,6 +3454,22 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/profile/delete-account/:
+    post:
+      operationId: v1_profile_delete_account_create
+      description: |-
+        Permanently delete the caller's account and everything it owns.
+
+        Requires the current password and an explicit confirmation string, because
+        the cascade takes every budget file, account, transaction and posting with
+        it and there is no undo.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/profile/update/:
     put:
       operationId: v1_profile_update_update

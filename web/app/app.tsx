@@ -14,6 +14,7 @@ import ReportsPage from '@/pages/reports'
 import RulesAndRecurringPage from '@/pages/rules'
 import UserSettingsPage from '@/pages/settings'
 import TransactionsPage from '@/pages/transactions'
+import { useEffect } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 
 function App() {
@@ -21,8 +22,15 @@ function App() {
   const isAuthenticated = isLoggedIn()
   const redirectToLogin = !isAuthenticated && location.pathname !== '/login' && location.pathname !== '/register'
 
+  // Redirecting is a side effect; doing it during render both violates React's
+  // rules and can fire twice under StrictMode.
+  useEffect(() => {
+    if (redirectToLogin) {
+      window.location.href = '/login'
+    }
+  }, [redirectToLogin])
+
   if (redirectToLogin) {
-    window.location.href = '/login'
     return null
   }
 

@@ -54,9 +54,14 @@ export function EditTransactionDialog({
   const refreshTransactions = useInvalidateTransactions()
   const { trigger: updateTransaction } = useV1TransactionsUpdate(transaction?.id?.toString()) // Ensure id is a string
 
-  // Initialize form with transaction data
+  // Initialize form with transaction data. Deferred a tick so the setState
+  // burst runs outside the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    if (transaction) {
+    const id = setTimeout(initialise, 0)
+    return () => clearTimeout(id)
+
+    function initialise() {
+      if (!transaction) return
       const category = categories?.results?.find((c) => c.id === transaction.category)
       setType(category?.type || TypeEnum.expense)
       setTitle(transaction.title || '')

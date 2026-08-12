@@ -89,10 +89,15 @@ export default function TransactionsPage() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  // Any filter change invalidates the current page number.
-  useEffect(() => {
+  // Any filter change invalidates the current page number. Adjusting state
+  // during render (with a tracked previous value) is React's sanctioned
+  // alternative to a setState-in-effect cascade.
+  const filterKey = `${debouncedSearch}|${transactionType}|${sortOrder}|${date?.toISOString() ?? ''}`
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey)
+  if (filterKey !== previousFilterKey) {
+    setPreviousFilterKey(filterKey)
     setCurrentPage(1)
-  }, [debouncedSearch, transactionType, sortOrder, date])
+  }
 
   const {
     data: transactions,
@@ -106,11 +111,11 @@ export default function TransactionsPage() {
     ordering: ORDERING[sortOrder],
   })
 
-  useEffect(() => {
-    if (transactions?.count === 0 && currentPage > 1) {
-      setCurrentPage(1)
-    }
-  }, [transactions?.count, currentPage])
+  // Landing past the last page (e.g. after deleting the only row on it)
+  // snaps back to page 1 - also adjusted during render, not in an effect.
+  if (transactions?.count === 0 && currentPage > 1) {
+    setCurrentPage(1)
+  }
 
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
 

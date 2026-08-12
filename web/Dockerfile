@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM node:22-slim AS builder
+FROM node:26-slim AS builder
 
 # pnpm version comes from the "packageManager" field in package.json, so the
 # build is reproducible instead of tracking whatever "latest" happens to be.
@@ -21,8 +21,8 @@ ENV VITE_UMAMI_SCRIPT_URL=$VITE_UMAMI_SCRIPT_URL
 ENV VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID
 
 # NOTE: `pnpm orval` is deliberately NOT run here. The API client under
-# app/client/pft is hand-maintained; regenerating it from schema/pft.yaml (which
-# does not describe /api/v1/finance/*) would overwrite the working client.
+# app/client/pft is hand-maintained; orval's output directory (app/client/gen)
+# is generated on demand and is not part of the build.
 RUN pnpm run build
 
 # Stage 2: Serve

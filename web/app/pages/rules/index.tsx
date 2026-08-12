@@ -188,7 +188,10 @@ export default function RulesAndRecurringPage() {
   }
 
   useEffect(() => {
-    void loadAll()
+    // Deferred a tick so the synchronous part of the loader's setState calls
+    // do not run inside the effect body itself (react-hooks/set-state-in-effect).
+    const id = setTimeout(() => void loadAll(), 0)
+    return () => clearTimeout(id)
   }, [])
 
   const resetRuleForm = () => {

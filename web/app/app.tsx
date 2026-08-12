@@ -4,17 +4,23 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { Toaster } from '@/components/ui/toaster'
 import { isLoggedIn } from '@/lib/auth'
-import AuthenticationPage from '@/pages/authentication'
-import BudgetsPage from '@/pages/budget'
-import CategoriesPage from '@/pages/category'
-import DashboardPage from '@/pages/dashboard'
-import { LoginPage } from '@/pages/login'
-import NotFound from '@/pages/not-found'
-import ReportsPage from '@/pages/reports'
-import RulesAndRecurringPage from '@/pages/rules'
-import UserSettingsPage from '@/pages/settings'
-import TransactionsPage from '@/pages/transactions'
-import { useEffect } from 'react'
+import { AnimateSpinner } from '@/components/spinner'
+import { Suspense, lazy, useEffect } from 'react'
+
+// Every page is its own chunk, so the initial route does not pay for recharts
+// or pages the user never visits. See the performance budget in CONTRIBUTING.
+const DashboardPage = lazy(() => import('@/pages/dashboard'))
+const CategoriesPage = lazy(() => import('@/pages/category'))
+const BudgetsPage = lazy(() => import('@/pages/budget'))
+const TransactionsPage = lazy(() => import('@/pages/transactions'))
+const ReportsPage = lazy(() => import('@/pages/reports'))
+const RulesAndRecurringPage = lazy(() => import('@/pages/rules'))
+const UserSettingsPage = lazy(() => import('@/pages/settings'))
+const NotFound = lazy(() => import('@/pages/not-found'))
+const AuthenticationPage = lazy(() => import('@/pages/authentication'))
+const LoginPage = lazy(() =>
+  import('@/pages/login').then((module) => ({ default: module.LoginPage })),
+)
 import { Route, Routes, useLocation } from 'react-router-dom'
 
 function App() {
@@ -38,7 +44,8 @@ function App() {
     <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
       {location.pathname !== '/register' && location.pathname !== '/login' && (
         <DashboardLayout>
-          <Routes>
+          <Suspense fallback={<AnimateSpinner size={64} />}>
+            <Routes>
             <Route path='/' element={<DashboardPage />} />
             <Route path='/categories' element={<CategoriesPage />} />
             <Route path='/budgets' element={<BudgetsPage />} />
@@ -48,17 +55,22 @@ function App() {
             <Route path='/home' element={<DashboardPage />} />
             <Route path='/settings' element={<UserSettingsPage />} />
             <Route path='*' element={<NotFound />} />
-          </Routes>
+            </Routes>
+          </Suspense>
         </DashboardLayout>
       )}
       {location.pathname === '/register' && (
         <div className='flex items-center justify-center h-screen bg-background'>
-          <AuthenticationPage />
+          <Suspense fallback={<AnimateSpinner size={64} />}>
+            <AuthenticationPage />
+          </Suspense>
         </div>
       )}
       {location.pathname === '/login' && (
         <div className='flex items-center justify-center h-screen bg-background'>
-          <LoginPage />
+          <Suspense fallback={<AnimateSpinner size={64} />}>
+            <LoginPage />
+          </Suspense>
         </div>
       )}
       <Toaster />

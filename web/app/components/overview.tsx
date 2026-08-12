@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/chart'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign } from 'lucide-react'
-import { useCurrency } from '@/context/currency-context'
+import { formatCurrency, useCurrency } from '@/context/currency-context'
 import { TypeEnum } from '@/client/pft/typeEnum'
 
 interface MonthlyData {
@@ -94,7 +94,7 @@ export function Overview({ transactions }: OverviewProps) {
         />
         <YAxis
           label={{ value: `Amount (${currency.symbol})`, angle: -90, position: 'left' }}
-          tickFormatter={(value) => `${currency.symbol}${value}`}
+          tickFormatter={(value) => formatCurrency(Number(value), currency.code, { maximumFractionDigits: 0 })}
         />
         <ChartTooltip
           cursor={false}
@@ -102,7 +102,7 @@ export function Overview({ transactions }: OverviewProps) {
             <ChartTooltipContent
               active={active}
               payload={payload}
-              formatter={(label, value) => [`${value} - ${currency.symbol}${label}`, ' ']}
+              formatter={(label, value) => [`${value} - ${formatCurrency(Number(label), currency.code)}`, ' ']}
               labelFormatter={() => `Total:`}
             />
           )}
@@ -113,7 +113,7 @@ export function Overview({ transactions }: OverviewProps) {
           radius={[4, 4, 0, 0]}
           label={{
             position: 'top',
-            formatter: (value: number) => `Income ${currency.symbol}${value}`,
+            formatter: (value: number) => `Income ${formatCurrency(value, currency.code)}`,
           }}
           name='Income'
         />
@@ -123,7 +123,7 @@ export function Overview({ transactions }: OverviewProps) {
           radius={[4, 4, 0, 0]}
           label={{
             position: 'top',
-            formatter: (value: number) => `Expenses ${currency.symbol}${value}`,
+            formatter: (value: number) => `Expenses ${formatCurrency(value, currency.code)}`,
           }}
           name='Expenses'
         />

@@ -1,4 +1,5 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
+import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import type { SWRConfiguration } from 'swr'
 import useSWR from 'swr'
 import useSWRMutation from 'swr/mutation'
@@ -34,6 +35,8 @@ export interface V1TransactionsListParams {
   search?: string
   start_date?: string
   end_date?: string
+  /** 'income' | 'expense'; filters on the category kind of the posting. */
+  type?: string
 }
 
 export interface V1CategoryListParams {
@@ -67,11 +70,6 @@ export interface BudgetMutationPayload {
   month: number
   year: number
   amount_limit: string | number
-}
-
-interface FinanceBudgetFile {
-  id: number
-  is_default: boolean
 }
 
 interface FinanceAccount {
@@ -117,7 +115,6 @@ interface FinanceEnvelopeAssignment {
   assigned_amount: string
 }
 
-let budgetFileCache: number | null = null
 const accountCache: Record<number, number> = {}
 
 const toQueryString = (params: object) => {
@@ -199,24 +196,10 @@ const formatAmount = (value: string | number) => {
 
 const amountAbs = (value: string | number) => Math.abs(Number(value || 0))
 
-const resolveDefaultBudgetFileId = async () => {
-  if (budgetFileCache) return budgetFileCache
-
-  const response = await get<PaginatedResponse<FinanceBudgetFile> | FinanceBudgetFile[]>('/api/v1/finance/budget-files/')
-  const files = asPaginated<FinanceBudgetFile>(response).results
-
-  let selected = files.find((file) => file.is_default) || files[0]
-  if (!selected) {
-    selected = await post<FinanceBudgetFile>('/api/v1/finance/budget-files/', {
-      name: 'Primary Budget',
-      currency_code: 'USD',
-      is_default: true,
-    })
-  }
-
-  budgetFileCache = selected.id
-  return selected.id
-}
+// Delegated to finance-client so there is one budget-file cache rather than two
+// module-level singletons that could disagree, and one place that decides the
+// currency of a newly created budget file.
+const resolveDefaultBudgetFileId = getDefaultBudgetFileId
 
 const resolveDefaultAccountId = async (budgetFileId: number) => {
   if (accountCache[budgetFileId]) return accountCache[budgetFileId]

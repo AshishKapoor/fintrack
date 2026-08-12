@@ -59,6 +59,13 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
+const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
+  newest: '-transaction_date',
+  oldest: 'transaction_date',
+  highest: '-amount',
+  lowest: 'amount',
+}
+
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
@@ -70,6 +77,18 @@ export default function TransactionsPage() {
   const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
   const [currentPage, setCurrentPage] = useState(1)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Debounced so typing does not fire a request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Any filter change invalidates the current page number.
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearch, transactionType, sortOrder, date])
 
   const {
     data: transactions,
@@ -77,6 +96,10 @@ export default function TransactionsPage() {
     mutate: refreshTransactions,
   } = useV1TransactionsList({
     page: currentPage,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(transactionType !== 'all' ? { type: transactionType } : {}),
+    ...(date ? { start_date: formatDateForApi(date), end_date: formatDateForApi(date) } : {}),
+    ordering: ORDERING[sortOrder],
   })
 
   useEffect(() => {
@@ -126,29 +149,10 @@ export default function TransactionsPage() {
     )
   }
 
-  const filteredTransactions = Array.isArray(transactions?.results)
-    ? transactions?.results
-        ?.filter((transaction) => {
-          const matchesSearch = transaction.title.toLowerCase().includes(searchQuery.toLowerCase())
-          const matchesType = transactionType === 'all' || transaction.type === transactionType
-          const matchesDate = !date || transaction.transaction_date === format(date, 'yyyy-MM-dd')
-          return matchesSearch && matchesType && matchesDate
-        })
-        .sort((a, b) => {
-          switch (sortOrder) {
-            case 'newest':
-              return new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()
-            case 'oldest':
-              return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
-            case 'highest':
-              return parseFloat(b.amount) - parseFloat(a.amount)
-            case 'lowest':
-              return parseFloat(a.amount) - parseFloat(b.amount)
-            default:
-              return 0
-          }
-        })
-    : []
+  // Search, type, date and ordering are applied by the API across the whole
+  // ledger. Doing it here only ever filtered the current page, so the result
+  // count disagreed with what was shown.
+  const filteredTransactions = Array.isArray(transactions?.results) ? transactions.results : []
 
   const getCategoryName = (categoryId: number | null | undefined) =>
     categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'

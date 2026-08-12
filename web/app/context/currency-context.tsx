@@ -1,8 +1,10 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { getDefaultBudgetFile, updateBudgetFileCurrency } from '@/lib/finance-client'
+import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react'
 
-// Currency options with symbols and flags
+// Currency options. `symbol` is only used for compact labels; amounts are
+// formatted by Intl, which knows each currency's real symbol and placement.
 export const currencies = [
   { code: 'INR', symbol: '₹', flag: '🇮🇳', name: 'Indian Rupee' },
   { code: 'USD', symbol: '$', flag: '🇺🇸', name: 'US Dollar' },
@@ -25,6 +27,13 @@ export type Currency = {
   name: string
 }
 
+const STORAGE_KEY = 'currency'
+const DEFAULT_CURRENCY = currencies.find((item) => item.code === 'USD') ?? currencies[0]
+
+export function currencyByCode(code: string | undefined | null): Currency {
+  return currencies.find((item) => item.code === code) ?? DEFAULT_CURRENCY
+}
+
 type CurrencyContextType = {
   currency: Currency
   setCurrency: (currency: Currency) => void
@@ -32,27 +41,48 @@ type CurrencyContextType = {
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
 
+function readStoredCurrency(): Currency {
+  if (typeof window === 'undefined') return DEFAULT_CURRENCY
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (!saved) return DEFAULT_CURRENCY
+  try {
+    return currencyByCode((JSON.parse(saved) as Currency)?.code)
+  } catch {
+    return DEFAULT_CURRENCY
+  }
+}
+
 export function CurrencyProvider({ children }: { children: ReactNode }) {
-  const [currency, setCurrency] = useState<Currency>(() => {
-    if (typeof window !== 'undefined') {
-      const savedCurrency = localStorage.getItem('currency')
-      return savedCurrency ? JSON.parse(savedCurrency) : currencies[0]
-    }
-    return currencies[0]
-  })
+  // localStorage is a cache for first paint. The budget file on the server is
+  // the source of truth: previously the UI defaulted to INR while the client
+  // wrote currency_code: 'USD' when it created the budget file, so the display
+  // and the stored data disagreed.
+  const [currency, setCurrencyState] = useState<Currency>(readStoredCurrency)
 
   useEffect(() => {
-    const handleStorageChange = () => {
-      const savedCurrency = localStorage.getItem('currency')
-      if (savedCurrency) {
-        setCurrency(JSON.parse(savedCurrency))
-      }
-    }
-
-    window.addEventListener('currencyChange', handleStorageChange)
+    let cancelled = false
+    getDefaultBudgetFile()
+      .then((budgetFile) => {
+        if (cancelled || !budgetFile?.currency_code) return
+        const resolved = currencyByCode(budgetFile.currency_code)
+        setCurrencyState(resolved)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(resolved))
+      })
+      .catch(() => {
+        // Signed out, or the API is unreachable: keep the cached choice.
+      })
     return () => {
-      window.removeEventListener('currencyChange', handleStorageChange)
+      cancelled = true
     }
+  }, [])
+
+  const setCurrency = useCallback((next: Currency) => {
+    setCurrencyState(next)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    // Persist server-side so the choice follows the account, not the browser.
+    updateBudgetFileCurrency(next.code).catch(() => {
+      // Non-fatal: the local display is already updated.
+    })
   }, [])
 
   return (
@@ -68,4 +98,22 @@ export function useCurrency() {
     throw new Error('useCurrency must be used within a CurrencyProvider')
   }
   return context
+}
+
+/** Format an amount in the given currency, using the browser's locale. */
+export function formatCurrency(
+  amount: number,
+  currencyCode: string,
+  options: Intl.NumberFormatOptions = {},
+): string {
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode,
+      ...options,
+    }).format(amount)
+  } catch {
+    // Intl throws on an unknown currency code.
+    return `${amount.toFixed(2)} ${currencyCode}`
+  }
 }

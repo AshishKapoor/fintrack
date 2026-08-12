@@ -1,10 +1,14 @@
 from datetime import date
+from decimal import Decimal
 
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Abs, Coalesce
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from .finance_serializers import (
@@ -175,11 +179,20 @@ class TagViewSet(UserScopedModelViewSet):
         return queryset
 
 
+class LedgerTransactionPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
+
+
 class LedgerTransactionViewSet(UserScopedModelViewSet):
     serializer_class = LedgerTransactionSerializer
+    pagination_class = LedgerTransactionPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["memo", "payee__name", "match_key"]
-    ordering_fields = ["transaction_date", "created_at", "updated_at", "id"]
+    # `amount` is annotated below: a ledger transaction has no amount column,
+    # the figure people mean lives on its category posting.
+    ordering_fields = ["transaction_date", "created_at", "updated_at", "id", "amount"]
     ordering = ["-transaction_date", "-id"]
 
     def get_queryset(self):
@@ -187,17 +200,35 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
             LedgerTransaction.objects.filter(budget_file__user=self.request.user)
             .select_related("payee")
             .prefetch_related("postings__account", "postings__category", "tags")
+            .annotate(
+                amount=Abs(
+                    Coalesce(
+                        Sum(
+                            "postings__amount",
+                            filter=Q(postings__category__isnull=False),
+                        ),
+                        Value(Decimal("0.00")),
+                    )
+                )
+            )
             .order_by("-transaction_date", "-id")
         )
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
-        start_date = self.request.query_params.get("start_date")
+        start_date = parse_iso_date(self.request.query_params.get("start_date"), "start_date")
         if start_date:
             queryset = queryset.filter(transaction_date__gte=start_date)
-        end_date = self.request.query_params.get("end_date")
+        end_date = parse_iso_date(self.request.query_params.get("end_date"), "end_date")
         if end_date:
             queryset = queryset.filter(transaction_date__lte=end_date)
+
+        # Income and expense are a property of the category on the posting, not
+        # of the transaction, so filtering by "type" filters on that category.
+        tx_type = self.request.query_params.get("type")
+        if tx_type in {CategoryV2.KIND_INCOME, CategoryV2.KIND_EXPENSE}:
+            queryset = queryset.filter(postings__category__kind=tx_type).distinct()
+
         return queryset
 
     @action(detail=False, methods=["post"], url_path="bulk-update")

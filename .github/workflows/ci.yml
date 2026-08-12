@@ -1,0 +1,183 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (lint + tests)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fintrack
+          POSTGRES_USER: fintrack
+          POSTGRES_PASSWORD: fintrack
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fintrack"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DJANGO_SETTINGS_MODULE: app.settings.dev
+      DJANGO_ENV: development
+      SECRET_KEY: ci-only-not-a-real-secret
+      DJANGO_ALLOWED_HOSTS: localhost 127.0.0.1
+      DATABASE_NAME: fintrack
+      DATABASE_USER: fintrack
+      DATABASE_PASSWORD: fintrack
+      DATABASE_HOST: localhost
+      DATABASE_PORT: 5432
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Check for missing migrations
+        run: uv run manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: uv run manage.py test
+
+  web:
+    name: Web (lint + typecheck + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Typecheck and build
+        run: pnpm run build
+
+  landing:
+    name: Landing (build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: landing/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build
+
+  stack:
+    name: Docker stack smoke test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bootstrap env files
+        run: make bootstrap
+
+      # This is the job that would have caught the web image failing to build
+      # and the API booting with a placeholder secret.
+      - name: Build images
+        run: docker compose build
+
+      - name: Start the stack
+        run: docker compose up -d
+
+      - name: Wait for the API to become healthy
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://localhost:8000/healthz/ > /dev/null; then
+              echo "API healthy after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "API never became healthy" >&2
+          docker compose logs
+          exit 1
+
+      - name: Web is served
+        run: curl -fsS -o /dev/null http://localhost:5173
+
+      - name: Register a user and create a transaction
+        run: |
+          set -euo pipefail
+          EMAIL="ci-$(date +%s)@example.com"
+          PASSWORD='Sup3rSecret!pass'
+          curl -fsS -X POST http://localhost:8000/api/v1/register/ \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"confirm_password\":\"$PASSWORD\"}" > /dev/null
+          TOKEN=$(curl -fsS -X POST http://localhost:8000/api/token/ \
+            -H 'Content-Type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" \
+            | python3 -c 'import sys,json; print(json.load(sys.stdin)["access"])')
+          curl -fsS -X POST http://localhost:8000/api/v1/transactions/ \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"title":"CI coffee","amount":"12.34","type":"expense","transaction_date":"2026-01-01"}' > /dev/null
+          echo "End-to-end register -> token -> transaction OK"
+
+      - name: Assert no placeholder secret is in use
+        run: |
+          docker compose exec -T api python -c "
+          from django.conf import settings
+          assert settings.SECRET_KEY, 'SECRET_KEY is empty'
+          assert settings.SECRET_KEY != 'some-random-secret-key', 'shipping the old public key'
+          assert settings.DEBUG is False, 'DEBUG must be off in the default stack'
+          print('settings OK')
+          "
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v

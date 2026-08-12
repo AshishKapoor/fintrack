@@ -17,12 +17,13 @@ MATRIX_PATH = ROOT / "docs/feature-audit/feature-matrix.json"
 REPORT_PATH = ROOT / "docs/feature-audit/parity-report.md"
 SCHEMA_PATH = ROOT / "web/schema/pft.yaml"
 ROUTERS_PATH = ROOT / "api/pft/routers.py"
+FINANCE_ROUTERS_PATH = ROOT / "api/pft/finance_routers.py"
 PFT_URLS_PATH = ROOT / "api/pft/urls.py"
 APP_URLS_PATH = ROOT / "api/app/urls.py"
 TRANSACTIONS_PAGE_PATH = ROOT / "web/app/pages/transactions/index.tsx"
 RECENT_TRANSACTIONS_PATH = ROOT / "web/app/components/recent-transactions.tsx"
 WEB_APP_PATH = ROOT / "web/app"
-GENERATED_CLIENT_PATH = ROOT / "web/app/client/gen/pft"
+GENERATED_CLIENT_PATH = ROOT / "web/app/client/pft"
 
 ROW_REQUIRED_FIELDS = {
     "feature_id",
@@ -153,6 +154,14 @@ def extract_backend_endpoints() -> set[str]:
     for resource in re.findall(r'router\.register\("([^"]+)"', routers):
         endpoints.add(f"/api/v1/{resource}/")
         endpoints.add(f"/api/v1/{resource}/{{id}}/")
+
+    # The finance domain mounts 16 more resources under /api/v1/finance/.
+    # Omitting this file was why the parity report reported PASS while the
+    # entire API the UI actually calls was undocumented.
+    finance_routers = FINANCE_ROUTERS_PATH.read_text(encoding="utf-8")
+    for resource in re.findall(r'router\.register\("([^"]+)"', finance_routers):
+        endpoints.add(f"/api/v1/finance/{resource}/")
+        endpoints.add(f"/api/v1/finance/{resource}/{{id}}/")
 
     pft_urls = PFT_URLS_PATH.read_text(encoding="utf-8")
     for match in re.finditer(r'path\("([^"]+)"', pft_urls):

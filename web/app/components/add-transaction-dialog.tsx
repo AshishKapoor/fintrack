@@ -175,7 +175,6 @@ export function AddTransactionDialog({
                   mode='single'
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
                   disabled={(date) => date > new Date()}
                 />
               </PopoverContent>

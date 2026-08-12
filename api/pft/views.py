@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -38,9 +39,13 @@ class CustomPagination(PageNumberPagination):
 # double-entry ledger at /api/v1/finance/*. Both are live, both are seeded on
 # signup, and nothing keeps them in sync - see ARCHITECTURE.md. The ledger is
 # the one being kept, so these announce themselves as deprecated to anything
-# scripting against them, per RFC 8594 and RFC 9745.
+# scripting against them, per RFC 9745. No Sunset header (RFC 8594) is sent
+# because removal is tied to the v1.0.0 release, not a calendar date.
 LEGACY_SUNSET_VERSION = "v1.0.0"
 LEGACY_SUCCESSOR = "/api/v1/finance/"
+# RFC 9745 Deprecation value: @<unix-timestamp> of when the deprecation
+# took effect (2026-08-12T00:00:00Z, the day these headers shipped).
+LEGACY_DEPRECATED_AT = "@1786492800"
 
 
 class DeprecatedLegacyEndpointMixin:
@@ -48,7 +53,7 @@ class DeprecatedLegacyEndpointMixin:
 
     def finalize_response(self, request, response, *args, **kwargs):
         response = super().finalize_response(request, response, *args, **kwargs)
-        response["Deprecation"] = "true"
+        response["Deprecation"] = LEGACY_DEPRECATED_AT
         response["Link"] = f'<{LEGACY_SUCCESSOR}>; rel="successor-version"'
         response["Warning"] = (
             f'299 - "This endpoint is deprecated and will be removed in '
@@ -110,6 +115,10 @@ class LogoutView(APIView):
 
 
 # CATEGORY VIEWSET
+@extend_schema(
+    deprecated=True,
+    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
+)
 class CategoryViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -134,6 +143,10 @@ class CategoryViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
 
 
 # TRANSACTION VIEWSET
+@extend_schema(
+    deprecated=True,
+    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
+)
 class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = TransactionSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -167,6 +180,10 @@ class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
 
 
 # BUDGET VIEWSET
+@extend_schema(
+    deprecated=True,
+    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
+)
 class BudgetViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     serializer_class = BudgetSerializer
     permission_classes = [permissions.IsAuthenticated]

@@ -111,7 +111,7 @@ working, but every response now carries deprecation headers naming the
 successor, so anything scripting against them finds out before they are removed:
 
 ```http
-Deprecation: true
+Deprecation: @1786492800
 Link: </api/v1/finance/>; rel="successor-version"
 Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
 ```

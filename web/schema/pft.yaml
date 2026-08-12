@@ -75,6 +75,7 @@ paths:
   /api/v1/budgets/:
     get:
       operationId: v1_budgets_list
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - name: page
         required: false
@@ -86,6 +87,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -95,6 +97,7 @@ paths:
           description: ''
     post:
       operationId: v1_budgets_create
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       tags:
       - v1
       requestBody:
@@ -111,6 +114,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '201':
           content:
@@ -121,6 +125,7 @@ paths:
   /api/v1/budgets/{id}/:
     get:
       operationId: v1_budgets_retrieve
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -131,6 +136,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -140,6 +146,7 @@ paths:
           description: ''
     put:
       operationId: v1_budgets_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -162,6 +169,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -171,6 +179,7 @@ paths:
           description: ''
     patch:
       operationId: v1_budgets_partial_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -192,6 +201,7 @@ paths:
               $ref: '#/components/schemas/PatchedBudget'
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -201,6 +211,7 @@ paths:
           description: ''
     delete:
       operationId: v1_budgets_destroy
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -211,12 +222,14 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '204':
           description: No response body
   /api/v1/categories/:
     get:
       operationId: v1_categories_list
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - name: page
         required: false
@@ -228,6 +241,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -237,6 +251,7 @@ paths:
           description: ''
     post:
       operationId: v1_categories_create
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       tags:
       - v1
       requestBody:
@@ -253,6 +268,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '201':
           content:
@@ -263,6 +279,7 @@ paths:
   /api/v1/categories/{id}/:
     get:
       operationId: v1_categories_retrieve
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -273,6 +290,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -282,6 +300,7 @@ paths:
           description: ''
     put:
       operationId: v1_categories_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -304,6 +323,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -313,6 +333,7 @@ paths:
           description: ''
     patch:
       operationId: v1_categories_partial_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -334,6 +355,7 @@ paths:
               $ref: '#/components/schemas/PatchedCategory'
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -343,6 +365,7 @@ paths:
           description: ''
     delete:
       operationId: v1_categories_destroy
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -353,6 +376,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '204':
           description: No response body
@@ -3559,6 +3583,7 @@ paths:
   /api/v1/transactions/:
     get:
       operationId: v1_transactions_list
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - name: ordering
         required: false
@@ -3582,6 +3607,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -3591,6 +3617,7 @@ paths:
           description: ''
     post:
       operationId: v1_transactions_create
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       tags:
       - v1
       requestBody:
@@ -3607,6 +3634,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '201':
           content:
@@ -3617,6 +3645,7 @@ paths:
   /api/v1/transactions/{id}/:
     get:
       operationId: v1_transactions_retrieve
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -3627,6 +3656,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -3636,6 +3666,7 @@ paths:
           description: ''
     put:
       operationId: v1_transactions_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -3658,6 +3689,7 @@ paths:
         required: true
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -3667,6 +3699,7 @@ paths:
           description: ''
     patch:
       operationId: v1_transactions_partial_update
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -3688,6 +3721,7 @@ paths:
               $ref: '#/components/schemas/PatchedTransaction'
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '200':
           content:
@@ -3697,6 +3731,7 @@ paths:
           description: ''
     delete:
       operationId: v1_transactions_destroy
+      description: Deprecated legacy resource; use /api/v1/finance/ instead.
       parameters:
       - in: path
         name: id
@@ -3707,6 +3742,7 @@ paths:
       - v1
       security:
       - jwtAuth: []
+      deprecated: true
       responses:
         '204':
           description: No response body

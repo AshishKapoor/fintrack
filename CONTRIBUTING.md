@@ -68,7 +68,13 @@ cd api && uv run ruff check . && uv run manage.py test
 ```
 
 ```bash
-cd web && pnpm run lint && pnpm run build
+cd web && pnpm run lint && pnpm run test && pnpm run build
+```
+
+End-to-end tests drive a real stack, so bring it up first:
+
+```bash
+docker compose up -d && cd web && pnpm exec playwright install chromium && pnpm exec playwright test
 ```
 
 And, if you touched anything in the Docker or settings layer:
@@ -104,8 +110,10 @@ uv run pre-commit install
   cross-tenant test** in `api/pft/tests/test_tenant_isolation.py`. This is a
   multi-user finance app; "user B cannot see or change user A's data" is the
   guarantee we care about most.
-- The frontend has no test harness yet. Adding one (vitest plus a Playwright smoke
-  path) is a genuinely valuable contribution.
+- The frontend has vitest for units (`web/**/*.test.ts`) and Playwright for the
+  smoke path (`web/e2e/`). Both run in CI. The Playwright suite exercises the
+  real stack through nginx, so it catches things unit tests cannot - it is how
+  the login redirect loop and the stale transaction list were found.
 
 ## Good first issues
 

@@ -199,13 +199,17 @@ cd api && uv run ruff check . && uv run manage.py test
 ```
 
 ```bash
-cd web && pnpm run lint && pnpm run build
+cd web && pnpm run lint && pnpm run test && pnpm run build
+```
+
+End-to-end, against a running stack:
+
+```bash
+docker compose up -d && cd web && pnpm exec playwright test
 ```
 
 CI runs all of the above on every pull request, plus a full `docker compose` smoke
 test that registers a user and creates a transaction.
-
-The frontend has no test harness yet — [contributions welcome](CONTRIBUTING.md).
 
 ---
 

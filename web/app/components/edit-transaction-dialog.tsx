@@ -4,8 +4,8 @@ import { Transaction } from '@/client/pft/transaction'
 import { TypeEnum } from '@/client/pft/typeEnum'
 
 import {
+  useInvalidateTransactions,
   useV1CategoriesList,
-  useV1TransactionsList,
   useV1TransactionsUpdate,
 } from '@/client/pft/v1/v1'
 import { Button } from '@/components/ui/button'
@@ -51,7 +51,7 @@ export function EditTransactionDialog({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const { mutate: refreshTransactions } = useV1TransactionsList()
+  const refreshTransactions = useInvalidateTransactions()
   const { trigger: updateTransaction } = useV1TransactionsUpdate(transaction?.id?.toString()) // Ensure id is a string
 
   // Initialize form with transaction data
@@ -82,9 +82,7 @@ export function EditTransactionDialog({
         user: transaction.user,
       })
 
-      refreshTransactions(undefined, {
-        revalidate: true,
-      })
+      await refreshTransactions()
 
       toast.success('Transaction updated successfully')
       onOpenChange(false)

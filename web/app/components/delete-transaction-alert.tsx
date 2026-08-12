@@ -10,7 +10,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { useV1TransactionsDestroy, useV1TransactionsList } from '@/client/pft/v1/v1'
+import {
+  useInvalidateTransactions,
+  useV1TransactionsDestroy,
+} from '@/client/pft/v1/v1'
 import { toast } from 'sonner'
 
 export function DeleteTransactionAlert({
@@ -24,7 +27,7 @@ export function DeleteTransactionAlert({
   currentPage?: number
 }) {
   const { trigger: deleteTransaction } = useV1TransactionsDestroy(transactionId)
-  const { mutate: refreshTransactions } = useV1TransactionsList()
+  const refreshTransactions = useInvalidateTransactions()
 
   const handleDeleteTransaction = async () => {
     try {

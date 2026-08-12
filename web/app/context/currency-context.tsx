@@ -1,5 +1,6 @@
 'use client'
 
+import { isLoggedIn } from '@/lib/auth'
 import { getDefaultBudgetFile, updateBudgetFileCurrency } from '@/lib/finance-client'
 import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react'
 
@@ -60,6 +61,11 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState<Currency>(readStoredCurrency)
 
   useEffect(() => {
+    // Only ask the API once there is a session. On /login and /register this
+    // request would 401, and the axios interceptor treats a failed refresh as a
+    // sign-out, which redirects to /login - i.e. a reload loop on the login page.
+    if (!isLoggedIn()) return
+
     let cancelled = false
     getDefaultBudgetFile()
       .then((budgetFile) => {

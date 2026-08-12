@@ -90,6 +90,9 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
+      - name: Unit tests
+        run: pnpm run test
+
       - name: Typecheck and build
         run: pnpm run build
 
@@ -178,6 +181,69 @@ jobs:
           assert settings.DEBUG is False, 'DEBUG must be off in the default stack'
           print('settings OK')
           "
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Tear down
+        if: always()
+        run: docker compose down -v
+
+  e2e:
+    name: End-to-end (Playwright)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: web
+        run: pnpm install --frozen-lockfile
+
+      - name: Install browser
+        working-directory: web
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Start the stack
+        run: make bootstrap && docker compose up -d --build
+
+      - name: Wait for the API
+        run: |
+          for i in $(seq 1 90); do
+            if curl -fsS http://localhost:8000/healthz/ > /dev/null; then
+              echo "API healthy after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          docker compose logs
+          exit 1
+
+      # Drives the real stack through the browser: register, sign in, add a
+      # transaction, see it listed and summed on the dashboard.
+      - name: Run Playwright
+        working-directory: web
+        run: pnpm exec playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            web/playwright-report/
+            web/test-results/
+          retention-days: 7
 
       - name: Dump logs on failure
         if: failure()

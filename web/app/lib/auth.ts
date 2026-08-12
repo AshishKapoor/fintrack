@@ -152,7 +152,12 @@ export async function logout() {
 
   removeTokens()
   authToken = null
-  window.location.href = '/login'
+
+  // Guard against a reload loop: if a request from the login page itself fails
+  // to refresh, redirecting to /login again would restart the same request.
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login'
+  }
 }
 
 export function isLoggedIn(): boolean {

@@ -26,9 +26,9 @@ import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import {
+  useInvalidateTransactions,
   useV1CategoriesList,
   useV1TransactionsCreate,
-  useV1TransactionsList,
 } from '@/client/pft/v1/v1'
 import { toast } from 'sonner'
 import { getUser } from '@/lib/auth'
@@ -48,7 +48,7 @@ export function AddTransactionDialog({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const { mutate: refreshTransactions } = useV1TransactionsList()
+  const refreshTransactions = useInvalidateTransactions()
   const { trigger: createTransaction } = useV1TransactionsCreate()
 
   const handleCreateTransaction = async () => {
@@ -64,9 +64,7 @@ export function AddTransactionDialog({
         transaction_date: format(date, 'yyyy-MM-dd'),
         user: user.id,
       })
-      refreshTransactions(undefined, {
-        revalidate: true,
-      })
+      await refreshTransactions()
       toast.success('Transaction created successfully')
       onOpenChange(false)
       // Reset form

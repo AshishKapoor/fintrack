@@ -39,6 +39,7 @@ import {
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
 import { formatDateForApi } from '@/lib/date'
+import { downloadFile, serializeExport } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -157,20 +158,13 @@ export default function TransactionsPage() {
   const getCategoryName = (categoryId: number | null | undefined) =>
     categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'
 
-  const escapeCsvCell = (value: string | number, sanitizeFormula = false) => {
-    const rawValue = String(value)
-    const safeValue =
-      sanitizeFormula && /^[=+\-@]/.test(rawValue.trimStart()) ? `'${rawValue}` : rawValue
-    return `"${safeValue.replace(/"/g, '""')}"`
-  }
-
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
       toast.error('No transactions available for export')
       return
     }
 
-    const exportRows = filteredTransactions.map((transaction) => ({
+    const rows = filteredTransactions.map((transaction) => ({
       id: transaction.id,
       date: transaction.transaction_date,
       title: transaction.title,
@@ -179,42 +173,9 @@ export default function TransactionsPage() {
       amount: transaction.amount,
     }))
 
-    const dateStamp = formatDateForApi(new Date())
-    const baseFilename = `fintrack-transactions-${dateStamp}`
-    let content = ''
-    let mimeType = ''
-    let extension = ''
-
-    if (format === 'json') {
-      content = JSON.stringify(exportRows, null, 2)
-      mimeType = 'application/json'
-      extension = 'json'
-    } else {
-      const header = ['id', 'date', 'title', 'category', 'type', 'amount']
-      const lines = exportRows.map((row) =>
-        [
-          escapeCsvCell(row.id),
-          escapeCsvCell(row.date),
-          escapeCsvCell(row.title, true),
-          escapeCsvCell(row.category, true),
-          escapeCsvCell(row.type),
-          escapeCsvCell(row.amount),
-        ].join(','),
-      )
-      content = [header.join(','), ...lines].join('\n')
-      mimeType = 'text/csv;charset=utf-8'
-      extension = 'csv'
-    }
-
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${baseFilename}.${extension}`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    const { content, mimeType, extension } = serializeExport(rows, format)
+    const filename = `fintrack-transactions-${formatDateForApi(new Date())}.${extension}`
+    downloadFile(content, filename, mimeType)
     toast.success(`Transactions exported as ${extension.toUpperCase()}`)
   }
 

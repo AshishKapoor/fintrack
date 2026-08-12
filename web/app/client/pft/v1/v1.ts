@@ -1,7 +1,7 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import type { SWRConfiguration } from 'swr'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import useSWRMutation from 'swr/mutation'
 import type { Transaction } from '../transaction'
 import { TypeEnum } from '../typeEnum'
@@ -552,4 +552,23 @@ export const v1BudgetsUpdate = async (id: string, payload: BudgetMutationPayload
   })
 
   return mapAssignmentToBudget(assignment, budgetMonth)
+}
+
+/**
+ * Invalidate every cached transaction list.
+ *
+ * Components used to call `mutate` from their own `useV1TransactionsList()`
+ * with no arguments, which produces the SWR key `/api/v1/transactions/`. The
+ * transactions page subscribes with pagination and filter parameters, so its
+ * key is different and those mutations never refreshed it - a new transaction
+ * only appeared after a manual reload.
+ */
+export const useInvalidateTransactions = () => {
+  const { mutate } = useSWRConfig()
+  return () =>
+    mutate(
+      (key) => typeof key === 'string' && key.startsWith('/api/v1/transactions/'),
+      undefined,
+      { revalidate: true },
+    )
 }

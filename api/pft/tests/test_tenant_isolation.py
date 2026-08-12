@@ -26,6 +26,7 @@ from pft.models import (
     ScheduledTransaction,
     Transaction,
 )
+from pft.views import LEGACY_DEPRECATED_AT
 
 User = get_user_model()
 
@@ -406,7 +407,9 @@ class LegacyDeprecationTests(TenantIsolationTestCase):
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertEqual(response.headers["Deprecation"], "true")
+                self.assertEqual(
+                    response.headers["Deprecation"], LEGACY_DEPRECATED_AT
+                )
                 self.assertIn("successor-version", response.headers["Link"])
                 self.assertIn("/api/v1/finance/", response.headers["Link"])
 

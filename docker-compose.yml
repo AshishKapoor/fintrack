@@ -1,69 +1,113 @@
-version: '3.8'
+x-django-env: &django-env
+  DJANGO_SETTINGS_MODULE: ${DJANGO_SETTINGS_MODULE:-app.settings.prod}
+  DJANGO_ENV: ${DJANGO_ENV:-production}
+  DEBUG: ${DEBUG:-False}
+  SECRET_KEY: ${SECRET_KEY:-}
+  SECRET_KEY_FILE: /app/run/.secret_key
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost 127.0.0.1 [::1]}
+  CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:5173}
+  SECURE_SSL: ${SECURE_SSL:-False}
+  DATABASE_NAME: ${POSTGRES_DB:-fintrack}
+  DATABASE_USER: ${POSTGRES_USER:-fintrack}
+  DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-fintrack_local_dev}
+  DATABASE_HOST: db
+  DATABASE_PORT: 5432
 
 services:
   api:
     build:
       context: ./api
     image: ghcr.io/ashishkapoor/fintrack-api:latest
-    command: sh -c "make run"
-    volumes:
-      - ./api:/app
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./api/.env.dev
+    # Build from the checked-out source rather than silently pulling a published
+    # tag that may be older than this working tree.
+    pull_policy: build
     environment:
-      - DJANGO_SETTINGS_MODULE=app.settings.dev
+      <<: *django-env
+    volumes:
+      - api_run:/app/run
+      - static_files:/app/staticfiles
+    ports:
+      - "${API_PORT:-8000}:8000"
     depends_on:
-      - migrate
-      - db
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     networks:
       - fintrack_network
-    restart: always
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
 
   migrate:
     build:
       context: ./api
-    image: ghcr.io/ashishkapoor/fintrack-migrate:latest
+    image: ghcr.io/ashishkapoor/fintrack-api:latest
+    pull_policy: build
     working_dir: /app
-    entrypoint: ["sh", "./entrypoint.migrate.sh"]
-    volumes:
-      - ./api:/app
-    env_file:
-      - ./api/.env.dev
+    entrypoint: ["sh", "/entrypoint.migrate.sh"]
     environment:
-      - DJANGO_SETTINGS_MODULE=app.settings.dev
+      <<: *django-env
+      FINTRACK_ADMIN_EMAIL: ${FINTRACK_ADMIN_EMAIL:-}
+      FINTRACK_ADMIN_PASSWORD: ${FINTRACK_ADMIN_PASSWORD:-}
+    volumes:
+      - api_run:/app/run
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - fintrack_network
+    restart: "no"
 
   web:
     build:
       context: ./web
     image: ghcr.io/ashishkapoor/fintrack-web:latest
+    pull_policy: build
     ports:
-      - "5173:80"
+      - "${WEB_PORT:-5173}:80"
     depends_on:
       - api
     networks:
       - fintrack_network
-    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   db:
     image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fintrack}
+      POSTGRES_USER: ${POSTGRES_USER:-fintrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fintrack_local_dev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    env_file:
-      - ./api/.env.dev
     networks:
       - fintrack_network
-    ports:
-      - "5432:5432"
-    restart: always 
+    # Not published to the host by default. Uncomment only if you need to connect
+    # a local client, and set a real POSTGRES_PASSWORD first.
+    # ports:
+    #   - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fintrack} -d ${POSTGRES_DB:-fintrack}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  static_files:
+  api_run:
 
 networks:
   fintrack_network:

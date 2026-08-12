@@ -172,4 +172,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
-.env.prod
+
+# Environment files - never commit real or placeholder secrets.
+# Only .env.example is tracked.
+.env
+.env.*
+!.env.example
+
+# Auto-generated Django signing key (see app/settings/base.py)
+.secret_key

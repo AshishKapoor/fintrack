@@ -1,9 +1,9 @@
 # Stage 1: Build
 FROM node:26-slim AS builder
 
-# pnpm version comes from the "packageManager" field in package.json, so the
-# build is reproducible instead of tracking whatever "latest" happens to be.
-RUN corepack enable
+# Node 26 no longer bundles corepack, so install pnpm directly - pinned to the
+# same version as the packageManager field so local and image builds agree.
+RUN npm install -g pnpm@10.34.5
 
 WORKDIR /app
 

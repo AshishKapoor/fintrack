@@ -1,3 +1,5 @@
+
+
 # 💰 Fintrack
 
 **Fintrack** is a privacy-first, self-hostable personal finance tracker built by [Sannty](https://sannty.in). Designed for individuals who want to take full control of their income, expenses, budgets, and financial goals without relying on third-party services.
@@ -34,7 +36,7 @@ password: fintrack
 ## 🛠️ Tech Stack
 
 ### 📱 Web (Frontend)
-- **Framework**: React 18
+- **Framework**: React 19
 - **Styling**: TailwindCSS
 - **State Management**: Zustand
 - **Build Tool**: Vite

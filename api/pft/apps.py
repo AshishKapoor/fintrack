@@ -6,4 +6,6 @@ class PftConfig(AppConfig):
     name = "pft"
 
     def ready(self):
-        import pft.signals
+        # Imported for its side effects: registers the post_save receiver that
+        # seeds a new user's default budget file, account and categories.
+        from . import signals  # noqa: F401

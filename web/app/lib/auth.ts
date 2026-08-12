@@ -8,9 +8,15 @@ let authToken: string | null = null
 let isRefreshing = false
 let refreshSubscribers: ((token: string) => void)[] = []
 
+// `Secure` is only set when the page is served over HTTPS, otherwise the cookie
+// would be silently dropped on a plain-HTTP LAN install. `SameSite=Strict`
+// keeps the token off cross-site requests.
+const isSecureContext = typeof window !== 'undefined' && window.location.protocol === 'https:'
+const COOKIE_FLAGS = `path=/; SameSite=Strict${isSecureContext ? '; Secure' : ''}`
+
 function setCookie(name: string, value: string, days = 7) {
   const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`
+  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; ${COOKIE_FLAGS}`
 }
 
 function getCookie(name: string): string | null {
@@ -23,7 +29,7 @@ function getCookie(name: string): string | null {
 }
 
 function removeCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${COOKIE_FLAGS}`
 }
 
 export function setTokens(access: string, refresh: string) {
@@ -124,6 +130,26 @@ export async function refreshAccessToken() {
 }
 
 export async function logout() {
+  const accessToken = getAccessToken()
+  const refreshToken = getRefreshToken()
+
+  // Tell the server to blacklist the refresh token. Clearing the cookie alone
+  // only forgets it locally - the token stays valid until it expires.
+  if (accessToken && refreshToken) {
+    try {
+      await fetch(`${PFT_BASE_URL}/api/token/logout/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      })
+    } catch {
+      // Signing out locally must succeed even if the server is unreachable.
+    }
+  }
+
   removeTokens()
   authToken = null
   window.location.href = '/login'

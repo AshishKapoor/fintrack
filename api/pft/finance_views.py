@@ -4,27 +4,9 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
-from .models import (
-    Account,
-    BudgetFile,
-    BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
-    EncryptedBackupBundle,
-    EnvelopeAssignment,
-    ExportJob,
-    ImportJob,
-    LedgerPosting,
-    LedgerTransaction,
-    Payee,
-    SavedReport,
-    ScheduledTransaction,
-    Tag,
-    TransactionEvent,
-    TransactionRule,
-)
 from .finance_serializers import (
     AccountSerializer,
     BudgetFileSerializer,
@@ -58,9 +40,46 @@ from .finance_services import (
     run_report,
     zero_budget_month,
 )
+from .models import (
+    Account,
+    BudgetFile,
+    BudgetMonth,
+    CategoryGroupV2,
+    CategoryV2,
+    EncryptedBackupBundle,
+    EnvelopeAssignment,
+    ExportJob,
+    ImportJob,
+    LedgerPosting,
+    LedgerTransaction,
+    Payee,
+    SavedReport,
+    ScheduledTransaction,
+    Tag,
+    TransactionEvent,
+    TransactionRule,
+)
+
+
+def parse_iso_date(raw, field_name):
+    """Parse a YYYY-MM-DD string, raising a 400 rather than a 500 on garbage."""
+    if raw in (None, ""):
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(
+            {field_name: "Expected a date in YYYY-MM-DD format."}
+        ) from exc
 
 
 class UserScopedModelViewSet(viewsets.ModelViewSet):
+    """Base class for the finance viewsets.
+
+    NOTE: this only enforces authentication. Every subclass is still responsible
+    for scoping its own get_queryset() to request.user.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
 
 
@@ -93,8 +112,7 @@ class BudgetFileViewSet(UserScopedModelViewSet):
     @action(detail=True, methods=["get"], url_path="balances")
     def balances(self, request, pk=None):
         budget_file = self.get_object()
-        as_of = request.query_params.get("as_of")
-        as_of_date = date.fromisoformat(as_of) if as_of else None
+        as_of_date = parse_iso_date(request.query_params.get("as_of"), "as_of")
         return Response(
             {
                 "as_of": as_of_date.isoformat() if as_of_date else None,
@@ -201,6 +219,18 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
             id__in=ids,
             budget_file__user=request.user,
         )
+
+        # `payee` is a raw id from the request body. Without this check a user
+        # could attach another tenant's payee to their own transactions.
+        if patch.get("payee") is not None:
+            owned_payee = Payee.objects.filter(
+                pk=patch["payee"], budget_file__user=request.user
+            ).exists()
+            if not owned_payee:
+                return Response(
+                    {"detail": "Unknown payee."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         updated_count = queryset.update(**patch, updated_at=timezone.now())
 
         budget_file_ids = queryset.values_list("budget_file_id", flat=True).distinct()
@@ -312,13 +342,20 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="run-due")
     def run_due(self, request):
-        run_date_raw = request.data.get("run_date")
-        run_date = date.fromisoformat(run_date_raw) if run_date_raw else timezone.now().date()
+        run_date = (
+            parse_iso_date(request.data.get("run_date"), "run_date")
+            or timezone.now().date()
+        )
         due_items = self.get_queryset().filter(is_active=True, next_run_date__lte=run_date)
 
         created_ids = []
         for schedule in due_items:
-            ledger_tx = materialize_scheduled_transaction(schedule)
+            try:
+                ledger_tx = materialize_scheduled_transaction(schedule)
+            except ValueError as exc:
+                raise ValidationError(
+                    {"detail": f"Scheduled transaction {schedule.id}: {exc}"}
+                ) from exc
             created_ids.append(ledger_tx.id)
 
         return Response({"created_transaction_ids": created_ids})
@@ -389,7 +426,10 @@ class ReportViewSet(UserScopedModelViewSet):
         if not budget_file:
             return Response({"detail": "Budget file not found"}, status=404)
 
-        result = run_report(budget_file, request.data)
+        try:
+            result = run_report(budget_file, request.data)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
         return Response(result)
 
     @action(detail=True, methods=["post"], url_path="run")
@@ -397,7 +437,10 @@ class ReportViewSet(UserScopedModelViewSet):
         saved_report = self.get_object()
         payload = dict(saved_report.definition or {})
         payload["report_type"] = saved_report.report_type
-        result = run_report(saved_report.budget_file, payload)
+        try:
+            result = run_report(saved_report.budget_file, payload)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
         return Response(result)
 
 

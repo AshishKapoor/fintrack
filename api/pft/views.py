@@ -1,25 +1,89 @@
-from rest_framework import generics, permissions, viewsets, status, filters
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from .models import (
-    Budget, Category, Transaction,
+from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.token_blacklist.models import (
+    BlacklistedToken,
+    OutstandingToken,
 )
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+from .models import (
+    Budget,
+    Category,
+    Transaction,
+)
 from .serializers import (
     BudgetSerializer,
     CategorySerializer,
     TransactionSerializer,
-    UserRegistrationSerializer,
     UserProfileSerializer,
+    UserRegistrationSerializer,
 )
+
 
 class CustomPagination(PageNumberPagination):
     page_size = 100
+
+
+def blacklist_all_refresh_tokens(user):
+    """Revoke every outstanding refresh token for a user.
+
+    Used on logout-everywhere and after a password change, so a stolen refresh
+    token stops working the moment the owner reacts.
+    """
+    revoked = 0
+    for outstanding in OutstandingToken.objects.filter(user=user):
+        _, created = BlacklistedToken.objects.get_or_create(token=outstanding)
+        if created:
+            revoked += 1
+    return revoked
+
+
+class ThrottledTokenObtainPairView(TokenObtainPairView):
+    """Login, rate limited per IP so the password field cannot be brute forced."""
+
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
+
+
+class LogoutView(APIView):
+    """Revoke a refresh token.
+
+    POST {"refresh": "<token>"} revokes that token. POST {"all": true} revokes
+    every session for the current user.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.data.get("all"):
+            revoked = blacklist_all_refresh_tokens(request.user)
+            return Response({"detail": "All sessions signed out.", "revoked": revoked})
+
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "refresh is required (or pass all=true)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            RefreshToken(refresh_token).blacklist()
+        except TokenError:
+            # An already-revoked or malformed token means the caller is signed
+            # out either way; do not leak which case it was.
+            pass
+
+        return Response({"detail": "Signed out."})
 
 
 # CATEGORY VIEWSET
@@ -29,12 +93,20 @@ class CategoryViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return (
-            Category.objects.filter(user=self.request.user)
-            | Category.objects.filter(user__isnull=True)
-        ).order_by("name", "id")
+        owned = Category.objects.filter(user=self.request.user)
+
+        # Global categories (user IS NULL) are shared by every account, so they
+        # are readable by all but writable by none: including them in the
+        # write queryset let any user edit or delete them for everybody.
+        if self.request.method not in permissions.SAFE_METHODS:
+            return owned.order_by("name", "id")
+
+        return (owned | Category.objects.filter(user__isnull=True)).order_by("name", "id")
 
     def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
         serializer.save(user=self.request.user)
 
 
@@ -67,6 +139,9 @@ class TransactionViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 # BUDGET VIEWSET
 class BudgetViewSet(viewsets.ModelViewSet):
@@ -78,6 +153,9 @@ class BudgetViewSet(viewsets.ModelViewSet):
         return Budget.objects.filter(user=self.request.user).order_by("-year", "-month", "id")
 
     def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -98,6 +176,8 @@ class BudgetViewSet(viewsets.ModelViewSet):
 class RegisterUserAPIView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "register"
 
     def create(self, request, *args, **kwargs):
         # Get email from request data
@@ -156,6 +236,8 @@ class UpdateProfileView(generics.UpdateAPIView):
 
 class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "password_change"
 
     def post(self, request):
         user = request.user
@@ -188,6 +270,15 @@ class ChangePasswordView(APIView):
 
         user.set_password(new_password)
         user.save()
+
+        # Changing a password must end every other session, otherwise a stolen
+        # refresh token survives the exact event meant to stop it.
+        blacklist_all_refresh_tokens(user)
+
         return Response(
-            {"message": "Password updated successfully"}, status=status.HTTP_200_OK
+            {
+                "message": "Password updated successfully",
+                "detail": "All existing sessions have been signed out.",
+            },
+            status=status.HTTP_200_OK,
         )

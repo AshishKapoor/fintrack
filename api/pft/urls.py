@@ -1,10 +1,11 @@
-from django.urls import path, include
+from django.urls import include, path
+
 from .routers import router
 from .views import (
-    RegisterUserAPIView,
-    MeView,
-    UpdateProfileView,
     ChangePasswordView,
+    MeView,
+    RegisterUserAPIView,
+    UpdateProfileView,
 )
 
 app_name = "pft"

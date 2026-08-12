@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 
@@ -454,6 +455,15 @@ class EncryptedBackupBundleSerializer(serializers.ModelSerializer, UserOwnedBudg
         self._validate_budget_file_owner(value)
         return value
 
+    def validate_ciphertext(self, value):
+        """Cap the bundle size. The field is an unbounded TextField."""
+        max_bytes = settings.FINTRACK_MAX_BACKUP_BYTES
+        if value and len(value.encode("utf-8")) > max_bytes:
+            raise serializers.ValidationError(
+                f"Backup bundle exceeds the {max_bytes // 1024}KB limit."
+            )
+        return value
+
 
 class ImportJobSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
@@ -481,4 +491,18 @@ class ImportJobSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin)
 
     def validate_budget_file(self, value):
         self._validate_budget_file_owner(value)
+        return value
+
+    def validate_source_payload(self, value):
+        """Cap the uploaded statement size.
+
+        The payload is stored as plaintext TEXT and parsed synchronously inside
+        the request, so an unbounded upload is both a memory and a storage
+        problem on a small self-hosted box.
+        """
+        max_bytes = settings.FINTRACK_MAX_IMPORT_BYTES
+        if value and len(value.encode("utf-8")) > max_bytes:
+            raise serializers.ValidationError(
+                f"Import payload exceeds the {max_bytes // 1024}KB limit."
+            )
         return value

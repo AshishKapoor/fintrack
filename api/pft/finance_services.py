@@ -3,12 +3,12 @@ import csv
 import io
 import json
 import uuid
+import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from xml.sax.saxutils import escape as xml_escape
-import xml.etree.ElementTree as ET
 
 from django.db import transaction
 from django.db.models import Sum
@@ -158,6 +158,14 @@ def compute_spending_trends(budget_file: BudgetFile, start_date: date, end_date:
     }
 
 
+def _report_date(value, field_name):
+    """Parse a report date, turning malformed input into a clear ValueError."""
+    try:
+        return date.fromisoformat(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field_name} must be a date in YYYY-MM-DD format.") from exc
+
+
 def run_report(budget_file: BudgetFile, payload: dict):
     report_type = payload.get("report_type", SavedReport.TYPE_CUSTOM)
 
@@ -166,17 +174,19 @@ def run_report(budget_file: BudgetFile, payload: dict):
     today = timezone.now().date()
 
     if start_date_value:
-        start_date = date.fromisoformat(start_date_value)
+        start_date = _report_date(start_date_value, "start_date")
     else:
         start_date = date(today.year, today.month, 1)
 
     if end_date_value:
-        end_date = date.fromisoformat(end_date_value)
+        end_date = _report_date(end_date_value, "end_date")
     else:
         end_date = today
 
     if report_type == SavedReport.TYPE_NET_WORTH:
-        as_of = date.fromisoformat(payload.get("as_of")) if payload.get("as_of") else end_date
+        as_of = (
+            _report_date(payload.get("as_of"), "as_of") if payload.get("as_of") else end_date
+        )
         return compute_net_worth(budget_file, as_of)
 
     if report_type == SavedReport.TYPE_CASH_FLOW:
@@ -653,11 +663,44 @@ def _validate_postings_balance(postings: list[dict]):
     return total == Decimal("0.00")
 
 
+def _validate_template_posting_targets(budget_file, postings: list[dict]):
+    """Ensure every account/category id in a template belongs to this budget file.
+
+    The template is user-supplied JSON that is later passed straight to
+    LedgerPosting.objects.create(account_id=..., category_id=...). Without this
+    check a user could point a posting at another tenant's account or category.
+    """
+    account_ids = {p.get("account_id") for p in postings if p.get("account_id") is not None}
+    category_ids = {p.get("category_id") for p in postings if p.get("category_id") is not None}
+
+    if account_ids:
+        owned = set(
+            Account.objects.filter(
+                budget_file=budget_file, id__in=account_ids
+            ).values_list("id", flat=True)
+        )
+        unknown = account_ids - owned
+        if unknown:
+            raise ValueError(f"Unknown account ids for this budget file: {sorted(unknown)}")
+
+    if category_ids:
+        owned = set(
+            CategoryV2.objects.filter(
+                budget_file=budget_file, id__in=category_ids
+            ).values_list("id", flat=True)
+        )
+        unknown = category_ids - owned
+        if unknown:
+            raise ValueError(f"Unknown category ids for this budget file: {sorted(unknown)}")
+
+
 def materialize_scheduled_transaction(schedule: ScheduledTransaction):
     template = schedule.transaction_template or {}
     postings = template.get("postings", [])
     if not postings or not _validate_postings_balance(postings):
         raise ValueError("Scheduled transaction template postings must be balanced")
+
+    _validate_template_posting_targets(schedule.budget_file, postings)
 
     with transaction.atomic():
         ledger_tx = LedgerTransaction.objects.create(

@@ -45,7 +45,6 @@ deployment. At minimum:
 
 These are real and tracked, not hidden:
 
-<<<<<<< HEAD
 - **`/admin/login/` is not rate limited.** The API throttles `/api/token/`,
   `/api/v1/register/` and password changes, but the Django admin login is
   served by Django itself. Limit it at your reverse proxy, or do not expose it.
@@ -60,17 +59,6 @@ These are real and tracked, not hidden:
   database as plaintext, as do completed exports. Run
   `manage.py prune_finance_jobs` periodically; see
   [docs/self-hosting.md](docs/self-hosting.md).
-=======
-- **No rate limiting** on `/api/token/`, `/api/v1/register/` or `/admin/login/`.
-  Put a reverse proxy with rate limiting in front of a public instance.
-- **JWTs cannot be revoked.** There is no token blacklist and no logout endpoint;
-  changing a password does not invalidate outstanding tokens. Access tokens live
-  5 minutes, refresh tokens 1 day.
-- **Tokens are stored in JavaScript-readable cookies**, so any XSS is an account
-  takeover.
-- **Import and export run synchronously in the request** with no size cap, and
-  `ImportJob.source_payload` retains the raw uploaded bank file in the database.
->>>>>>> origin/main
 - **The finance endpoints are unpaginated**, so a large ledger returns in one
   response.
 

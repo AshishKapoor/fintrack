@@ -127,5 +127,6 @@ start, these are all real and self-contained:
   `web/app/components/ui/currency-display.tsx` with
   `Intl.NumberFormat(locale, { style: 'currency' })`, including the chart tooltips.
 - Register the finance models in `api/pft/admin.py`.
-- Implement the account-deletion flow behind the disabled button in
-  `web/app/pages/settings/index.tsx`.
+- Surface envelope budgeting in the UI: `BudgetMonth` and `EnvelopeAssignment`
+  with goals and carryover are fully implemented in the API.
+- Add a backup/restore screen for `/api/v1/finance/backups/`.

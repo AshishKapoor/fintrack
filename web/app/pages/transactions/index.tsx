@@ -8,6 +8,7 @@ import { AddTransactionDialog } from '@/components/add-transaction-dialog'
 import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog'
+import { ImportTransactionsDialog } from '@/components/import-transactions-dialog'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -55,6 +56,7 @@ import {
   Repeat,
   Search,
   Trash,
+  Upload,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -70,6 +72,7 @@ const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -143,9 +146,18 @@ export default function TransactionsPage() {
           icon={<CircleDollarSign className='w-12 h-12' />}
           title='No transactions yet'
           description='Start tracking your finances by adding your first transaction.'
-          action={<Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>}
+          action={
+            <div className='flex gap-2'>
+              <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+              <Button variant='outline' onClick={() => setShowImport(true)}>
+                <Upload className='mr-2 h-4 w-4' />
+                Import statement
+              </Button>
+            </div>
+          }
         />
         <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+        <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       </div>
     )
   }
@@ -184,6 +196,10 @@ export default function TransactionsPage() {
       <div className='flex items-center justify-between'>
         <Typography variant='h2'>Transactions</Typography>
         <div className='flex items-center gap-2'>
+          <Button variant='outline' onClick={() => setShowImport(true)}>
+            <Upload className='mr-2 h-4 w-4' />
+            Import
+          </Button>
           <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
             <Repeat className='mr-2 h-4 w-4' />
             Add Transfer
@@ -399,6 +415,7 @@ export default function TransactionsPage() {
       </div>
 
       <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+      <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       <AddTransferDialog
         open={showAddTransfer}
         onOpenChange={setShowAddTransfer}

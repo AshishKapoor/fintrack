@@ -86,6 +86,8 @@ fintrack/
 - Dashboard with balance, income and expense cards over a selectable date range
 - Transaction list with search, filtering, sorting and pagination
 - Export transactions as CSV or JSON from the UI
+- Import bank statements: CSV, OFX, QFX, QIF, CAMT.053 and YNAB, with a preview
+  step and duplicate detection
 - Rules and recurring (scheduled) transactions
 - Reports: net worth, cash flow, spending trends
 - Light/dark mode, responsive layout, currency symbol selection
@@ -95,7 +97,6 @@ fintrack/
 **Implemented in the API but not yet exposed in the UI** — these are good places to
 contribute, because the backend already works:
 
-- Bank statement import (CSV, OFX, QFX, QIF, CAMT.053, YNAB)
 - Envelope budgeting with goals and carryover
 - Server-side exports including XLSX
 - Encrypted backup bundles

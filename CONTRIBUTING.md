@@ -89,6 +89,13 @@ Optionally install the git hooks so formatting and secret scanning run locally:
 uv run pre-commit install
 ```
 
+## Sign your commits (DCO)
+
+FinTrack uses the [Developer Certificate of Origin](https://developercertificate.org/)
+rather than a CLA. Add a `Signed-off-by` line to each commit — `git commit -s`
+does it for you. See [docs/adr/0001-licensing.md](docs/adr/0001-licensing.md)
+for why.
+
 ## Conventions
 
 - **Commits** follow [Conventional Commits](https://www.conventionalcommits.org/):

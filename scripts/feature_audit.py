@@ -18,6 +18,8 @@ REPORT_PATH = ROOT / "docs/feature-audit/parity-report.md"
 SCHEMA_PATH = ROOT / "web/schema/pft.yaml"
 ROUTERS_PATH = ROOT / "api/pft/routers.py"
 FINANCE_ROUTERS_PATH = ROOT / "api/pft/finance_routers.py"
+VIEWS_PATH = ROOT / "api/pft/views.py"
+FINANCE_VIEWS_PATH = ROOT / "api/pft/finance_views.py"
 PFT_URLS_PATH = ROOT / "api/pft/urls.py"
 APP_URLS_PATH = ROOT / "api/app/urls.py"
 TRANSACTIONS_PAGE_PATH = ROOT / "web/app/pages/transactions/index.tsx"
@@ -141,27 +143,78 @@ def extract_schema_endpoints() -> set[str]:
     return endpoints
 
 
+# `router.register(` may wrap across lines, so allow whitespace before the prefix.
+REGISTER_RE = re.compile(r'router\.register\(\s*"([^"]+)"\s*,\s*(\w+)')
+# @action(detail=..., url_path="...") declares an extra route on a viewset.
+ACTION_RE = re.compile(r"@action\((?P<args>[^)]*)\)", re.S)
+
+
+def _actions_for(source: str) -> dict[str, list[tuple[bool, str]]]:
+    """Collect @action routes per viewset, tolerating multi-line decorators."""
+    actions: dict[str, list[tuple[bool, str]]] = {}
+    class_positions = [
+        (match.start(), match.group(1)) for match in re.finditer(r"^class (\w+)\(", source, re.M)
+    ]
+
+    for match in ACTION_RE.finditer(source):
+        args = match.group("args")
+        url_match = re.search(r'url_path="([^"]+)"', args)
+        if not url_match:
+            continue
+        owner = None
+        for position, name in class_positions:
+            if position < match.start():
+                owner = name
+            else:
+                break
+        if owner is None:
+            continue
+        actions.setdefault(owner, []).append(("detail=True" in args, url_match.group(1)))
+
+    return actions
+
+
+def _register_router(endpoints: set[str], source: str, prefix: str, actions_source: str) -> None:
+    actions = _actions_for(actions_source)
+    for resource, viewset in REGISTER_RE.findall(source):
+        endpoints.add(f"{prefix}/{resource}/")
+        endpoints.add(f"{prefix}/{resource}/{{id}}/")
+        for detail, url_path in actions.get(viewset, []):
+            if detail:
+                endpoints.add(f"{prefix}/{resource}/{{id}}/{url_path}/")
+            else:
+                endpoints.add(f"{prefix}/{resource}/{url_path}/")
+
+
 def extract_backend_endpoints() -> set[str]:
     endpoints: set[str] = set()
 
     app_urls = APP_URLS_PATH.read_text(encoding="utf-8")
-    for match in re.finditer(r'path\("([^"]+)"', app_urls):
+    # Skip include() mounts: they are prefixes, not endpoints. The resources
+    # behind them are picked up from the routers below.
+    for match in re.finditer(r'path\(\s*"([^"]+)"\s*,\s*(?P<target>[^,)]+)', app_urls):
         path_value = match.group(1)
-        if path_value.startswith("api/") and path_value != "api/v1/":
+        if "include(" in match.group("target"):
+            continue
+        if path_value.startswith("api/"):
             endpoints.add("/" + path_value)
 
-    routers = ROUTERS_PATH.read_text(encoding="utf-8")
-    for resource in re.findall(r'router\.register\("([^"]+)"', routers):
-        endpoints.add(f"/api/v1/{resource}/")
-        endpoints.add(f"/api/v1/{resource}/{{id}}/")
+    _register_router(
+        endpoints,
+        ROUTERS_PATH.read_text(encoding="utf-8"),
+        "/api/v1",
+        VIEWS_PATH.read_text(encoding="utf-8"),
+    )
 
-    # The finance domain mounts 16 more resources under /api/v1/finance/.
-    # Omitting this file was why the parity report reported PASS while the
-    # entire API the UI actually calls was undocumented.
-    finance_routers = FINANCE_ROUTERS_PATH.read_text(encoding="utf-8")
-    for resource in re.findall(r'router\.register\("([^"]+)"', finance_routers):
-        endpoints.add(f"/api/v1/finance/{resource}/")
-        endpoints.add(f"/api/v1/finance/{resource}/{{id}}/")
+    # The finance domain mounts 16 more resources under /api/v1/finance/, each
+    # with its own @action routes. Omitting this file was why the parity report
+    # reported PASS while the entire API the UI calls was undocumented.
+    _register_router(
+        endpoints,
+        FINANCE_ROUTERS_PATH.read_text(encoding="utf-8"),
+        "/api/v1/finance",
+        FINANCE_VIEWS_PATH.read_text(encoding="utf-8"),
+    )
 
     pft_urls = PFT_URLS_PATH.read_text(encoding="utf-8")
     for match in re.finditer(r'path\("([^"]+)"', pft_urls):

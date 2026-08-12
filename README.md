@@ -73,7 +73,7 @@ fintrack/
 │   └── pft/   The application: models, views, serializers, services, tests
 ├── web/       React single-page app
 ├── landing/   Next.js marketing site (not part of the self-host stack)
-├── docs/      Feature audit artifacts
+├── docs/      Self-hosting guide and feature audit artifacts
 └── scripts/   Repo tooling
 ```
 
@@ -102,7 +102,7 @@ contribute, because the backend already works:
 
 **Not built yet:** account deletion, budget alerts and notifications, real
 multi-currency conversion, PWA offline mode, savings goals, investment tracking,
-native mobile apps.
+native mobile apps. See [ARCHITECTURE.md](ARCHITECTURE.md) for where things go.
 
 ---
 
@@ -159,12 +159,22 @@ Postgres is **not** published to the host by default; the port mapping in
 
 ---
 
+## 📚 Documentation
+
+| | |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why there are two API surfaces |
+| [docs/self-hosting.md](docs/self-hosting.md) | Reverse proxy, TLS, backups, upgrades, monitoring |
+| [SECURITY.md](SECURITY.md) | Hardening checklist, reporting, known limitations |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
+
+---
+
 ## 🔒 Security
 
-Read [SECURITY.md](SECURITY.md) before exposing an instance to the internet. It
+Read [SECURITY.md](SECURITY.md) and [docs/self-hosting.md](docs/self-hosting.md) before exposing an instance to the internet. It
 covers the hardening checklist, how to report a vulnerability privately, and the
-current known limitations (no rate limiting, no JWT revocation, unpaginated
-finance endpoints).
+current known limitations.
 
 If you ran a version of FinTrack from before this was fixed, note that a
 `SECRET_KEY` was previously committed to this repository and used as the default.
@@ -217,17 +227,25 @@ of work — see [CONTRIBUTING.md](CONTRIBUTING.md).
 Authentication is JWT: `POST /api/token/` to obtain a pair, `POST /api/token/refresh/`
 to refresh.
 
-> Note: `web/schema/pft.yaml` currently documents only the legacy surface. The live
-> schema at `/api/schema/` is generated from the code and is authoritative.
+`web/schema/pft.yaml` is generated from the backend and covers all 61 paths.
+Regenerate it after changing the API surface:
+
+```bash
+docker compose exec api uv run manage.py spectacular --file /tmp/schema.yaml
+```
 
 ---
 
 ## ⚠️ Known limitations
 
-- No rate limiting on login, registration or the Django admin.
-- JWTs cannot be revoked; a password change does not invalidate existing tokens.
-- The `/api/v1/finance/*` endpoints are not paginated.
-- Import and export run synchronously in the request, with no size cap.
+- The Django admin has no rate limiting of its own; limit it at your reverse
+  proxy, or don't expose it. The API throttles login, registration and password
+  changes.
+- The `/api/v1/finance/*` endpoints are not paginated, so a large ledger comes
+  back in one response.
+- Import and export run synchronously inside the request. Payloads are capped,
+  but there is no background queue.
+- Tokens live in JavaScript-readable cookies, so an XSS is an account takeover.
 - Currency selection changes the displayed symbol only — it does not convert.
 - Transaction filtering and sorting in the UI operate on the current page.
 

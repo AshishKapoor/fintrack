@@ -22,9 +22,7 @@ Matrix validation errors:
 
 ## Parity Findings
 
-| Severity | Finding | Detail | Evidence |
-|---|---|---|---|
-| P2 | Backend routes missing from OpenAPI schema | 31 active endpoints are not represented in schema. | `api/pft/routers.py`<br>`api/pft/urls.py`<br>`web/schema/pft.yaml` |
+No parity findings.
 
 
 ## Schema Endpoints Not in Active Backend
@@ -34,35 +32,5 @@ Matrix validation errors:
 
 ## Active Backend Endpoints Missing From Schema
 
-- `/api/v1/finance/`
-- `/api/v1/finance/accounts/`
-- `/api/v1/finance/accounts/{id}/`
-- `/api/v1/finance/backups/`
-- `/api/v1/finance/backups/{id}/`
-- `/api/v1/finance/budget-files/`
-- `/api/v1/finance/budget-files/{id}/`
-- `/api/v1/finance/budget-months/`
-- `/api/v1/finance/budget-months/{id}/`
-- `/api/v1/finance/categories/`
-- `/api/v1/finance/categories/{id}/`
-- `/api/v1/finance/category-groups/`
-- `/api/v1/finance/category-groups/{id}/`
-- `/api/v1/finance/envelope-assignments/`
-- `/api/v1/finance/envelope-assignments/{id}/`
-- `/api/v1/finance/exports/`
-- `/api/v1/finance/exports/{id}/`
-- `/api/v1/finance/imports/`
-- `/api/v1/finance/imports/{id}/`
-- `/api/v1/finance/payees/`
-- `/api/v1/finance/payees/{id}/`
-- `/api/v1/finance/postings/`
-- `/api/v1/finance/postings/{id}/`
-- `/api/v1/finance/reports/`
-- `/api/v1/finance/reports/{id}/`
-- `/api/v1/finance/rules/`
-- `/api/v1/finance/rules/{id}/`
-- `/api/v1/finance/tags/`
-- `/api/v1/finance/tags/{id}/`
-- `/api/v1/finance/transactions/`
-- `/api/v1/finance/transactions/{id}/`
+- None
 

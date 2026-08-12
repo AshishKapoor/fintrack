@@ -23,6 +23,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-app/client/gen/*
-!app/client/gen/pft/
-!app/client/gen/pft/**
+# orval output. The hand-maintained client lives in app/client/pft/ and IS tracked.
+app/client/gen/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

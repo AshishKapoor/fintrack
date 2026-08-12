@@ -1,6 +1,7 @@
 import '@/assets/styles/globals.css'
 import DashboardLayout from '@/components/dashboard-layout'
 import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { Toaster } from '@/components/ui/toaster'
 import { isLoggedIn } from '@/lib/auth'
 import AuthenticationPage from '@/pages/authentication'
@@ -13,15 +14,24 @@ import ReportsPage from '@/pages/reports'
 import RulesAndRecurringPage from '@/pages/rules'
 import UserSettingsPage from '@/pages/settings'
 import TransactionsPage from '@/pages/transactions'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Route, Routes, useLocation } from 'react-router-dom'
 
 function App() {
   const location = useLocation()
   const isAuthenticated = isLoggedIn()
   const redirectToLogin = !isAuthenticated && location.pathname !== '/login' && location.pathname !== '/register'
 
+  // Redirecting is a side effect; doing it during render both violates React's
+  // rules and can fire twice under StrictMode.
+  useEffect(() => {
+    if (redirectToLogin) {
+      window.location.href = '/login'
+    }
+  }, [redirectToLogin])
+
   if (redirectToLogin) {
-    return <Navigate to='/login' replace />
+    return null
   }
 
   return (
@@ -52,6 +62,9 @@ function App() {
         </div>
       )}
       <Toaster />
+      {/* Most of the app notifies through sonner; without this mount those
+          toasts - including every API error - render nothing. */}
+      <SonnerToaster />
     </ThemeProvider>
   )
 }

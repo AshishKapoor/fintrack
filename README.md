@@ -1,156 +1,150 @@
-# 💰 Fintrack
+<div align="center">
 
-**Fintrack** is a privacy-first, self-hostable personal finance tracker built by [Sannty](https://sannty.in). Designed for individuals who want to take full control of their income, expenses, budgets, and financial goals without relying on third-party services.
+# 💰 FinTrack
 
-## [Self Host] Admin Credentials (change me!)
-URL: http://localhost:5173
+**A privacy-first, self-hostable personal finance tracker.**
+
+Track income, expenses, budgets, and financial goals on your own server —
+no subscriptions, no third-party services, no vendor lock-in.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
+[![Django](https://img.shields.io/badge/Django-5.x-092e20.svg)](https://www.djangoproject.com/)
+[![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
+[![GitHub stars](https://img.shields.io/github/stars/AshishKapoor/fintrack?style=social)](https://github.com/AshishKapoor/fintrack/stargazers)
+
+[Features](#-features) •
+[Quick Start](#-quick-start) •
+[Configuration](#%EF%B8%8F-configuration) •
+[API](#-api) •
+[Contributing](#-contributing) •
+[License](#-license)
+
+<img src="https://github.com/user-attachments/assets/e66ad9e7-a967-4d5b-9139-9c327b6b466f" alt="FinTrack dashboard screenshot" width="800" />
+
+</div>
+
+---
+
+## ✨ Features
+
+- 📊 **Income & expense tracking** with custom categories and tags
+- 🧱 **Double-entry ledger** with accounts, payees, transactions, and postings
+- ✉️ **Envelope budgeting** — budget months, envelope assignments, and progress tracking
+- 📅 **Flexible views** — browse transactions by day, week, or month
+- 🔁 **Scheduled transactions and rules** for recurring activity
+- 📈 **Reports** on spending, budgets, and trends
+- 📦 **Import / export** your data (CSV, JSON) plus encrypted backup bundles
+- 🔒 **100% self-hosted** — your data never leaves your server
+- 👤 **Multi-user support** (optional)
+- 🌗 **Light / dark mode** with a responsive UI for mobile and desktop
+- 🔌 **API-first architecture** with OpenAPI docs out of the box
+
+## 🛠️ Tech stack
+
+| Layer | Technology |
+| --- | --- |
+| Frontend | [React 19](https://react.dev/), [Vite](https://vitejs.dev/), [TailwindCSS](https://tailwindcss.com/), [Zustand](https://zustand-demo.pmnd.rs/), [pnpm](https://pnpm.io/) |
+| Backend | [Django 5](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
+| Database | [PostgreSQL](https://www.postgresql.org/) |
+| Infrastructure | Docker & Docker Compose, hot reload in development |
+
+## 🚀 Quick Start
+
+The fastest way to run FinTrack is with Docker:
+
+```bash
+git clone https://github.com/AshishKapoor/fintrack.git
+cd fintrack
+./setup.sh start
 ```
-email: admin@example.com
+
+That's it. The script creates the `.env` files from their examples, builds the
+images, and starts every service. Once it finishes, open:
+
+| Service | URL |
+| --- | --- |
+| Web app | http://localhost:5173 |
+| API | http://localhost:8000 |
+| API docs (Swagger UI) | http://localhost:8000/api/docs/ |
+| API docs (ReDoc) | http://localhost:8000/api/redoc/ |
+
+Log in with the default admin account — **change these credentials immediately**:
+
+```
+email:    admin@example.com
 password: fintrack
 ```
 
-## Screenshot
+Other lifecycle commands:
 
-<img src="https://github.com/user-attachments/assets/e66ad9e7-a967-4d5b-9139-9c327b6b466f" alt="screenshot" width="800" height="600" />
+```bash
+./setup.sh stop     # Stop all services (data is kept)
+./setup.sh clean    # Stop and delete containers, volumes, and data
+```
 
----
+Equivalent `make` targets (`make up`, `make down`, `make logs`, `make clean`)
+are also available.
 
-## 🚀 Features
+> ⚠️ The default configuration is tuned for a quick local trial. Before
+> exposing an instance to the internet, read [SECURITY.md](SECURITY.md).
 
-- 📊 Track income and expenses with ease
-- 🧾 Add custom categories and tags
-- 📅 View transactions by day, week, or month
-- 📈 Budget planning and progress tracking
-- 🔒 100% self-hosted – your data, your server
-- 📦 Export data as CSV or JSON
-- 👤 Multi-user support (optional)
-- 🌗 Light/Dark mode UI
-- 📱 Responsive design (mobile + desktop)
-- 🔌 API-first architecture
-- 🧱 `/api/v1/finance/*` finance domain with double-entry ledger, envelope budgeting primitives, reports, exports, imports, and encrypted backup bundles
+## 🧑‍💻 Local Development
 
----
+Prefer running the services directly? You'll need:
 
-## 🛠️ Tech Stack
+- [Python](https://www.python.org/) >= 3.12 and [uv](https://docs.astral.sh/uv/)
+- [Node.js](https://nodejs.org/) >= 18 and [pnpm](https://pnpm.io/)
+- A running [PostgreSQL](https://www.postgresql.org/) instance
 
-### 📱 Web (Frontend)
-- **Framework**: React 18
-- **Styling**: TailwindCSS
-- **State Management**: Zustand
-- **Build Tool**: Vite
-- **Package Manager**: pnpm
+**Backend**
 
-### 🔧 API (Backend)
-- **Framework**: Django + Django REST Framework
-- **Database**: PostgreSQL
-- **Package Manager**: Poetry
-- **Authentication**: JWT-based
+```bash
+cd api
+cp .env.example .env          # then adjust values as needed
+uv sync                       # install dependencies
+uv run manage.py migrate      # apply database migrations
+uv run manage.py runserver    # start the dev server on :8000
+```
 
-### 🐳 Infrastructure
-- **Containerization**: Docker & Docker Compose
-- **Development**: Hot-reload enabled for both frontend and backend
+**Frontend**
 
----
+```bash
+cd web
+cp .env.example .env
+pnpm install
+pnpm dev                      # start the dev server on :5173
+```
 
-## 📁 Project Structure
+See [`api/README.md`](api/README.md) and [`web/README.md`](web/README.md) for
+more details on each service.
+
+## 📁 Project structure
 
 ```
 fintrack/
-├── api/                # Django backend
-│   ├── app/            # Django project settings
-│   ├── pft/            # Main Django app
-│   └── manage.py       # Django CLI
-├── web/                # React frontend
-│   ├── app/            # Application source
-│   ├── public/         # Static assets
-│   └── schema/         # API schema
-└── README.md
+├── api/            # Django backend (DRF, JWT auth, OpenAPI schema)
+│   ├── app/        # Django project settings
+│   └── pft/        # Main Django app (finance domain)
+├── web/            # React frontend (Vite, TailwindCSS, Zustand)
+│   ├── app/        # Application source
+│   └── schema/     # Generated API schema / client
+├── docs/           # Project documentation and feature audits
+├── scripts/        # Maintenance and audit scripts
+├── docker-compose.yml
+├── setup.sh        # One-command setup for self-hosting
+└── Makefile        # Common development tasks
 ```
-
----
-
-## 🏁 Getting Started
-
-### 📋 Prerequisites
-
-- [Node.js](https://nodejs.org/) >= 18.x
-- [Python](https://python.org/) >= 3.12
-- [pnpm](https://pnpm.io/) >= 8.x
-- [Poetry](https://python-poetry.org/) >= 1.7
-- [Docker](https://www.docker.com/) (optional but recommended)
-
-### 🔧 Setup Instructions
-
-#### Option 1: Using Docker (Recommended)
-
-```bash
-# Clone the repository
-git clone https://github.com/ashishkapoor/fintrack.git
-cd fintrack
-
-# Copy environment files
-cp api/.env.example api/.env
-cp web/.env.example web/.env
-
-# Start the services
-docker compose up --build
-```
-
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/api/docs/
-
-#### Option 2: Manual Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/ashishkapoor/fintrack.git
-cd fintrack
-```
-
-2. Setup API (Backend):
-```bash
-cd api
-
-# Install poetry if not already installed
-curl -sSL https://install.python-poetry.org | python3 -
-
-# Install dependencies
-poetry install
-
-# Setup environment variables
-cp .env.example .env
-
-# Run migrations
-poetry run python manage.py migrate
-
-# Start the development server
-poetry run python manage.py runserver
-```
-
-3. Setup Web (Frontend):
-```bash
-cd web
-
-# Install dependencies
-pnpm install
-
-# Setup environment variables
-cp .env.example .env
-
-# Start the development server
-pnpm dev
-```
-
----
 
 ## ⚙️ Configuration
 
-### API Environment Variables
+Both services are configured through `.env` files created from the checked-in
+examples (`api/.env.example`, `web/.env.example`).
+
+**Backend (`api/.env`)**
 
 ```env
-# api/.env
 DEBUG=True
 SECRET_KEY=your_secure_secret_key
 DATABASE_URL=postgres://user:password@localhost:5432/fintrack
@@ -158,92 +152,70 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-### Web Environment Variables
+**Frontend (`web/.env`)**
 
 ```env
-# web/.env
 VITE_BASE_DOMAIN=http://localhost:8000
 ```
 
----
-
-## 🧪 Tests
-
-### Bootstrap (first run)
-```bash
-make bootstrap
-```
-
-### API Tests
-```bash
-make test-api
-```
-
-### Full API Suite
-```bash
-make test-api-all
-```
-
----
-
-## 🧭 Feature Audit
-
-The budgeting-core audit artifacts and prioritized roadmap live in:
-
-- `docs/feature-audit/README.md`
-- `docs/feature-audit/feature-matrix.json`
-- `docs/feature-audit/prioritized-roadmap.md`
-- `docs/feature-audit/parity-report.md`
-- `docs/feature-audit/test-plan.md`
-
-Run the audit validator and parity report generator:
+## 🧪 Testing
 
 ```bash
-make feature-audit
+make bootstrap       # first run: create env files
+make test-api        # API smoke tests
+make test-api-all    # full API test suite
 ```
 
----
+## 📤 API
 
-## 📤 API Documentation
+FinTrack is API-first. Interactive documentation is served by the backend at
+[/api/docs/](http://localhost:8000/api/docs/) (Swagger UI) and
+[/api/redoc/](http://localhost:8000/api/redoc/) (ReDoc).
 
-The API documentation is available at:
-- Swagger UI: http://localhost:8000/api/docs/
-- ReDoc: http://localhost:8000/api/redoc/
-
-## 🧩 API Surface
-
-- `/api/v1/*`: core auth/profile and compatibility endpoints
-- `/api/v1/finance/*`: finance domain resources
+- `/api/v1/*` — core auth, profile, and compatibility endpoints
+- `/api/v1/finance/*` — the finance domain:
   - `budget-files`, `accounts`, `category-groups`, `categories`, `payees`, `tags`
   - `transactions`, `postings`, `scheduled-transactions`, `rules`
   - `budget-months`, `envelope-assignments`, `reports`
   - `exports`, `imports`, `backups`
 
----
+## 🗺️ Roadmap
+
+The budgeting-core feature audit and prioritized roadmap live in
+[`docs/feature-audit/`](docs/feature-audit/README.md). To validate the audit
+artifacts and regenerate the parity report:
+
+```bash
+make feature-audit
+```
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome!  
-Feel free to fork and submit a pull request.
+Contributions, issues, and feature requests are welcome! Please read the
+[contributing guide](CONTRIBUTING.md) to get started, and check the
+[open issues](https://github.com/AshishKapoor/fintrack/issues) for ideas.
 
----
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push the branch (`git push origin feature/amazing-feature`)
+5. Open a pull request
+
+## 🔒 Security
+
+FinTrack stores personal financial data — please report vulnerabilities
+privately via
+[GitHub security advisories](https://github.com/AshishKapoor/fintrack/security/advisories/new)
+rather than public issues. See [SECURITY.md](SECURITY.md) for the full policy
+and a hardening checklist for internet-facing deployments.
 
 ## 📄 License
 
-MIT License © 2025 [Sannty](https://github.com/ashishkapoor)
-
----
-
-## 💡 Inspiration
-
-FinTrack was built to give privacy-conscious users a simple but powerful way to manage their finances independently, free of subscription fees or vendor lock-in.
-
----
+Distributed under the [MIT License](LICENSE). © 2025 [Ashish Kapoor](https://github.com/AshishKapoor).
 
 ## 🙌 Support
 
-If you find FinTrack useful, consider giving a ⭐ on GitHub or sharing it with others!
-
-## Star History
+If you find FinTrack useful, consider giving it a ⭐ on GitHub or sharing it
+with others — it helps the project grow!
 
 [![Star History Chart](https://api.star-history.com/svg?repos=ashishkapoor/fintrack&type=Date)](https://www.star-history.com/#ashishkapoor/fintrack&Date)

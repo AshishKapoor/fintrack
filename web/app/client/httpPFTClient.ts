@@ -22,9 +22,13 @@ interface OfflineQueuedRequest {
   created_at: string
 }
 
+// Reports, exports and imports are computed synchronously on the server, so a
+// 5s ceiling failed them client-side before the server had finished.
+const DEFAULT_TIMEOUT_MS = 30000
+
 export const AXIOS_INSTANCE = Axios.create({
   baseURL: PFT_BASE_URL,
-  timeout: 5000,
+  timeout: DEFAULT_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },

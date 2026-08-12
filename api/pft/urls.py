@@ -3,6 +3,7 @@ from django.urls import include, path
 from .routers import router
 from .views import (
     ChangePasswordView,
+    DeleteAccountView,
     MeView,
     RegisterUserAPIView,
     UpdateProfileView,
@@ -18,4 +19,5 @@ urlpatterns = [
     path(
         "profile/change-password/", ChangePasswordView.as_view(), name="change-password"
     ),
+    path("profile/delete-account/", DeleteAccountView.as_view(), name="delete-account"),
 ]

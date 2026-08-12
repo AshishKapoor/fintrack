@@ -1,21 +1,25 @@
-# Description
+## What does this change?
 
-<!-- What does this PR change and why? Link the issue it closes, e.g. "Closes #123". -->
+<!-- One or two sentences. Link the issue it closes, if there is one. -->
 
-## Type of change
+Closes #
 
-<!-- Keep the ones that apply. Your PR title must follow Conventional Commits, e.g. `fix(api): reject unbalanced ledger postings`. -->
+## Why?
 
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Refactor / cleanup
-- [ ] Documentation
-- [ ] CI / tooling
+<!-- What problem does this solve for someone running FinTrack? -->
+
+## How was it verified?
+
+<!-- Delete what does not apply. -->
+
+- [ ] `cd api && uv run ruff check . && uv run manage.py test`
+- [ ] `cd web && pnpm run lint && pnpm run build`
+- [ ] `docker compose build && docker compose up -d` and the app works end to end
+- [ ] Tried it manually (say what you did)
 
 ## Checklist
 
-- [ ] I read [CONTRIBUTING.md](../CONTRIBUTING.md)
-- [ ] API changes: `uv run ruff check .` and `uv run manage.py test` pass locally
-- [ ] API model changes: migrations are committed (`manage.py makemigrations`)
-- [ ] Web changes: `pnpm lint` and `pnpm build` pass locally
-- [ ] No secrets, credentials, or personal data in the diff
+- [ ] Backend changes to a queryset, serializer or permission come with a
+      cross-tenant test in `api/pft/tests/test_tenant_isolation.py`
+- [ ] No secrets, `.env` files, or generated clients committed
+- [ ] Docs updated if the setup steps or API surface changed

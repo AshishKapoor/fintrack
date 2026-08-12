@@ -2,14 +2,14 @@ import {
   useV1BudgetsList,
   useV1CategoriesList,
   useV1TransactionsList,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { BudgetProgress } from '@/components/budget-progress'
 import { Overview } from '@/components/overview'
 import { PinnedReports } from '@/components/pinned-reports'
 import { RecentTransactions } from '@/components/recent-transactions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Transaction } from '@/client/gen/pft/transaction'
+import { Transaction } from '@/client/pft/transaction'
 
 import { AnimateSpinner } from '@/components/spinner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
@@ -17,7 +17,7 @@ import { CircleDollarSign, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 import { DatePickerWithRange } from '@/components/date-range-picker'
 import { useSearchParams } from 'react-router-dom'
@@ -234,7 +234,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              <CurrencyDisplay amount={~~stats.totalBalance.toFixed(2)} />
+              <CurrencyDisplay amount={stats.totalBalance} />
             </div>
           </CardContent>
         </Card>
@@ -244,7 +244,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-emerald-600'>
-              <CurrencyDisplay amount={~~stats.monthlyIncome.toFixed(2)} />
+              <CurrencyDisplay amount={stats.monthlyIncome} />
             </div>
             <p className='text-xs text-muted-foreground'>
               {incomeChange >= 0 ? '+' : ''}
@@ -258,7 +258,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold text-rose-600'>
-              <CurrencyDisplay amount={~~stats.monthlyExpenses.toFixed(2)} />
+              <CurrencyDisplay amount={stats.monthlyExpenses} />
             </div>
             <p className='text-xs text-muted-foreground'>
               {expensesChange >= 0 ? '+' : ''}

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useV1CategoriesList } from '@/client/gen/pft/v1/v1'
+import { useV1CategoriesList } from '@/client/pft/v1/v1'
 import {
   createScheduledTransaction,
   createTransactionRule,
@@ -188,7 +188,10 @@ export default function RulesAndRecurringPage() {
   }
 
   useEffect(() => {
-    void loadAll()
+    // Deferred a tick so the synchronous part of the loader's setState calls
+    // do not run inside the effect body itself (react-hooks/set-state-in-effect).
+    const id = setTimeout(() => void loadAll(), 0)
+    return () => clearTimeout(id)
   }, [])
 
   const resetRuleForm = () => {

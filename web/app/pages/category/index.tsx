@@ -29,11 +29,11 @@ import {
   useV1CategoriesCreate,
   v1CategoriesDestroy,
   v1CategoriesUpdate,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { toast } from 'sonner'
 import { AnimateSpinner } from '@/components/spinner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 export default function CategoriesPage() {
   const [showAddCategory, setShowAddCategory] = useState(false)

@@ -1,9 +1,14 @@
 from datetime import date
+from decimal import Decimal
 
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Abs, Coalesce
 from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from .finance_serializers import (
@@ -60,7 +65,25 @@ from .models import (
 )
 
 
+def parse_iso_date(raw, field_name):
+    """Parse a YYYY-MM-DD string, raising a 400 rather than a 500 on garbage."""
+    if raw in (None, ""):
+        return None
+    try:
+        return date.fromisoformat(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValidationError(
+            {field_name: "Expected a date in YYYY-MM-DD format."}
+        ) from exc
+
+
 class UserScopedModelViewSet(viewsets.ModelViewSet):
+    """Base class for the finance viewsets.
+
+    NOTE: this only enforces authentication. Every subclass is still responsible
+    for scoping its own get_queryset() to request.user.
+    """
+
     permission_classes = [permissions.IsAuthenticated]
 
 
@@ -95,8 +118,7 @@ class BudgetFileViewSet(UserScopedModelViewSet):
     @action(detail=True, methods=["get"], url_path="balances")
     def balances(self, request, pk=None):
         budget_file = self.get_object()
-        as_of = request.query_params.get("as_of")
-        as_of_date = date.fromisoformat(as_of) if as_of else None
+        as_of_date = parse_iso_date(request.query_params.get("as_of"), "as_of")
         return Response(
             {
                 "as_of": as_of_date.isoformat() if as_of_date else None,
@@ -167,11 +189,20 @@ class TagViewSet(UserScopedModelViewSet):
         return queryset
 
 
+class LedgerTransactionPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 500
+
+
 class LedgerTransactionViewSet(UserScopedModelViewSet):
     serializer_class = LedgerTransactionSerializer
+    pagination_class = LedgerTransactionPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["memo", "payee__name", "match_key"]
-    ordering_fields = ["transaction_date", "created_at", "updated_at", "id"]
+    # `amount` is annotated below: a ledger transaction has no amount column,
+    # the figure people mean lives on its category posting.
+    ordering_fields = ["transaction_date", "created_at", "updated_at", "id", "amount"]
     ordering = ["-transaction_date", "-id"]
 
     def get_queryset(self):
@@ -179,17 +210,37 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
             LedgerTransaction.objects.filter(budget_file__user=self.request.user)
             .select_related("payee")
             .prefetch_related("postings__account", "postings__category", "tags")
+            .annotate(
+                amount=Abs(
+                    Coalesce(
+                        Sum(
+                            "postings__amount",
+                            filter=Q(postings__category__isnull=False),
+                        ),
+                        Value(Decimal("0.00")),
+                    )
+                )
+            )
             .order_by("-transaction_date", "-id")
         )
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
-        start_date = self.request.query_params.get("start_date")
+        start_date = parse_iso_date(
+            self.request.query_params.get("start_date"), "start_date"
+        )
         if start_date:
             queryset = queryset.filter(transaction_date__gte=start_date)
-        end_date = self.request.query_params.get("end_date")
+        end_date = parse_iso_date(self.request.query_params.get("end_date"), "end_date")
         if end_date:
             queryset = queryset.filter(transaction_date__lte=end_date)
+
+        # Income and expense are a property of the category on the posting, not
+        # of the transaction, so filtering by "type" filters on that category.
+        tx_type = self.request.query_params.get("type")
+        if tx_type in {CategoryV2.KIND_INCOME, CategoryV2.KIND_EXPENSE}:
+            queryset = queryset.filter(postings__category__kind=tx_type).distinct()
+
         return queryset
 
     @action(detail=False, methods=["post"], url_path="bulk-update")
@@ -213,6 +264,18 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
             id__in=ids,
             budget_file__user=request.user,
         )
+
+        # `payee` is a raw id from the request body. Without this check a user
+        # could attach another tenant's payee to their own transactions.
+        if patch.get("payee") is not None:
+            owned_payee = Payee.objects.filter(
+                pk=patch["payee"], budget_file__user=request.user
+            ).exists()
+            if not owned_payee:
+                return Response(
+                    {"detail": "Unknown payee."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
         updated_count = queryset.update(**patch, updated_at=timezone.now())
 
         budget_file_ids = queryset.values_list("budget_file_id", flat=True).distinct()
@@ -324,9 +387,9 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="run-due")
     def run_due(self, request):
-        run_date_raw = request.data.get("run_date")
         run_date = (
-            date.fromisoformat(run_date_raw) if run_date_raw else timezone.now().date()
+            parse_iso_date(request.data.get("run_date"), "run_date")
+            or timezone.now().date()
         )
         due_items = self.get_queryset().filter(
             is_active=True, next_run_date__lte=run_date
@@ -334,7 +397,12 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
 
         created_ids = []
         for schedule in due_items:
-            ledger_tx = materialize_scheduled_transaction(schedule)
+            try:
+                ledger_tx = materialize_scheduled_transaction(schedule)
+            except ValueError as exc:
+                raise ValidationError(
+                    {"detail": f"Scheduled transaction {schedule.id}: {exc}"}
+                ) from exc
             created_ids.append(ledger_tx.id)
 
         return Response({"created_transaction_ids": created_ids})
@@ -405,7 +473,10 @@ class ReportViewSet(UserScopedModelViewSet):
         if not budget_file:
             return Response({"detail": "Budget file not found"}, status=404)
 
-        result = run_report(budget_file, request.data)
+        try:
+            result = run_report(budget_file, request.data)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
         return Response(result)
 
     @action(detail=True, methods=["post"], url_path="run")
@@ -413,7 +484,10 @@ class ReportViewSet(UserScopedModelViewSet):
         saved_report = self.get_object()
         payload = dict(saved_report.definition or {})
         payload["report_type"] = saved_report.report_type
-        result = run_report(saved_report.budget_file, payload)
+        try:
+            result = run_report(saved_report.budget_file, payload)
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
         return Response(result)
 
 

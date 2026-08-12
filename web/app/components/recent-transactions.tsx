@@ -1,7 +1,8 @@
 'use client'
 
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
-import { useV1CategoriesList, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import type { Transaction } from '@/client/pft/transaction'
+import { TypeEnum } from '@/client/pft/typeEnum'
+import { useV1CategoriesList, useV1TransactionsList } from '@/client/pft/v1/v1'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
@@ -16,10 +17,15 @@ import {
   HomeIcon,
   ShoppingBag,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const categoryIcons: Record<string, any> = {
+interface CategoryIcon {
+  icon: LucideIcon
+  color: string
+}
+
+const categoryIcons: Record<string, CategoryIcon> = {
   Salary: { icon: Briefcase, color: 'text-emerald-500 bg-emerald-100' },
   Housing: { icon: HomeIcon, color: 'text-blue-500 bg-blue-100' },
   Food: { icon: ShoppingBag, color: 'text-orange-500 bg-orange-100' },
@@ -52,7 +58,7 @@ export function RecentTransactions() {
 
   return (
     <div className='space-y-4'>
-      {transactions.results.slice(0, 5).map((transaction) => {
+      {transactions.results.slice(0, 5).map((transaction: Transaction) => {
         const categoryName =
           categories?.results?.find((category) => category.id === transaction.category)?.name || ''
         const categoryInfo = categoryIcons[categoryName] || {

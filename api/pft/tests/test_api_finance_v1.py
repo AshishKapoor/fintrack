@@ -39,14 +39,18 @@ class FinanceApiV1Tests(APITestCase):
 
     def test_user_bootstrap_creates_default_finance_objects(self):
         self.assertEqual(BudgetFile.objects.filter(user=self.user).count(), 1)
-        self.assertEqual(Account.objects.filter(budget_file=self.budget_file).count(), 1)
+        self.assertEqual(
+            Account.objects.filter(budget_file=self.budget_file).count(), 1
+        )
         self.assertGreaterEqual(
             CategoryV2.objects.filter(budget_file=self.budget_file).count(),
             10,
         )
 
     def test_accounts_list_returns_current_balance(self):
-        response = self.client.get(f"/api/v1/finance/accounts/?budget_file={self.budget_file.id}")
+        response = self.client.get(
+            f"/api/v1/finance/accounts/?budget_file={self.budget_file.id}"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["id"], self.account.id)
@@ -74,10 +78,16 @@ class FinanceApiV1Tests(APITestCase):
                 },
             ],
         }
-        response = self.client.post("/api/v1/finance/transactions/", payload, format="json")
+        response = self.client.post(
+            "/api/v1/finance/transactions/", payload, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(LedgerTransaction.objects.filter(budget_file=self.budget_file).count(), 1)
-        self.assertEqual(LedgerPosting.objects.filter(transaction_id=response.data["id"]).count(), 2)
+        self.assertEqual(
+            LedgerTransaction.objects.filter(budget_file=self.budget_file).count(), 1
+        )
+        self.assertEqual(
+            LedgerPosting.objects.filter(transaction_id=response.data["id"]).count(), 2
+        )
 
     def test_reject_unbalanced_ledger_transaction(self):
         payload = {
@@ -99,7 +109,9 @@ class FinanceApiV1Tests(APITestCase):
                 },
             ],
         }
-        response = self.client.post("/api/v1/finance/transactions/", payload, format="json")
+        response = self.client.post(
+            "/api/v1/finance/transactions/", payload, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_budget_month_snapshot_and_helpers(self):
@@ -131,7 +143,9 @@ class FinanceApiV1Tests(APITestCase):
         )
         self.assertEqual(assignment_response.status_code, status.HTTP_201_CREATED)
 
-        snapshot_response = self.client.get(f"/api/v1/finance/budget-months/{budget_month_id}/snapshot/")
+        snapshot_response = self.client.get(
+            f"/api/v1/finance/budget-months/{budget_month_id}/snapshot/"
+        )
         self.assertEqual(snapshot_response.status_code, status.HTTP_200_OK)
         self.assertIn("available_to_budget", snapshot_response.data)
 
@@ -235,12 +249,14 @@ class FinanceApiV1Tests(APITestCase):
         self.assertEqual(execute_response.data["created"], 2)
 
     def test_import_preview_supports_qif_camt_and_ynab(self):
-        qif_payload = "!Type:Bank\nD03/03/2026\nT-12.50\nPCoffee Shop\nMMorning coffee\n^\n"
+        qif_payload = (
+            "!Type:Bank\nD03/03/2026\nT-12.50\nPCoffee Shop\nMMorning coffee\n^\n"
+        )
         camt_payload = (
             '<?xml version="1.0" encoding="UTF-8"?>'
             '<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.02">'
             "<BkToCstmrStmt><Stmt><Ntry>"
-            "<Amt Ccy=\"USD\">150.00</Amt><CdtDbtInd>CRDT</CdtDbtInd>"
+            '<Amt Ccy="USD">150.00</Amt><CdtDbtInd>CRDT</CdtDbtInd>'
             "<BookgDt><Dt>2026-03-04</Dt></BookgDt>"
             "<NtryDtls><TxDtls><RmtInf><Ustrd>Transfer In</Ustrd></RmtInf></TxDtls></NtryDtls>"
             "</Ntry></Stmt></BkToCstmrStmt></Document>"
@@ -339,7 +355,9 @@ class FinanceApiV1Tests(APITestCase):
         )
         self.assertEqual(cash_flow_response.status_code, status.HTTP_200_OK)
         self.assertEqual(Decimal(cash_flow_response.data["income"]), Decimal("500.00"))
-        self.assertEqual(Decimal(cash_flow_response.data["expenses"]), Decimal("100.00"))
+        self.assertEqual(
+            Decimal(cash_flow_response.data["expenses"]), Decimal("100.00")
+        )
 
         net_worth_response = self.client.post(
             "/api/v1/finance/reports/run/",

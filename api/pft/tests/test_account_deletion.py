@@ -63,7 +63,9 @@ class DeleteAccountTests(APITestCase):
 
     def test_rejects_a_wrong_password(self):
         response = self.client.post(
-            URL, {"password": "not-my-password", "confirmation": "DELETE"}, format="json"
+            URL,
+            {"password": "not-my-password", "confirmation": "DELETE"},
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue(User.objects.filter(pk=self.user.pk).exists())
@@ -104,8 +106,12 @@ class DeleteAccountTests(APITestCase):
         )
         refresh = tokens.data["refresh"]
 
-        self.client.post(URL, {"password": PASSWORD, "confirmation": "DELETE"}, format="json")
+        self.client.post(
+            URL, {"password": PASSWORD, "confirmation": "DELETE"}, format="json"
+        )
 
         self.client.force_authenticate(user=None)
-        response = self.client.post("/api/token/refresh/", {"refresh": refresh}, format="json")
+        response = self.client.post(
+            "/api/token/refresh/", {"refresh": refresh}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

@@ -104,9 +104,13 @@ class LegacyApiIsolationTests(TenantIsolationTestCase):
         self.assertNotEqual(self.alice.transaction.title, "hijacked")
 
     def test_cannot_delete_other_users_transaction(self):
-        response = self.client.delete(f"/api/v1/transactions/{self.alice.transaction.id}/")
+        response = self.client.delete(
+            f"/api/v1/transactions/{self.alice.transaction.id}/"
+        )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Transaction.objects.filter(id=self.alice.transaction.id).exists())
+        self.assertTrue(
+            Transaction.objects.filter(id=self.alice.transaction.id).exists()
+        )
 
     def test_cannot_reassign_own_transaction_to_another_user(self):
         """Regression: `user` used to be writable, so a PUT could donate a row."""
@@ -166,7 +170,9 @@ class LegacyApiIsolationTests(TenantIsolationTestCase):
 
     def test_global_categories_are_readable_but_not_writable(self):
         """Regression: global (user IS NULL) rows were editable by everyone."""
-        shared = Category.objects.create(user=None, name="Shared Global", type="expense")
+        shared = Category.objects.create(
+            user=None, name="Shared Global", type="expense"
+        )
 
         listed = self.client.get("/api/v1/categories/")
         self.assertIn(shared.id, {row["id"] for row in listed.data["results"]})
@@ -259,13 +265,21 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             "memo": "Trespassing",
             "postings": [
                 {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
-                {"category": self.alice.category_v2.id, "amount": "5.00", "sort_order": 1},
+                {
+                    "category": self.alice.category_v2.id,
+                    "amount": "5.00",
+                    "sort_order": 1,
+                },
             ],
         }
-        response = self.client.post("/api/v1/finance/transactions/", payload, format="json")
+        response = self.client.post(
+            "/api/v1/finance/transactions/", payload, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(
-            LedgerTransaction.objects.filter(budget_file=self.alice.budget_file).exists()
+            LedgerTransaction.objects.filter(
+                budget_file=self.alice.budget_file
+            ).exists()
         )
 
     def test_bulk_update_cannot_attach_another_tenants_payee(self):
@@ -407,9 +421,7 @@ class LegacyDeprecationTests(TenantIsolationTestCase):
             with self.subTest(url=url):
                 response = self.client.get(url)
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertEqual(
-                    response.headers["Deprecation"], LEGACY_DEPRECATED_AT
-                )
+                self.assertEqual(response.headers["Deprecation"], LEGACY_DEPRECATED_AT)
                 self.assertIn("successor-version", response.headers["Link"])
                 self.assertIn("/api/v1/finance/", response.headers["Link"])
 

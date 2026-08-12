@@ -202,7 +202,16 @@ class Command(BaseCommand):
             )
 
     def _write_transaction(
-        self, *, budget_file, account, category, payee_name, memo, amount, is_income, when
+        self,
+        *,
+        budget_file,
+        account,
+        category,
+        payee_name,
+        memo,
+        amount,
+        is_income,
+        when,
     ):
         payee, _ = Payee.objects.get_or_create(budget_file=budget_file, name=payee_name)
 

@@ -38,7 +38,9 @@ class Command(BaseCommand):
 
         if user_model.objects.filter(email__iexact=email).exists():
             self.stdout.write(
-                self.style.WARNING(f"Admin {email} already exists - leaving it untouched.")
+                self.style.WARNING(
+                    f"Admin {email} already exists - leaving it untouched."
+                )
             )
             return
 

@@ -36,17 +36,23 @@ class TokenRevocationTests(APITestCase):
 
     def test_refresh_works_before_logout(self):
         _, refresh = self.obtain_tokens()
-        response = self.client.post("/api/token/refresh/", {"refresh": refresh}, format="json")
+        response = self.client.post(
+            "/api/token/refresh/", {"refresh": refresh}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_logout_revokes_the_refresh_token(self):
         access, refresh = self.obtain_tokens()
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
 
-        logout = self.client.post("/api/token/logout/", {"refresh": refresh}, format="json")
+        logout = self.client.post(
+            "/api/token/logout/", {"refresh": refresh}, format="json"
+        )
         self.assertEqual(logout.status_code, status.HTTP_200_OK)
 
-        response = self.client.post("/api/token/refresh/", {"refresh": refresh}, format="json")
+        response = self.client.post(
+            "/api/token/refresh/", {"refresh": refresh}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_logout_all_revokes_every_session(self):

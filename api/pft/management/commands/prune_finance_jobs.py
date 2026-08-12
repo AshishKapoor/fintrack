@@ -29,9 +29,9 @@ class Command(BaseCommand):
         dry_run = options["dry_run"]
         cutoff = timezone.now() - timezone.timedelta(days=days)
 
-        stale_imports = ImportJob.objects.filter(
-            created_at__lt=cutoff
-        ).exclude(source_payload="")
+        stale_imports = ImportJob.objects.filter(created_at__lt=cutoff).exclude(
+            source_payload=""
+        )
         stale_exports = ExportJob.objects.filter(created_at__lt=cutoff).exclude(
             content_text="", content_b64=""
         )

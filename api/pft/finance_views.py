@@ -108,7 +108,9 @@ class BudgetFileViewSet(UserScopedModelViewSet):
     @action(detail=True, methods=["post"], url_path="set-default")
     def set_default(self, request, pk=None):
         budget_file = self.get_object()
-        BudgetFile.objects.filter(user=request.user, is_default=True).update(is_default=False)
+        BudgetFile.objects.filter(user=request.user, is_default=True).update(
+            is_default=False
+        )
         budget_file.is_default = True
         budget_file.save(update_fields=["is_default", "updated_at"])
         return Response(BudgetFileSerializer(budget_file).data)
@@ -130,16 +132,18 @@ class AccountViewSet(UserScopedModelViewSet):
     serializer_class = AccountSerializer
 
     def get_queryset(self):
-        return Account.objects.filter(budget_file__user=self.request.user).order_by("id")
+        return Account.objects.filter(budget_file__user=self.request.user).order_by(
+            "id"
+        )
 
 
 class CategoryGroupViewSet(UserScopedModelViewSet):
     serializer_class = CategoryGroupV2Serializer
 
     def get_queryset(self):
-        queryset = CategoryGroupV2.objects.filter(budget_file__user=self.request.user).order_by(
-            "sort_order", "id"
-        )
+        queryset = CategoryGroupV2.objects.filter(
+            budget_file__user=self.request.user
+        ).order_by("sort_order", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -150,7 +154,9 @@ class CategoryV2ViewSet(UserScopedModelViewSet):
     serializer_class = CategoryV2Serializer
 
     def get_queryset(self):
-        queryset = CategoryV2.objects.filter(budget_file__user=self.request.user).order_by("id")
+        queryset = CategoryV2.objects.filter(
+            budget_file__user=self.request.user
+        ).order_by("id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -161,7 +167,9 @@ class PayeeViewSet(UserScopedModelViewSet):
     serializer_class = PayeeSerializer
 
     def get_queryset(self):
-        queryset = Payee.objects.filter(budget_file__user=self.request.user).order_by("id")
+        queryset = Payee.objects.filter(budget_file__user=self.request.user).order_by(
+            "id"
+        )
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -172,7 +180,9 @@ class TagViewSet(UserScopedModelViewSet):
     serializer_class = TagSerializer
 
     def get_queryset(self):
-        queryset = Tag.objects.filter(budget_file__user=self.request.user).order_by("id")
+        queryset = Tag.objects.filter(budget_file__user=self.request.user).order_by(
+            "id"
+        )
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -216,7 +226,9 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
-        start_date = parse_iso_date(self.request.query_params.get("start_date"), "start_date")
+        start_date = parse_iso_date(
+            self.request.query_params.get("start_date"), "start_date"
+        )
         if start_date:
             queryset = queryset.filter(transaction_date__gte=start_date)
         end_date = parse_iso_date(self.request.query_params.get("end_date"), "end_date")
@@ -236,7 +248,9 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
         ids = request.data.get("ids") or []
         updates = request.data.get("updates") or {}
         if not ids:
-            return Response({"detail": "ids is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "ids is required"}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         allowed_fields = {"memo", "cleared", "imported", "payee"}
         patch = {k: v for k, v in updates.items() if k in allowed_fields}
@@ -299,9 +313,9 @@ class BudgetMonthViewSet(UserScopedModelViewSet):
     serializer_class = BudgetMonthSerializer
 
     def get_queryset(self):
-        queryset = BudgetMonth.objects.filter(budget_file__user=self.request.user).order_by(
-            "-year", "-month", "-id"
-        )
+        queryset = BudgetMonth.objects.filter(
+            budget_file__user=self.request.user
+        ).order_by("-year", "-month", "-id")
         budget_file = self.request.query_params.get("budget_file")
         year = self.request.query_params.get("year")
         month = self.request.query_params.get("month")
@@ -377,7 +391,9 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
             parse_iso_date(request.data.get("run_date"), "run_date")
             or timezone.now().date()
         )
-        due_items = self.get_queryset().filter(is_active=True, next_run_date__lte=run_date)
+        due_items = self.get_queryset().filter(
+            is_active=True, next_run_date__lte=run_date
+        )
 
         created_ids = []
         for schedule in due_items:
@@ -396,9 +412,9 @@ class TransactionRuleViewSet(UserScopedModelViewSet):
     serializer_class = TransactionRuleSerializer
 
     def get_queryset(self):
-        queryset = TransactionRule.objects.filter(budget_file__user=self.request.user).order_by(
-            "priority", "id"
-        )
+        queryset = TransactionRule.objects.filter(
+            budget_file__user=self.request.user
+        ).order_by("priority", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -431,9 +447,9 @@ class ReportViewSet(UserScopedModelViewSet):
     serializer_class = SavedReportSerializer
 
     def get_queryset(self):
-        queryset = SavedReport.objects.filter(budget_file__user=self.request.user).order_by(
-            "-updated_at", "-id"
-        )
+        queryset = SavedReport.objects.filter(
+            budget_file__user=self.request.user
+        ).order_by("-updated_at", "-id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -504,7 +520,9 @@ class ExportJobViewSet(UserScopedModelViewSet):
         }[export_job.format]
 
         response = HttpResponse(payload, content_type=content_type)
-        response["Content-Disposition"] = f'attachment; filename="{export_job.file_name}"'
+        response["Content-Disposition"] = (
+            f'attachment; filename="{export_job.file_name}"'
+        )
         return response
 
 
@@ -530,7 +548,9 @@ class BackupBundleViewSet(UserScopedModelViewSet):
 
         bundle = self.get_queryset().filter(budget_file_id=budget_file_id).first()
         if not bundle:
-            return Response({"detail": "Backup not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Backup not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         return Response(self.get_serializer(bundle).data)
 

@@ -82,7 +82,9 @@ class CoreFinanceSmokeTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.expense_category = Category.objects.filter(user=self.user, type="expense").first()
+        self.expense_category = Category.objects.filter(
+            user=self.user, type="expense"
+        ).first()
 
     def _create_transaction(self, title: str, amount: str, transaction_date: str):
         payload = {
@@ -97,14 +99,18 @@ class CoreFinanceSmokeTests(APITestCase):
 
     def test_category_transaction_and_budget_flows(self):
         category_payload = {"name": "Travel", "type": "expense"}
-        category_response = self.client.post("/api/v1/categories/", category_payload, format="json")
+        category_response = self.client.post(
+            "/api/v1/categories/", category_payload, format="json"
+        )
         self.assertEqual(category_response.status_code, status.HTTP_201_CREATED)
 
         categories_response = self.client.get("/api/v1/categories/")
         self.assertEqual(categories_response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(categories_response.data["count"], 3)
 
-        transaction_response = self._create_transaction("Flight Ticket", "640.00", "2026-03-01")
+        transaction_response = self._create_transaction(
+            "Flight Ticket", "640.00", "2026-03-01"
+        )
         self.assertEqual(transaction_response.status_code, status.HTTP_201_CREATED)
 
         transaction_id = transaction_response.data["id"]
@@ -136,7 +142,9 @@ class CoreFinanceSmokeTests(APITestCase):
             "year": 2026,
             "amount_limit": "1000.00",
         }
-        budget_create_response = self.client.post("/api/v1/budgets/", budget_payload, format="json")
+        budget_create_response = self.client.post(
+            "/api/v1/budgets/", budget_payload, format="json"
+        )
         self.assertEqual(budget_create_response.status_code, status.HTTP_201_CREATED)
 
         budget_update_payload = {
@@ -222,7 +230,9 @@ class CoreFinanceSmokeTests(APITestCase):
             "last_name": "Tester",
             "department": "engineering",
         }
-        profile_response = self.client.put("/api/v1/profile/update/", profile_payload, format="json")
+        profile_response = self.client.put(
+            "/api/v1/profile/update/", profile_payload, format="json"
+        )
         self.assertEqual(profile_response.status_code, status.HTTP_200_OK)
         self.assertEqual(profile_response.data["first_name"], "Smoke")
 

@@ -22,6 +22,7 @@ DEFAULT_EXPENSE_CATEGORIES = [
     "Entertainment",
 ]
 
+
 @receiver(post_save, sender=User)
 def create_default_categories(sender, instance, created, **kwargs):
     """

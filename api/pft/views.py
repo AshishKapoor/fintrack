@@ -133,7 +133,9 @@ class CategoryViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
         if self.request.method not in permissions.SAFE_METHODS:
             return owned.order_by("name", "id")
 
-        return (owned | Category.objects.filter(user__isnull=True)).order_by("name", "id")
+        return (owned | Category.objects.filter(user__isnull=True)).order_by(
+            "name", "id"
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -153,7 +155,13 @@ class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     pagination_class = CustomPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "category__name"]
-    ordering_fields = ["transaction_date", "amount", "created_at", "updated_at", "title"]
+    ordering_fields = [
+        "transaction_date",
+        "amount",
+        "created_at",
+        "updated_at",
+        "title",
+    ]
     ordering = ["-transaction_date", "-id"]
 
     def get_queryset(self):
@@ -162,8 +170,8 @@ class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
         )
 
         # Date range filtering
-        start_date = self.request.query_params.get('start_date')
-        end_date = self.request.query_params.get('end_date')
+        start_date = self.request.query_params.get("start_date")
+        end_date = self.request.query_params.get("end_date")
 
         if start_date:
             queryset = queryset.filter(transaction_date__gte=start_date)
@@ -190,7 +198,9 @@ class BudgetViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user).order_by("-year", "-month", "id")
+        return Budget.objects.filter(user=self.request.user).order_by(
+            "-year", "-month", "id"
+        )
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -210,7 +220,9 @@ class BudgetViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
         # Otherwise create a new budget
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class RegisterUserAPIView(generics.CreateAPIView):
@@ -252,7 +264,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
 
         # Set username to email before passing to serializer
         mutable_data = request.data.copy()
-        mutable_data['username'] = email
+        mutable_data["username"] = email
         request._full_data = mutable_data
 
         return super().create(request, *args, **kwargs)

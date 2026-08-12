@@ -58,7 +58,10 @@ class LedgerFilteringTests(APITestCase):
         )
         account_amount = amount if income else -amount
         LedgerPosting.objects.create(
-            transaction=ledger_tx, account=self.account, amount=account_amount, sort_order=0
+            transaction=ledger_tx,
+            account=self.account,
+            amount=account_amount,
+            sort_order=0,
         )
         LedgerPosting.objects.create(
             transaction=ledger_tx,
@@ -124,7 +127,9 @@ class LedgerFilteringTests(APITestCase):
 
     def test_filters_combine(self):
         response = self.client.get(f"{URL}?type=expense&ordering=-amount")
-        self.assertEqual(self.ids(response), [self.large_expense.id, self.small_expense.id])
+        self.assertEqual(
+            self.ids(response), [self.large_expense.id, self.small_expense.id]
+        )
 
     def test_malformed_date_is_a_400(self):
         response = self.client.get(f"{URL}?start_date=not-a-date")

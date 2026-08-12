@@ -88,12 +88,21 @@ class TransactionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Transaction
-        fields = ['id', 'user', 'title', 'amount', 'type', 'category',
-                 'transaction_date', 'created_at', 'updated_at']
+        fields = [
+            "id",
+            "user",
+            "title",
+            "amount",
+            "type",
+            "category",
+            "transaction_date",
+            "created_at",
+            "updated_at",
+        ]
         # `user` is owned by the view (perform_create/perform_update), never by
         # the client. Leaving it writable let one user reassign a transaction to
         # another account, and made `user` a required field on create.
-        read_only_fields = ['user', 'created_at', 'updated_at']
+        read_only_fields = ["user", "created_at", "updated_at"]
         extra_kwargs = {
             "category": {"required": False, "allow_null": True},
         }
@@ -110,11 +119,11 @@ class TransactionSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         # Ensure amount is always serialized as Decimal
         ret = super().to_representation(instance)
-        ret['amount'] = str(instance.amount)
+        ret["amount"] = str(instance.amount)
         return ret
 
     def create(self, validated_data):
-        amount = validated_data.pop('amount', None)
+        amount = validated_data.pop("amount", None)
         transaction = Transaction(**validated_data)
         if amount is not None:
             transaction.amount = str(amount)
@@ -122,13 +131,14 @@ class TransactionSerializer(serializers.ModelSerializer):
         return transaction
 
     def update(self, instance, validated_data):
-        amount = validated_data.pop('amount', None)
+        amount = validated_data.pop("amount", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         if amount is not None:
             instance.amount = str(amount)
         instance.save()
         return instance
+
 
 class BudgetSerializer(serializers.ModelSerializer):
     def validate_category(self, value):

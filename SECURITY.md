@@ -45,6 +45,22 @@ deployment. At minimum:
 
 These are real and tracked, not hidden:
 
+<<<<<<< HEAD
+- **`/admin/login/` is not rate limited.** The API throttles `/api/token/`,
+  `/api/v1/register/` and password changes, but the Django admin login is
+  served by Django itself. Limit it at your reverse proxy, or do not expose it.
+- **Tokens are stored in JavaScript-readable cookies**, so any XSS is an account
+  takeover. They carry `SameSite=Strict`, and `Secure` over HTTPS, but not
+  `HttpOnly`. Moving the access token into memory with an HttpOnly refresh
+  cookie is planned.
+- **Import and export run synchronously in the request.** Payloads are capped
+  (`FINTRACK_MAX_IMPORT_BYTES`, `FINTRACK_MAX_BACKUP_BYTES`) but there is no
+  background queue, so a large import ties up a worker.
+- **`ImportJob.source_payload` retains the raw uploaded bank file** in the
+  database as plaintext, as do completed exports. Run
+  `manage.py prune_finance_jobs` periodically; see
+  [docs/self-hosting.md](docs/self-hosting.md).
+=======
 - **No rate limiting** on `/api/token/`, `/api/v1/register/` or `/admin/login/`.
   Put a reverse proxy with rate limiting in front of a public instance.
 - **JWTs cannot be revoked.** There is no token blacklist and no logout endpoint;
@@ -54,6 +70,7 @@ These are real and tracked, not hidden:
   takeover.
 - **Import and export run synchronously in the request** with no size cap, and
   `ImportJob.source_payload` retains the raw uploaded bank file in the database.
+>>>>>>> origin/main
 - **The finance endpoints are unpaginated**, so a large ledger returns in one
   response.
 

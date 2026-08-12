@@ -1,13 +1,14 @@
 'use client'
 
-import { Transaction } from '@/client/gen/pft/transaction'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { Transaction } from '@/client/pft/transaction'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
-import { useV1CategoriesList, useV1TransactionsList } from '@/client/gen/pft/v1/v1'
+import { useV1CategoriesList, useV1TransactionsList } from '@/client/pft/v1/v1'
 import { AddTransactionDialog } from '@/components/add-transaction-dialog'
 import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog'
+import { ImportTransactionsDialog } from '@/components/import-transactions-dialog'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -39,6 +40,7 @@ import {
 } from '@/components/ui/table'
 import Typography from '@/components/ui/typography'
 import { formatDateForApi } from '@/lib/date'
+import { downloadFile, serializeExport } from '@/lib/export'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import {
@@ -54,14 +56,23 @@ import {
   Repeat,
   Search,
   Trash,
+  Upload,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
+const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
+  newest: '-transaction_date',
+  oldest: 'transaction_date',
+  highest: '-amount',
+  lowest: 'amount',
+}
+
 export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(false)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
+  const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
@@ -70,6 +81,23 @@ export default function TransactionsPage() {
   const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all')
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest')
   const [currentPage, setCurrentPage] = useState(1)
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Debounced so typing does not fire a request per keystroke.
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Any filter change invalidates the current page number. Adjusting state
+  // during render (with a tracked previous value) is React's sanctioned
+  // alternative to a setState-in-effect cascade.
+  const filterKey = `${debouncedSearch}|${transactionType}|${sortOrder}|${date?.toISOString() ?? ''}`
+  const [previousFilterKey, setPreviousFilterKey] = useState(filterKey)
+  if (filterKey !== previousFilterKey) {
+    setPreviousFilterKey(filterKey)
+    setCurrentPage(1)
+  }
 
   const {
     data: transactions,
@@ -77,13 +105,17 @@ export default function TransactionsPage() {
     mutate: refreshTransactions,
   } = useV1TransactionsList({
     page: currentPage,
+    ...(debouncedSearch ? { search: debouncedSearch } : {}),
+    ...(transactionType !== 'all' ? { type: transactionType } : {}),
+    ...(date ? { start_date: formatDateForApi(date), end_date: formatDateForApi(date) } : {}),
+    ordering: ORDERING[sortOrder],
   })
 
-  useEffect(() => {
-    if (transactions?.count === 0 && currentPage > 1) {
-      setCurrentPage(1)
-    }
-  }, [transactions?.count, currentPage])
+  // Landing past the last page (e.g. after deleting the only row on it)
+  // snaps back to page 1 - also adjusted during render, not in an effect.
+  if (transactions?.count === 0 && currentPage > 1) {
+    setCurrentPage(1)
+  }
 
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
 
@@ -119,46 +151,29 @@ export default function TransactionsPage() {
           icon={<CircleDollarSign className='w-12 h-12' />}
           title='No transactions yet'
           description='Start tracking your finances by adding your first transaction.'
-          action={<Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>}
+          action={
+            <div className='flex gap-2'>
+              <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+              <Button variant='outline' onClick={() => setShowImport(true)}>
+                <Upload className='mr-2 h-4 w-4' />
+                Import statement
+              </Button>
+            </div>
+          }
         />
         <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+        <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       </div>
     )
   }
 
-  const filteredTransactions = Array.isArray(transactions?.results)
-    ? transactions?.results
-        ?.filter((transaction) => {
-          const matchesSearch = transaction.title.toLowerCase().includes(searchQuery.toLowerCase())
-          const matchesType = transactionType === 'all' || transaction.type === transactionType
-          const matchesDate = !date || transaction.transaction_date === format(date, 'yyyy-MM-dd')
-          return matchesSearch && matchesType && matchesDate
-        })
-        .sort((a, b) => {
-          switch (sortOrder) {
-            case 'newest':
-              return new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime()
-            case 'oldest':
-              return new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime()
-            case 'highest':
-              return parseFloat(b.amount) - parseFloat(a.amount)
-            case 'lowest':
-              return parseFloat(a.amount) - parseFloat(b.amount)
-            default:
-              return 0
-          }
-        })
-    : []
+  // Search, type, date and ordering are applied by the API across the whole
+  // ledger. Doing it here only ever filtered the current page, so the result
+  // count disagreed with what was shown.
+  const filteredTransactions = Array.isArray(transactions?.results) ? transactions.results : []
 
   const getCategoryName = (categoryId: number | null | undefined) =>
     categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'
-
-  const escapeCsvCell = (value: string | number, sanitizeFormula = false) => {
-    const rawValue = String(value)
-    const safeValue =
-      sanitizeFormula && /^[=+\-@]/.test(rawValue.trimStart()) ? `'${rawValue}` : rawValue
-    return `"${safeValue.replace(/"/g, '""')}"`
-  }
 
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
@@ -166,7 +181,7 @@ export default function TransactionsPage() {
       return
     }
 
-    const exportRows = filteredTransactions.map((transaction) => ({
+    const rows = filteredTransactions.map((transaction) => ({
       id: transaction.id,
       date: transaction.transaction_date,
       title: transaction.title,
@@ -175,42 +190,9 @@ export default function TransactionsPage() {
       amount: transaction.amount,
     }))
 
-    const dateStamp = formatDateForApi(new Date())
-    const baseFilename = `fintrack-transactions-${dateStamp}`
-    let content = ''
-    let mimeType = ''
-    let extension = ''
-
-    if (format === 'json') {
-      content = JSON.stringify(exportRows, null, 2)
-      mimeType = 'application/json'
-      extension = 'json'
-    } else {
-      const header = ['id', 'date', 'title', 'category', 'type', 'amount']
-      const lines = exportRows.map((row) =>
-        [
-          escapeCsvCell(row.id),
-          escapeCsvCell(row.date),
-          escapeCsvCell(row.title, true),
-          escapeCsvCell(row.category, true),
-          escapeCsvCell(row.type),
-          escapeCsvCell(row.amount),
-        ].join(','),
-      )
-      content = [header.join(','), ...lines].join('\\n')
-      mimeType = 'text/csv;charset=utf-8'
-      extension = 'csv'
-    }
-
-    const blob = new Blob([content], { type: mimeType })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${baseFilename}.${extension}`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+    const { content, mimeType, extension } = serializeExport(rows, format)
+    const filename = `fintrack-transactions-${formatDateForApi(new Date())}.${extension}`
+    downloadFile(content, filename, mimeType)
     toast.success(`Transactions exported as ${extension.toUpperCase()}`)
   }
 
@@ -219,6 +201,10 @@ export default function TransactionsPage() {
       <div className='flex items-center justify-between'>
         <Typography variant='h2'>Transactions</Typography>
         <div className='flex items-center gap-2'>
+          <Button variant='outline' onClick={() => setShowImport(true)}>
+            <Upload className='mr-2 h-4 w-4' />
+            Import
+          </Button>
           <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
             <Repeat className='mr-2 h-4 w-4' />
             Add Transfer
@@ -434,6 +420,7 @@ export default function TransactionsPage() {
       </div>
 
       <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+      <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       <AddTransferDialog
         open={showAddTransfer}
         onOpenChange={setShowAddTransfer}

@@ -146,9 +146,25 @@ const del = async (url: string): Promise<void> =>
     method: 'DELETE',
   })
 
-let budgetFileCache: number | null = null
+const SUPPORTED_CURRENCY_CODES = new Set([
+  'INR', 'USD', 'EUR', 'GBP', 'JPY', 'CNY', 'CAD', 'AUD', 'CHF', 'KRW', 'SGD', 'HKD',
+])
 
-export const getDefaultBudgetFileId = async () => {
+const LOCALE_CURRENCY: Record<string, string> = {
+  IN: 'INR', US: 'USD', GB: 'GBP', JP: 'JPY', CN: 'CNY', CA: 'CAD',
+  AU: 'AUD', CH: 'CHF', KR: 'KRW', SG: 'SGD', HK: 'HKD',
+}
+
+function guessCurrencyCode(): string {
+  const region = new Intl.Locale(navigator.language).maximize().region
+  const code = region ? LOCALE_CURRENCY[region] : undefined
+  return code && SUPPORTED_CURRENCY_CODES.has(code) ? code : 'USD'
+}
+
+let budgetFileCache: BudgetFile | null = null
+
+/** Resolve the caller's default budget file, creating one if none exists. */
+export const getDefaultBudgetFile = async (): Promise<BudgetFile> => {
   if (budgetFileCache) return budgetFileCache
 
   const response = await get<PaginatedResponse<BudgetFile> | BudgetFile[]>('/api/v1/finance/budget-files/')
@@ -158,13 +174,29 @@ export const getDefaultBudgetFileId = async () => {
   if (!selected) {
     selected = await post<BudgetFile>('/api/v1/finance/budget-files/', {
       name: 'Primary Budget',
-      currency_code: 'USD',
+      // Follow the browser's locale rather than assuming USD, which is what
+      // made an INR-displaying UI store USD server-side.
+      currency_code: guessCurrencyCode(),
       is_default: true,
     })
   }
 
-  budgetFileCache = selected.id
-  return selected.id
+  budgetFileCache = selected
+  return selected
+}
+
+export const getDefaultBudgetFileId = async () => (await getDefaultBudgetFile()).id
+
+/** Persist the display currency on the budget file so it follows the account. */
+export const updateBudgetFileCurrency = async (currencyCode: string) => {
+  const budgetFile = await getDefaultBudgetFile()
+  if (budgetFile.currency_code === currencyCode) return budgetFile
+
+  const updated = await patch<BudgetFile>(`/api/v1/finance/budget-files/${budgetFile.id}/`, {
+    currency_code: currencyCode,
+  })
+  budgetFileCache = updated
+  return updated
 }
 
 export const listAccounts = async (budgetFileId?: number) => {

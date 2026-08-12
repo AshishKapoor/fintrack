@@ -41,7 +41,7 @@ no subscriptions, no third-party services, no vendor lock-in.
 - 🌗 **Light / dark mode** with a responsive UI for mobile and desktop
 - 🔌 **API-first architecture** with OpenAPI docs out of the box
 
-## 🛠️ Tech Stack
+## 🛠️ Tech stack
 
 | Layer | Technology |
 | --- | --- |
@@ -120,7 +120,7 @@ pnpm dev                      # start the dev server on :5173
 See [`api/README.md`](api/README.md) and [`web/README.md`](web/README.md) for
 more details on each service.
 
-## 📁 Project Structure
+## 📁 Project structure
 
 ```
 fintrack/

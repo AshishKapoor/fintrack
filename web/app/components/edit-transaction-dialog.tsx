@@ -1,13 +1,13 @@
 'use client'
 
-import { Transaction } from '@/client/gen/pft/transaction'
-import { TypeEnum } from '@/client/gen/pft/typeEnum'
+import { Transaction } from '@/client/pft/transaction'
+import { TypeEnum } from '@/client/pft/typeEnum'
 
 import {
+  useInvalidateTransactions,
   useV1CategoriesList,
-  useV1TransactionsList,
   useV1TransactionsUpdate,
-} from '@/client/gen/pft/v1/v1'
+} from '@/client/pft/v1/v1'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -51,12 +51,17 @@ export function EditTransactionDialog({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const { mutate: refreshTransactions } = useV1TransactionsList()
+  const refreshTransactions = useInvalidateTransactions()
   const { trigger: updateTransaction } = useV1TransactionsUpdate(transaction?.id?.toString()) // Ensure id is a string
 
-  // Initialize form with transaction data
+  // Initialize form with transaction data. Deferred a tick so the setState
+  // burst runs outside the effect body (react-hooks/set-state-in-effect).
   useEffect(() => {
-    if (transaction) {
+    const id = setTimeout(initialise, 0)
+    return () => clearTimeout(id)
+
+    function initialise() {
+      if (!transaction) return
       const category = categories?.results?.find((c) => c.id === transaction.category)
       setType(category?.type || TypeEnum.expense)
       setTitle(transaction.title || '')
@@ -82,9 +87,7 @@ export function EditTransactionDialog({
         user: transaction.user,
       })
 
-      refreshTransactions(undefined, {
-        revalidate: true,
-      })
+      await refreshTransactions()
 
       toast.success('Transaction updated successfully')
       onOpenChange(false)

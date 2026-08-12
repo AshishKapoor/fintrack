@@ -1,0 +1,27 @@
+# Install once with: uv run pre-commit install   (from api/, or `pre-commit install`)
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.10.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^api/
+      - id: ruff-format
+        files: ^api/
+
+  # A committed SECRET_KEY is how this project shipped a public signing key for
+  # months. This hook is the backstop.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.24.0
+    hooks:
+      - id: gitleaks

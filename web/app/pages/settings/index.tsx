@@ -1,4 +1,5 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
+import { DeleteAccountDialog } from '@/components/delete-account-dialog'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import {
@@ -385,9 +386,7 @@ export default function UserSettingsPage() {
                       Permanently delete your account and all data
                     </p>
                   </div>
-                  <Button variant='destructive' disabled>
-                    Delete Account
-                  </Button>
+                  <DeleteAccountDialog />
                 </div>
               </CardContent>
             </Card>

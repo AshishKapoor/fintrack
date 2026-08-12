@@ -97,7 +97,11 @@ export function CommandMenu() {
             <CommandItem
               onSelect={() =>
                 runCommand(() =>
-                  window.open("https://docs.example.com", "_blank")
+                  window.open(
+                    "https://github.com/AshishKapoor/fintrack#readme",
+                    "_blank",
+                    "noopener,noreferrer"
+                  )
                 )
               }
             >
@@ -107,12 +111,16 @@ export function CommandMenu() {
             <CommandItem
               onSelect={() =>
                 runCommand(() =>
-                  window.open("https://help.example.com", "_blank")
+                  window.open(
+                    "https://github.com/AshishKapoor/fintrack/issues",
+                    "_blank",
+                    "noopener,noreferrer"
+                  )
                 )
               }
             >
               <HelpCircle className="mr-2 h-4 w-4" />
-              <span>Help Center</span>
+              <span>Report an Issue</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>

@@ -6,3 +6,6 @@ dist
 *.log
 .DS_Store
 coverage
+e2e/
+test-results/
+playwright-report/

@@ -7,9 +7,11 @@ ENV UV_LINK_MODE=copy
 
 COPY entrypoint.sh /entrypoint.sh
 COPY entrypoint.migrate.sh /entrypoint.migrate.sh
+COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
+RUN chmod +x /entrypoint.sh /entrypoint.migrate.sh /usr/local/bin/wait-for-db.sh
 
 RUN apt-get update && \
-    apt-get install -y libpq-dev gcc build-essential curl && \
+    apt-get install -y libpq-dev gcc build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -21,9 +23,6 @@ ADD . /app
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
-
-RUN curl -o /usr/local/bin/wait-for-it.sh https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh && \
-    chmod +x /usr/local/bin/wait-for-it.sh
 
 ENV PATH="/app/.venv/bin:$PATH"
 

@@ -1,0 +1,12 @@
+# Environment files - only .env.example is tracked
+.env
+.env.*
+!.env.example
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/

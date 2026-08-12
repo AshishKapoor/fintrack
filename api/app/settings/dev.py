@@ -1,7 +1,7 @@
-from .base import *
+from .base import *  # noqa: F403
 
-DEBUG = True
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+DEBUG = env_bool("DEBUG", True)  # noqa: F405
+ALLOWED_HOSTS = ["*"]
 
 INTERNAL_IPS = ["127.0.0.1"]
 

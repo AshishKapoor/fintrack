@@ -4,6 +4,9 @@ import App from './app.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { SWRConfig } from 'swr'
 import { CurrencyProvider } from './context/currency-context'
+import { initAnalytics } from './lib/analytics'
+
+initAnalytics()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

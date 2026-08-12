@@ -13,7 +13,7 @@ import ReportsPage from '@/pages/reports'
 import RulesAndRecurringPage from '@/pages/rules'
 import UserSettingsPage from '@/pages/settings'
 import TransactionsPage from '@/pages/transactions'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 function App() {
   const location = useLocation()
@@ -21,8 +21,7 @@ function App() {
   const redirectToLogin = !isAuthenticated && location.pathname !== '/login' && location.pathname !== '/register'
 
   if (redirectToLogin) {
-    window.location.href = '/login'
-    return null
+    return <Navigate to='/login' replace />
   }
 
   return (

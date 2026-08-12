@@ -52,7 +52,7 @@ export function RecentTransactions() {
 
   return (
     <div className='space-y-4'>
-      {transactions.results.slice(0, 5).map((transaction: any) => {
+      {transactions.results.slice(0, 5).map((transaction) => {
         const categoryName =
           categories?.results?.find((category) => category.id === transaction.category)?.name || ''
         const categoryInfo = categoryIcons[categoryName] || {

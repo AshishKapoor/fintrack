@@ -50,8 +50,8 @@ copy_env() {
 # nothing stay quiet so this can be invoked before every start.
 configure() {
     copy_env .env.example .env
-    copy_env api/.env.example api/.env
-    copy_env web/.env.example web/.env
+    copy_env apps/api/.env.example apps/api/.env
+    copy_env apps/web/.env.example apps/web/.env
     if [ "$created_any" = 1 ]; then
         echo "Review the generated .env files before exposing this instance publicly"
         echo "(at minimum, change POSTGRES_PASSWORD in .env)."

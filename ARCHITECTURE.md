@@ -18,16 +18,16 @@ explained in full below.
                                                    └─────────────┘
 ```
 
-- `web/` is a React 19 single-page app built by Vite and served as static files
+- `apps/web/` is a React 19 single-page app built by Vite and served as static files
   by nginx, which also proxies `/api/` to the backend. There is no server-side
   rendering and no Node process at runtime.
-- `api/` is Django + Django REST Framework behind gunicorn. Authentication is
+- `apps/api/` is Django + Django REST Framework behind gunicorn. Authentication is
   JWT (SimpleJWT); there are no server-side sessions for the API.
 - `worker/` is the same image running Celery against Redis. Import execution
   and exports run there; job state lives on the `ImportJob`/`ExportJob` rows,
   which clients poll. With no `REDIS_URL`, tasks run eagerly inline — the test
   suite and bare-metal trials need no broker.
-- `landing/` is a separate Next.js marketing site. It is **not** part of the
+- `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 
 ## The two API surfaces
@@ -84,7 +84,7 @@ This is enforced in two places, which is worth knowing:
 - The zero-sum rule is enforced in the serializer
   (`finance_serializers._validate_postings`), not in the database.
 
-Business logic lives in `api/pft/finance_services.py`: balances and net worth,
+Business logic lives in `apps/api/pft/finance_services.py`: balances and net worth,
 cash flow, spending trends, envelope snapshots, the rules engine, schedule
 materialisation, CSV/XLSX export, and importers for CSV, OFX, QFX, QIF,
 CAMT.053 and YNAB. Views stay thin and delegate to it.
@@ -97,12 +97,12 @@ Both are live and routed at the same time. On signup, `pft/signals.py` seeds
 them in sync afterwards.
 
 The web app reads through the legacy shapes but **writes to the finance API**.
-That translation lives in one file, `web/app/client/pft/v1/v1.ts`: it resolves
+That translation lives in one file, `apps/web/app/client/pft/v1/v1.ts`: it resolves
 the default budget file and account, maps a `LedgerTransaction` and its postings
 back into a flat `Transaction`, and splits a flat write back into balanced
 postings.
 
-That file is hand-written and lives next to — not inside — `web/app/client/gen/`,
+That file is hand-written and lives next to — not inside — `apps/web/app/client/gen/`,
 which is orval's output directory. Do not run `pnpm orval` expecting it to
 produce this; it will overwrite it with something that does not compile.
 
@@ -123,7 +123,7 @@ Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
 The remaining steps, not yet done:
 
 1. Move the UI onto `/api/v1/finance/*` directly, removing the adapter in
-   `web/app/client/pft/v1/v1.ts`.
+   `apps/web/app/client/pft/v1/v1.ts`.
 2. Remove the legacy endpoints and models in `v1.0.0`.
 3. Rename `CategoryV2` and `CategoryGroupV2` — the "V2" suffix is an accident of
    history that is currently baked into the public schema.
@@ -171,13 +171,13 @@ accepts an ID from the request body must be ownership-checked, or a user can
 point their own row at somebody else's object. Every past isolation bug in this
 codebase was of that shape.
 
-**This is why `api/pft/tests/test_tenant_isolation.py` exists, and why any change
+**This is why `apps/api/pft/tests/test_tenant_isolation.py` exists, and why any change
 to a queryset, serializer or permission needs a test there.**
 
 ## Frontend structure
 
 ```
-web/app/
+apps/web/app/
 ├── main.tsx              root: router, SWR config, currency context, analytics
 ├── app.tsx               route table and layout switch
 ├── pages/                one directory per route
@@ -197,7 +197,7 @@ Data fetching is SWR keyed on URL-ish strings. Note that global revalidation is
 switched off in `main.tsx`, so data refreshes on explicit mutation rather than
 on focus or reconnect.
 
-`web/app/lib/finance-client.ts` is a *second* hand-written client used by the
+`apps/web/app/lib/finance-client.ts` is a *second* hand-written client used by the
 reports and rules pages. It duplicates helpers from `client/pft/v1/v1.ts`,
 including a separate budget-file cache. Merging the two is a good contribution.
 
@@ -216,7 +216,7 @@ including a separate budget-file cache. Merging the two is a good contribution.
 
 ## Settings
 
-`api/app/settings/` splits into `base.py`, `dev.py` and `prod.py`. Containers
+`apps/api/app/settings/` splits into `base.py`, `dev.py` and `prod.py`. Containers
 run `prod` by default; `make dev` selects `dev`. Everything deployment-specific
 comes from the environment — see `.env.example` and `SECURITY.md`.
 
@@ -226,7 +226,7 @@ module refuses to fall back to any known placeholder.
 
 ## Migrations
 
-`api/pft/migrations/` is a linear chain. `0002` creates nine models for an
+`apps/api/pft/migrations/` is a linear chain. `0002` creates nine models for an
 abandoned SaaS direction and `0003` deletes all nine — 240 lines that net to
 zero, kept only because rewriting history is not worth it. `0005` creates the
 entire finance domain and backfills existing v1 rows into it, marking them with
@@ -237,7 +237,7 @@ Migrations are not reversible: the data migrations have no-op reverse functions.
 ## Testing
 
 ```
-api/pft/tests/
+apps/api/pft/tests/
 ├── test_api_smoke.py         registration, JWT, CRUD, filtering, pagination
 ├── test_api_finance_v1.py    ledger, envelopes, reports, import/export, backups
 ├── test_tenant_isolation.py  user B cannot read or write user A's data

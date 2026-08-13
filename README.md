@@ -101,7 +101,7 @@ Prefer running the services directly? You'll need:
 **Backend**
 
 ```bash
-cd api
+cd apps/api
 cp .env.example .env          # then adjust values as needed
 uv sync                       # install dependencies
 uv run manage.py migrate      # apply database migrations
@@ -111,23 +111,23 @@ uv run manage.py runserver    # start the dev server on :8000
 **Frontend**
 
 ```bash
-cd web
+cd apps/web
 cp .env.example .env
 pnpm install
 pnpm dev                      # start the dev server on :5173
 ```
 
-See [`api/README.md`](api/README.md) and [`web/README.md`](web/README.md) for
+See [`apps/api/README.md`](apps/api/README.md) and [`apps/web/README.md`](apps/web/README.md) for
 more details on each service.
 
 ## 📁 Project structure
 
 ```
 fintrack/
-├── api/            # Django backend (DRF, JWT auth, OpenAPI schema)
+├── apps/api/            # Django backend (DRF, JWT auth, OpenAPI schema)
 │   ├── app/        # Django project settings
 │   └── pft/        # Main Django app (finance domain)
-├── web/            # React frontend (Vite, TailwindCSS, Zustand)
+├── apps/web/            # React frontend (Vite, TailwindCSS, Zustand)
 │   ├── app/        # Application source
 │   └── schema/     # Generated API schema / client
 ├── docs/           # Project documentation and feature audits
@@ -140,9 +140,9 @@ fintrack/
 ## ⚙️ Configuration
 
 Both services are configured through `.env` files created from the checked-in
-examples (`api/.env.example`, `web/.env.example`).
+examples (`apps/api/.env.example`, `apps/web/.env.example`).
 
-**Backend (`api/.env`)**
+**Backend (`apps/api/.env`)**
 
 ```env
 DEBUG=True
@@ -152,7 +152,7 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 CORS_ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-**Frontend (`web/.env`)**
+**Frontend (`apps/web/.env`)**
 
 ```env
 VITE_BASE_DOMAIN=http://localhost:8000

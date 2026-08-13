@@ -17,10 +17,10 @@ if ! uv run manage.py spectacular --file "$GENERATED" >/dev/null 2>"$GENLOG"; th
     exit 1
 fi
 
-if ! diff -u ../web/schema/pft.yaml "$GENERATED" > /tmp/schema.diff 2>&1; then
+if ! diff -u ../../apps/web/schema/pft.yaml "$GENERATED" > /tmp/schema.diff 2>&1; then
     echo "web/schema/pft.yaml is out of date with the backend." >&2
     echo "Regenerate it and re-run orval:" >&2
-    echo "  cd api && uv run manage.py spectacular --file ../web/schema/pft.yaml" >&2
+    echo "  cd apps/api && uv run manage.py spectacular --file ../../apps/web/schema/pft.yaml" >&2
     echo "  cd web && pnpm orval" >&2
     echo >&2
     head -40 /tmp/schema.diff >&2

@@ -21,9 +21,9 @@ jobs:
       matrix:
         include:
           - name: api
-            context: ./api
+            context: ./apps/api
           - name: web
-            context: ./web
+            context: ./apps/web
 
     steps:
       - uses: actions/checkout@v4
@@ -56,3 +56,58 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  publish-sdk-ts:
+    # Publishes @fintrack/sdk to npm when an NPM_TOKEN secret is configured;
+    # without it the job builds and exits, so forks are unaffected.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Build
+        working-directory: packages/sdk-ts
+        run: pnpm install --frozen-lockfile && pnpm run build
+
+      - name: Publish
+        working-directory: packages/sdk-ts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "NPM_TOKEN not configured; skipping publish."
+            exit 0
+          fi
+          pnpm publish --access public --no-git-checks
+
+  publish-sdk-py:
+    # Publishes fintrack-sdk to PyPI when a PYPI_API_TOKEN secret exists;
+    # without it the job builds and exits, so forks are unaffected.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        working-directory: packages/sdk-py
+        run: uv build
+
+      - name: Publish
+        working-directory: packages/sdk-py
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$UV_PUBLISH_TOKEN" ]; then
+            echo "PYPI_API_TOKEN not configured; skipping publish."
+            exit 0
+          fi
+          uv publish

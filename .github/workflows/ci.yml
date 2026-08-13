@@ -48,7 +48,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: api
+        working-directory: apps/api
 
     steps:
       - uses: actions/checkout@v4
@@ -72,14 +72,14 @@ jobs:
       # The committed OpenAPI schema drives the generated SDK in
       # web/app/client/gen; drift means the SDK lies about the API.
       - name: Schema is in sync with the backend
-        run: ../scripts/check_schema_sync.sh
+        run: ../../scripts/check_schema_sync.sh
 
   web:
     name: Web (lint + typecheck + build)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: apps/web
 
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: landing
+        working-directory: apps/landing
 
     steps:
       - uses: actions/checkout@v4
@@ -132,11 +132,71 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: landing/pnpm-lock.yaml
+          cache-dependency-path: apps/landing/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm run build
+
+  sdk-ts:
+    name: SDK (TypeScript)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-ts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: packages/sdk-ts/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # The committed generated client must match the committed schema.
+      - name: Generated client is current
+        run: |
+          pnpm run generate
+          git diff --exit-code src/gen || {
+            echo "::error::packages/sdk-ts/src/gen is stale. Run 'pnpm run generate' and commit."; exit 1; }
+
+      - name: Build
+        run: pnpm run build
+
+  sdk-py:
+    name: SDK (Python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-py
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Generated client is current
+        run: |
+          uvx openapi-python-client generate \
+            --path ../../apps/web/schema/pft.yaml \
+            --output-path fintrack_sdk --meta none --overwrite
+          python3 post_generate.py
+          git diff --exit-code fintrack_sdk || {
+            echo "::error::packages/sdk-py/fintrack_sdk is stale. Regenerate and commit."; exit 1; }
+
+      - name: Build and import
+        run: |
+          uv build
+          uv venv .ci-venv
+          uv pip install -p .ci-venv dist/*.whl
+          .ci-venv/bin/python -c "import fintrack_sdk; from fintrack_sdk import AuthenticatedClient; print('import OK')"
 
   stack:
     name: Docker stack smoke test
@@ -223,14 +283,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: web
+        working-directory: apps/web
         run: pnpm install --frozen-lockfile
 
       - name: Install browser
-        working-directory: web
+        working-directory: apps/web
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Start the stack
@@ -251,7 +311,7 @@ jobs:
       # Drives the real stack through the browser: register, sign in, add a
       # transaction, see it listed and summed on the dashboard.
       - name: Run Playwright
-        working-directory: web
+        working-directory: apps/web
         run: pnpm exec playwright test
 
       - uses: actions/upload-artifact@v4
@@ -259,8 +319,8 @@ jobs:
         with:
           name: playwright-report
           path: |
-            web/playwright-report/
-            web/test-results/
+            apps/web/playwright-report/
+            apps/web/test-results/
           retention-days: 7
 
       - name: Dump logs on failure

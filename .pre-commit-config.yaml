@@ -15,9 +15,9 @@ repos:
     hooks:
       - id: ruff
         args: [--fix]
-        files: ^api/
+        files: ^apps/api/
       - id: ruff-format
-        files: ^api/
+        files: ^apps/api/
 
   # A committed SECRET_KEY is how this project shipped a public signing key for
   # months. This hook is the backstop.

@@ -21,9 +21,9 @@ jobs:
       matrix:
         include:
           - name: api
-            context: ./api
+            context: ./apps/api
           - name: web
-            context: ./web
+            context: ./apps/web
 
     steps:
       - uses: actions/checkout@v4

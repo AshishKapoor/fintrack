@@ -48,7 +48,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: api
+        working-directory: apps/api
 
     steps:
       - uses: actions/checkout@v4
@@ -72,14 +72,14 @@ jobs:
       # The committed OpenAPI schema drives the generated SDK in
       # web/app/client/gen; drift means the SDK lies about the API.
       - name: Schema is in sync with the backend
-        run: ../scripts/check_schema_sync.sh
+        run: ../../scripts/check_schema_sync.sh
 
   web:
     name: Web (lint + typecheck + build)
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: apps/web
 
     steps:
       - uses: actions/checkout@v4
@@ -93,7 +93,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
@@ -119,7 +119,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: landing
+        working-directory: apps/landing
 
     steps:
       - uses: actions/checkout@v4
@@ -132,7 +132,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: landing/pnpm-lock.yaml
+          cache-dependency-path: apps/landing/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
 
@@ -223,14 +223,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache-dependency-path: apps/web/pnpm-lock.yaml
 
       - name: Install dependencies
-        working-directory: web
+        working-directory: apps/web
         run: pnpm install --frozen-lockfile
 
       - name: Install browser
-        working-directory: web
+        working-directory: apps/web
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Start the stack
@@ -251,7 +251,7 @@ jobs:
       # Drives the real stack through the browser: register, sign in, add a
       # transaction, see it listed and summed on the dashboard.
       - name: Run Playwright
-        working-directory: web
+        working-directory: apps/web
         run: pnpm exec playwright test
 
       - uses: actions/upload-artifact@v4
@@ -259,8 +259,8 @@ jobs:
         with:
           name: playwright-report
           path: |
-            web/playwright-report/
-            web/test-results/
+            apps/web/playwright-report/
+            apps/web/test-results/
           retention-days: 7
 
       - name: Dump logs on failure

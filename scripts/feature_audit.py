@@ -15,17 +15,17 @@ from typing import Iterable
 ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "docs/feature-audit/feature-matrix.json"
 REPORT_PATH = ROOT / "docs/feature-audit/parity-report.md"
-SCHEMA_PATH = ROOT / "web/schema/pft.yaml"
-ROUTERS_PATH = ROOT / "api/pft/routers.py"
-FINANCE_ROUTERS_PATH = ROOT / "api/pft/finance_routers.py"
-VIEWS_PATH = ROOT / "api/pft/views.py"
-FINANCE_VIEWS_PATH = ROOT / "api/pft/finance_views.py"
-PFT_URLS_PATH = ROOT / "api/pft/urls.py"
-APP_URLS_PATH = ROOT / "api/app/urls.py"
-TRANSACTIONS_PAGE_PATH = ROOT / "web/app/pages/transactions/index.tsx"
-RECENT_TRANSACTIONS_PATH = ROOT / "web/app/components/recent-transactions.tsx"
-WEB_APP_PATH = ROOT / "web/app"
-GENERATED_CLIENT_PATH = ROOT / "web/app/client/pft"
+SCHEMA_PATH = ROOT / "apps/web/schema/pft.yaml"
+ROUTERS_PATH = ROOT / "apps/api/pft/routers.py"
+FINANCE_ROUTERS_PATH = ROOT / "apps/api/pft/finance_routers.py"
+VIEWS_PATH = ROOT / "apps/api/pft/views.py"
+FINANCE_VIEWS_PATH = ROOT / "apps/api/pft/finance_views.py"
+PFT_URLS_PATH = ROOT / "apps/api/pft/urls.py"
+APP_URLS_PATH = ROOT / "apps/api/app/urls.py"
+TRANSACTIONS_PAGE_PATH = ROOT / "apps/web/app/pages/transactions/index.tsx"
+RECENT_TRANSACTIONS_PATH = ROOT / "apps/web/app/components/recent-transactions.tsx"
+WEB_APP_PATH = ROOT / "apps/web/app"
+GENERATED_CLIENT_PATH = ROOT / "apps/web/app/client/pft"
 
 ROW_REQUIRED_FIELDS = {
     "feature_id",
@@ -350,8 +350,8 @@ def build_findings() -> tuple[list[Finding], set[str], set[str]]:
             )
         )
 
-    dashboard_line = get_line(ROOT / "web/app/pages/dashboard/index.tsx", r"useV1TransactionsList\(\s*{")
-    overview_line = get_line(ROOT / "web/app/components/overview.tsx", r"useV1TransactionsList\(")
+    dashboard_line = get_line(ROOT / "apps/web/app/pages/dashboard/index.tsx", r"useV1TransactionsList\(\s*{")
+    overview_line = get_line(ROOT / "apps/web/app/components/overview.tsx", r"useV1TransactionsList\(")
     if dashboard_line and overview_line:
         findings.append(
             Finding(
@@ -365,12 +365,12 @@ def build_findings() -> tuple[list[Finding], set[str], set[str]]:
             )
         )
 
-    api_tests = [p for p in (ROOT / "api/pft/tests").rglob("*.py") if p.name != "__init__.py"]
-    web_tests = [p for p in (ROOT / "web/app").rglob("*.test.tsx")] + [
-        p for p in (ROOT / "web/app").rglob("*.test.ts")
+    api_tests = [p for p in (ROOT / "apps/api/pft/tests").rglob("*.py") if p.name != "__init__.py"]
+    web_tests = [p for p in (ROOT / "apps/web/app").rglob("*.test.tsx")] + [
+        p for p in (ROOT / "apps/web/app").rglob("*.test.ts")
     ]
-    web_tests += [p for p in (ROOT / "web/app").rglob("*.spec.tsx")]
-    web_tests += [p for p in (ROOT / "web/app").rglob("*.spec.ts")]
+    web_tests += [p for p in (ROOT / "apps/web/app").rglob("*.spec.tsx")]
+    web_tests += [p for p in (ROOT / "apps/web/app").rglob("*.spec.ts")]
     if not api_tests and not web_tests:
         findings.append(
             Finding(

@@ -11,7 +11,7 @@ services:
       DJANGO_ENV: development
       DEBUG: "True"
     volumes:
-      - ./api:/app
+      - ./apps/api:/app
       - api_run:/app/run
 
   migrate:
@@ -20,7 +20,7 @@ services:
       DJANGO_ENV: development
       DEBUG: "True"
     volumes:
-      - ./api:/app
+      - ./apps/api:/app
       - api_run:/app/run
 
   worker:
@@ -29,7 +29,7 @@ services:
       DJANGO_ENV: development
       DEBUG: "True"
     volumes:
-      - ./api:/app
+      - ./apps/api:/app
       - api_run:/app/run
 
   db:

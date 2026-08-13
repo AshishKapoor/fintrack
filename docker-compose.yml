@@ -18,7 +18,7 @@ x-django-env: &django-env
 services:
   api:
     build:
-      context: ./api
+      context: ./apps/api
     image: ghcr.io/ashishkapoor/fintrack-api:latest
     # Build from the checked-out source rather than silently pulling a published
     # tag that may be older than this working tree.
@@ -49,7 +49,7 @@ services:
 
   migrate:
     build:
-      context: ./api
+      context: ./apps/api
     image: ghcr.io/ashishkapoor/fintrack-api:latest
     pull_policy: build
     working_dir: /app
@@ -69,7 +69,7 @@ services:
 
   web:
     build:
-      context: ./web
+      context: ./apps/web
     image: ghcr.io/ashishkapoor/fintrack-web:latest
     pull_policy: build
     ports:
@@ -88,7 +88,7 @@ services:
 
   worker:
     build:
-      context: ./api
+      context: ./apps/api
     image: ghcr.io/ashishkapoor/fintrack-api:latest
     pull_policy: build
     # Same image as the api; only the process differs. Imports and exports run

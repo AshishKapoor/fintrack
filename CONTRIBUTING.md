@@ -27,7 +27,7 @@ The backend has two API surfaces that both exist today:
   scheduled transactions, reports, imports, exports and backups.
 
 The web app reads through the legacy shapes but writes to the finance API, via the
-hand-maintained adapter in `web/app/client/pft/`. Consolidating these is the
+hand-maintained adapter in `apps/web/app/client/pft/`. Consolidating these is the
 biggest open piece of work.
 
 ## Getting set up
@@ -45,7 +45,7 @@ http://localhost:5173.
 ### Backend without Docker
 
 ```bash
-cd api && cp .env.example .env && uv sync && uv run manage.py migrate && uv run manage.py runserver
+cd apps/api && cp .env.example .env && uv sync && uv run manage.py migrate && uv run manage.py runserver
 ```
 
 `uv` is the only supported Python toolchain - `uv.lock` is authoritative. There is
@@ -54,7 +54,7 @@ no Poetry setup any more.
 ### Frontend without Docker
 
 ```bash
-cd web && cp .env.example .env && pnpm install && pnpm dev
+cd apps/web && cp .env.example .env && pnpm install && pnpm dev
 ```
 
 pnpm's version is pinned by the `packageManager` field; run `corepack enable` once
@@ -65,17 +65,17 @@ and it will be used automatically.
 Run what CI runs:
 
 ```bash
-cd api && uv run ruff check . && uv run manage.py test
+cd apps/api && uv run ruff check . && uv run manage.py test
 ```
 
 ```bash
-cd web && pnpm run lint && pnpm run test && pnpm run build
+cd apps/web && pnpm run lint && pnpm run test && pnpm run build
 ```
 
 End-to-end tests drive a real stack, so bring it up first:
 
 ```bash
-docker compose up -d && cd web && pnpm exec playwright install chromium && pnpm exec playwright test
+docker compose up -d && cd apps/web && pnpm exec playwright install chromium && pnpm exec playwright test
 ```
 
 And, if you touched anything in the Docker or settings layer:
@@ -104,22 +104,22 @@ for why.
 - **Python** is formatted and linted by Ruff (`line-length = 88`). Run
   `uv run ruff check --fix .`, but read the diff: Ruff will happily delete
   side-effect imports that matter.
-- **TypeScript** follows the ESLint flat config in `web/eslint.config.js`. Avoid
+- **TypeScript** follows the ESLint flat config in `apps/web/eslint.config.js`. Avoid
   `any`; if you truly need it, explain why in a comment.
-- Do not commit generated API clients into `web/app/client/gen/` - that directory
+- Do not commit generated API clients into `apps/web/app/client/gen/` - that directory
   is orval's output and is ignored. The maintained client lives in
-  `web/app/client/pft/`.
+  `apps/web/app/client/pft/`.
 
 ## Testing expectations
 
-- Backend changes need tests. `api/pft/tests/` has three suites: smoke, finance,
+- Backend changes need tests. `apps/api/pft/tests/` has three suites: smoke, finance,
   and tenant isolation.
 - **Anything that touches a queryset, serializer or permission must have a
-  cross-tenant test** in `api/pft/tests/test_tenant_isolation.py`. This is a
+  cross-tenant test** in `apps/api/pft/tests/test_tenant_isolation.py`. This is a
   multi-user finance app; "user B cannot see or change user A's data" is the
   guarantee we care about most.
-- The frontend has vitest for units (`web/**/*.test.ts`) and Playwright for the
-  smoke path (`web/e2e/`). Both run in CI. The Playwright suite exercises the
+- The frontend has vitest for units (`apps/web/**/*.test.ts`) and Playwright for the
+  smoke path (`apps/web/e2e/`). Both run in CI. The Playwright suite exercises the
   real stack through nginx, so it catches things unit tests cannot - it is how
   the login redirect loop and the stale transaction list were found.
 
@@ -128,13 +128,13 @@ for why.
 Look for the `good first issue` label. If none are open and you want somewhere to
 start, these are all real and self-contained:
 
-- Remove the ~21 unused shadcn components from `web/app/components/ui/`.
+- Remove the ~21 unused shadcn components from `apps/web/app/components/ui/`.
 - Move transaction filtering and sorting server-side; today they run over the
   current page only, so the result count is wrong.
 - Replace the hand-rolled currency formatting in
-  `web/app/components/ui/currency-display.tsx` with
+  `apps/web/app/components/ui/currency-display.tsx` with
   `Intl.NumberFormat(locale, { style: 'currency' })`, including the chart tooltips.
-- Register the finance models in `api/pft/admin.py`.
+- Register the finance models in `apps/api/pft/admin.py`.
 - Surface envelope budgeting in the UI: `BudgetMonth` and `EnvelopeAssignment`
   with goals and carryover are fully implemented in the API.
 - Add a backup/restore screen for `/api/v1/finance/backups/`.

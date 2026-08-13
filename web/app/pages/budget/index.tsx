@@ -1,7 +1,12 @@
 'use client'
 
 import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
-import { upsertEnvelopeAssignment, useCurrentEnvelopeSnapshot, useInvalidateLedger } from '@/lib/ledger'
+import {
+  runEnvelopeAction,
+  upsertEnvelopeAssignment,
+  useCurrentEnvelopeSnapshot,
+  useInvalidateLedger,
+} from '@/lib/ledger'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import {
@@ -33,7 +38,7 @@ import {
 } from '@/components/ui/select'
 import Typography from '@/components/ui/typography'
 import { cn } from '@/lib/utils'
-import { Edit, Plus, CircleDollarSign } from 'lucide-react'
+import { CircleDollarSign, Copy, Edit, Eraser, Plus, Sigma } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
@@ -91,6 +96,24 @@ export default function BudgetsPage() {
     } catch (err) {
       console.error('Failed to update budget:', err)
       toast.error('Failed to update budget')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleEnvelopeAction = async (
+    action: 'copy-previous' | 'zero-out' | 'three-month-average',
+    label: string,
+  ) => {
+    if (saving) return
+    setSaving(true)
+    try {
+      await runEnvelopeAction(action)
+      toast.success(label)
+      await refreshLedger()
+    } catch (err) {
+      console.error(`Envelope action ${action} failed:`, err)
+      toast.error('That did not work - is there budget data in previous months?')
     } finally {
       setSaving(false)
     }
@@ -197,7 +220,35 @@ export default function BudgetsPage() {
             Manage your spending limits for {currentMonthDisplay}
           </p>
         </div>
-        <Button onClick={() => setShowAddBudget(true)}>Add Budget</Button>
+        <div className='flex flex-wrap items-center gap-2'>
+          <Button
+            variant='outline'
+            disabled={saving}
+            onClick={() => handleEnvelopeAction('copy-previous', "Copied last month's budgets")}
+          >
+            <Copy className='mr-2 h-4 w-4' />
+            Copy last month
+          </Button>
+          <Button
+            variant='outline'
+            disabled={saving}
+            onClick={() =>
+              handleEnvelopeAction('three-month-average', 'Set budgets to the 3-month average')
+            }
+          >
+            <Sigma className='mr-2 h-4 w-4' />
+            3-month average
+          </Button>
+          <Button
+            variant='outline'
+            disabled={saving}
+            onClick={() => handleEnvelopeAction('zero-out', 'Zeroed out this month')}
+          >
+            <Eraser className='mr-2 h-4 w-4' />
+            Zero out
+          </Button>
+          <Button onClick={() => setShowAddBudget(true)}>Add Budget</Button>
+        </div>
       </div>
 
       <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
@@ -229,6 +280,11 @@ export default function BudgetsPage() {
                   </div>
                   <CardDescription>
                     <CurrencyDisplay amount={spent} /> of <CurrencyDisplay amount={limit} />
+                    {Number(row.carryover) !== 0 && (
+                      <span className='ml-1 text-xs'>
+                        (incl. <CurrencyDisplay amount={Number(row.carryover)} /> carryover)
+                      </span>
+                    )}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -2,8 +2,11 @@ import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
 import {
   v1FinanceAccountsCreate,
   v1FinanceAccountsList,
+  v1FinanceBudgetMonthsCopyPreviousCreate,
   v1FinanceBudgetMonthsCreate,
   v1FinanceBudgetMonthsList,
+  v1FinanceBudgetMonthsThreeMonthAverageCreate,
+  v1FinanceBudgetMonthsZeroOutCreate,
   v1FinanceBudgetMonthsSnapshotRetrieve,
   v1FinanceEnvelopeAssignmentsCreate,
   v1FinanceEnvelopeAssignmentsList,
@@ -236,4 +239,18 @@ export async function upsertEnvelopeAssignment(categoryId: number, amount: strin
     category: categoryId,
     assigned_amount: amount,
   })
+}
+
+/** The three whole-month envelope actions the API already implements. */
+export async function runEnvelopeAction(
+  action: 'copy-previous' | 'zero-out' | 'three-month-average',
+) {
+  const budgetMonthId = String(await getOrCreateCurrentBudgetMonth())
+  if (action === 'copy-previous') {
+    return v1FinanceBudgetMonthsCopyPreviousCreate(budgetMonthId, {} as never)
+  }
+  if (action === 'zero-out') {
+    return v1FinanceBudgetMonthsZeroOutCreate(budgetMonthId, {} as never)
+  }
+  return v1FinanceBudgetMonthsThreeMonthAverageCreate(budgetMonthId, {} as never)
 }

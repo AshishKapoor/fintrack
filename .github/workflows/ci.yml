@@ -66,6 +66,11 @@ jobs:
       - name: Run tests
         run: uv run manage.py test
 
+      # The committed OpenAPI schema drives the generated SDK in
+      # web/app/client/gen; drift means the SDK lies about the API.
+      - name: Schema is in sync with the backend
+        run: ../scripts/check_schema_sync.sh
+
   web:
     name: Web (lint + typecheck + build)
     runs-on: ubuntu-latest

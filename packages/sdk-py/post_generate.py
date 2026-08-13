@@ -74,11 +74,12 @@ def main() -> None:
                     f'd.pop("{field}")', f'd.pop("{field}", "")'
                 )
         if path.name in WRITE_ONLY:
-            updated = ensure_sentinel_import(updated)
             for field in WRITE_ONLY[path.name]:
                 updated = updated.replace(
                     f'{field} = d.pop("{field}")', f'{field} = d.pop("{field}", UNSET)'
                 )
+            # The pops above introduce UNSET; the import must follow them.
+            updated = ensure_sentinel_import(updated)
         if updated != source:
             path.write_text(updated)
             patched += 1

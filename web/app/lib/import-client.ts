@@ -88,10 +88,44 @@ export async function previewImportJob(id: number): Promise<ImportPreview> {
   })
 }
 
-export async function executeImportJob(id: number): Promise<ImportResult> {
-  return httpPFTClient<ImportResult>({
+export async function getImportJob(id: number): Promise<ImportJob> {
+  return httpPFTClient<ImportJob>({
+    url: `/api/v1/finance/imports/${id}/`,
+    method: 'GET',
+  })
+}
+
+/**
+ * Start the import (the API answers 202 and runs it on a worker), then poll the
+ * job row until it completes or fails. Polling replaces the old synchronous
+ * call so a large statement no longer ties up a web worker - or this tab.
+ */
+export async function executeImportJob(
+  id: number,
+  { intervalMs = 700, timeoutMs = 120_000 }: { intervalMs?: number; timeoutMs?: number } = {},
+): Promise<ImportResult> {
+  await httpPFTClient<ImportJob>({
     url: `/api/v1/finance/imports/${id}/execute/`,
     method: 'POST',
     data: {},
   })
+
+  const startedAt = Date.now()
+  for (;;) {
+    const job = await getImportJob(id)
+    if (job.status === 'completed') {
+      const summary = (job.preview_summary ?? {}) as Record<string, unknown>
+      return {
+        created: Number(summary.created ?? 0),
+        skipped: Number(summary.skipped_duplicates ?? 0),
+      }
+    }
+    if (job.status === 'failed') {
+      throw new Error(job.error_message || 'The import failed.')
+    }
+    if (Date.now() - startedAt > timeoutMs) {
+      throw new Error('The import is taking too long; check the job status later.')
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+  }
 }

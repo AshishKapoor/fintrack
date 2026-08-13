@@ -131,7 +131,8 @@ the user when you are done.
 ## Backups
 
 Your data lives in the `postgres_data` volume. Nothing else in the stack holds
-state you cannot rebuild.
+state you cannot rebuild — Redis carries only queued jobs in flight, and a lost
+queue entry just means re-clicking an import.
 
 ### Dumping
 
@@ -206,6 +207,10 @@ docker compose exec api uv run manage.py prune_finance_jobs --days 30
 Add `--dry-run` to see what it would clear.
 
 ## Monitoring
+
+The stack runs five services: `web`, `api`, `worker` (imports and exports),
+`redis` (the job queue) and `db`. `docker compose logs worker` shows job
+processing.
 
 `/healthz/` returns `200` with `{"status": "ok", "database": "ok"}` when the API
 can reach Postgres, and `503` otherwise. It is unauthenticated and contains no

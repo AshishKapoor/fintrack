@@ -123,8 +123,8 @@ importers:
         specifier: ^0.4.4
         version: 0.4.6(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       next-umami:
-        specifier: ^1.0.0
-        version: 1.0.0(next@15.2.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
+        specifier: ^2.0.3
+        version: 2.0.3(next@15.2.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react:
         specifier: ^19.2.8
         version: 19.2.8
@@ -1465,9 +1465,9 @@ packages:
       react: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
       react-dom: ^16.8 || ^17 || ^18 || ^19 || ^19.0.0-rc
 
-  next-umami@1.0.0:
-    resolution: {integrity: sha512-bwq2nuH1vE0zBRkT/6pKznlKsDv6BwTWGfOFcSf0hLT3ua3OJHMVpB3Ws3GiCKl69Exan++PX05wNvfrDvfTmQ==}
-    engines: {node: '>=16.0.0'}
+  next-umami@2.0.3:
+    resolution: {integrity: sha512-ZQsye+G6Lws8MQqgX2PUQG6oCwrH5VRQV8Li/lBSnRUWn3z6BGA+hAt3gjJv3gy+j80lMT2H/PX81vSYAUWf+g==}
+    engines: {node: '>=18.17.0'}
     peerDependencies:
       next: '>=13.0.0'
       react: '>=18.0.0'
@@ -2995,7 +2995,7 @@ snapshots:
       react: 19.2.8
       react-dom: 19.2.8(react@19.2.8)
 
-  next-umami@1.0.0(next@15.2.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
+  next-umami@2.0.3(next@15.2.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(react-dom@19.2.8(react@19.2.8))(react@19.2.8):
     dependencies:
       next: 15.2.9(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       react: 19.2.8

@@ -5,9 +5,17 @@
 set -e
 
 GENERATED="$(mktemp)"
-trap 'rm -f "$GENERATED"' EXIT
+GENLOG="$(mktemp)"
+trap 'rm -f "$GENERATED" "$GENLOG"' EXIT
 
-uv run manage.py spectacular --file "$GENERATED" >/dev/null 2>&1
+# The generator is noisy (87 warnings on a healthy tree), so its output is held
+# back rather than piped into the log. Discarding it outright would turn a
+# generator failure into an unexplained diff, so keep it and print it on error.
+if ! uv run manage.py spectacular --file "$GENERATED" >/dev/null 2>"$GENLOG"; then
+    echo "manage.py spectacular failed:" >&2
+    cat "$GENLOG" >&2
+    exit 1
+fi
 
 if ! diff -u ../web/schema/pft.yaml "$GENERATED" > /tmp/schema.diff 2>&1; then
     echo "web/schema/pft.yaml is out of date with the backend." >&2

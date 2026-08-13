@@ -126,6 +126,56 @@ def compute_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date)
     }
 
 
+def compute_monthly_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date):
+    """Income and expenses per calendar month, from the category legs.
+
+    The dashboard chart wants both series in one call. Signs follow the ledger
+    convention: income-category postings are negative (value leaves the income
+    category for an account), expense postings positive - both reported as
+    magnitudes here.
+    """
+    rows = (
+        LedgerPosting.objects.filter(
+            transaction__budget_file=budget_file,
+            transaction__transaction_date__gte=start_date,
+            transaction__transaction_date__lte=end_date,
+            category__isnull=False,
+        )
+        .annotate(year=ExtractYear("transaction__transaction_date"))
+        .annotate(month=ExtractMonth("transaction__transaction_date"))
+        .values("year", "month", "category__kind")
+        .annotate(total=Sum("amount"))
+    )
+
+    buckets: dict[tuple[int, int], dict[str, Decimal]] = {}
+    for row in rows:
+        bucket = buckets.setdefault(
+            (row["year"], row["month"]),
+            {"income": Decimal("0.00"), "expenses": Decimal("0.00")},
+        )
+        total = row["total"] or Decimal("0.00")
+        if row["category__kind"] == CategoryV2.KIND_INCOME:
+            bucket["income"] += abs(total)
+        else:
+            bucket["expenses"] += abs(total)
+
+    return {
+        "type": "monthly_cash_flow",
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "rows": [
+            {
+                "year": year,
+                "month": month,
+                "income": str(values["income"]),
+                "expenses": str(values["expenses"]),
+                "net": str(values["income"] - values["expenses"]),
+            }
+            for (year, month), values in sorted(buckets.items())
+        ],
+    }
+
+
 def compute_spending_trends(budget_file: BudgetFile, start_date: date, end_date: date):
     rows = (
         LedgerPosting.objects.filter(
@@ -196,6 +246,9 @@ def run_report(budget_file: BudgetFile, payload: dict):
 
     if report_type == SavedReport.TYPE_SPENDING:
         return compute_spending_trends(budget_file, start_date, end_date)
+
+    if report_type == "monthly_cash_flow":
+        return compute_monthly_cash_flow(budget_file, start_date, end_date)
 
     group_by = payload.get("group_by", "category")
     queryset = LedgerPosting.objects.filter(

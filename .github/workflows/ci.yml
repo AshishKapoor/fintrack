@@ -8,7 +8,10 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Cancel superseded PR runs, but never a run on main: back-to-back merges
+  # used to kill the earlier merge's run, which is how a schema drift reached
+  # main with the gate that would have caught it never having executed.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   api:
@@ -93,6 +96,14 @@ jobs:
           cache-dependency-path: web/pnpm-lock.yaml
 
       - run: pnpm install --frozen-lockfile
+
+      # The api job checks pft.yaml still matches the backend; this checks the
+      # committed SDK still matches pft.yaml. Neither half catches the other's
+      # drift, so both are needed to keep web/app/client/gen honest.
+      - name: Generated client is in sync with the schema
+        run: |
+          pnpm orval
+          git diff --exit-code -- app/client/gen
 
       - name: Lint
         run: pnpm run lint

@@ -3268,10 +3268,12 @@ export const useV1FinanceImportsDestroy = <TError = unknown>(
   }
 }
 /**
- * Base class for the finance viewsets.
+ * Start the import and return 202; poll the job for the outcome.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Row-by-row execution is the heavy half of importing (preview is a
+parse-only pass and stays synchronous), so it runs on the worker. The
+job row carries status and, on completion, created/skipped counts in
+preview_summary.
  */
 export const v1FinanceImportsExecuteCreate = (
     id: string,

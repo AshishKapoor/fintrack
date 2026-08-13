@@ -381,3 +381,43 @@ class FinanceApiV1Tests(APITestCase):
         )
         self.assertEqual(net_worth_response.status_code, status.HTTP_200_OK)
         self.assertEqual(Decimal(net_worth_response.data["total"]), Decimal("400.00"))
+
+    def test_reports_monthly_cash_flow(self):
+        for day, amount, category in (
+            ("2026-01-10", "100.00", self.income_category),
+            ("2026-01-20", "40.00", self.expense_category),
+            ("2026-02-05", "60.00", self.expense_category),
+        ):
+            sign = -1 if category == self.income_category else 1
+            self.client.post(
+                "/api/v1/finance/transactions/",
+                {
+                    "budget_file": self.budget_file.id,
+                    "transaction_date": day,
+                    "memo": "flow",
+                    "postings": [
+                        {"account": self.account.id, "amount": str(-sign * float(amount))},
+                        {"category": category.id, "amount": str(sign * float(amount))},
+                    ],
+                },
+                format="json",
+            )
+
+        response = self.client.post(
+            "/api/v1/finance/reports/run/",
+            {
+                "budget_file": self.budget_file.id,
+                "report_type": "monthly_cash_flow",
+                "start_date": "2026-01-01",
+                "end_date": "2026-02-28",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        rows = response.data["rows"]
+        self.assertEqual(len(rows), 2)
+        self.assertEqual(rows[0]["month"], 1)
+        self.assertEqual(rows[0]["income"], "100.00")
+        self.assertEqual(rows[0]["expenses"], "40.00")
+        self.assertEqual(rows[1]["expenses"], "60.00")
+        self.assertEqual(rows[1]["net"], "-60.00")

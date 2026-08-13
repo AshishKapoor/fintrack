@@ -9,7 +9,6 @@ export default defineConfig({
       client: 'swr',
       mode: 'tags-split',
       mock: false,
-      prettier: true,
       override: {
         mutator: {
           path: './app/client/httpPFTClient.ts',

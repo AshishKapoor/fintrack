@@ -23,8 +23,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-# orval output. The hand-maintained client lives in app/client/pft/ and IS tracked.
-app/client/gen/
+# The generated client (app/client/gen/) IS tracked: it is the SDK the app
+# consumes, regenerated via `pnpm orval` and guarded by the CI schema gate.
 
 # Playwright
 /test-results/

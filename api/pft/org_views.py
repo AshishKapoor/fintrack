@@ -20,7 +20,8 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.response import Response
 
-from .models import Invitation, Membership, Organization
+from .audit import record
+from .models import AuditLog, Invitation, Membership, Organization
 
 
 class MembershipSerializer(serializers.ModelSerializer):
@@ -149,8 +150,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         ):
             raise ValidationError({"detail": "An organization needs at least one owner."})
 
+        old_role = membership.role
         membership.role = new_role
         membership.save(update_fields=["role"])
+        record(
+            organization=organization,
+            actor=request.user,
+            action=AuditLog.ACTION_UPDATED,
+            entity=membership,
+            summary=f"Changed {membership.user.email} from {old_role} to {new_role}",
+            changes={"role": {"from": old_role, "to": new_role}},
+        )
         return Response(MembershipSerializer(membership).data)
 
     @action(
@@ -176,7 +186,19 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         ):
             raise ValidationError({"detail": "An organization needs at least one owner."})
 
+        removed_email = membership.user.email
         membership.delete()
+        record(
+            organization=organization,
+            actor=request.user,
+            action=AuditLog.ACTION_DELETED,
+            entity="Membership",
+            summary=(
+                f"{removed_email} left the workspace"
+                if removing_self
+                else f"Removed {removed_email} from the workspace"
+            ),
+        )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     # ---- Invitations ------------------------------------------------------
@@ -206,6 +228,13 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             email=email,
             role=serializer.validated_data.get("role", Membership.ROLE_MEMBER),
             invited_by=request.user,
+        )
+        record(
+            organization=organization,
+            actor=request.user,
+            action=AuditLog.ACTION_CREATED,
+            entity=invitation,
+            summary=f"Invited {email} as {invitation.role}",
         )
         # No email backend is configured; the token is returned to the inviter
         # to share out of band. When SMTP lands, this is where the mail goes.
@@ -240,6 +269,13 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             )
             invitation.accepted_at = timezone.now()
             invitation.save(update_fields=["accepted_at"])
+            record(
+                organization=invitation.organization,
+                actor=request.user,
+                action=AuditLog.ACTION_CREATED,
+                entity=membership,
+                summary=f"{request.user.email} joined as {membership.role}",
+            )
 
         return Response(
             OrganizationSerializer(

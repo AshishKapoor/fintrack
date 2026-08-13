@@ -1,6 +1,7 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from .audit_views import AuditLogViewSet
 from .org_views import OrganizationViewSet
 from .routers import router
 from .views import (
@@ -13,6 +14,7 @@ from .views import (
 
 org_router = DefaultRouter()
 org_router.register("orgs", OrganizationViewSet, basename="org")
+org_router.register("audit-log", AuditLogViewSet, basename="audit-log")
 
 app_name = "pft"
 

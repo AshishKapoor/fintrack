@@ -2,7 +2,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from pft.models import ExportJob, ImportJob
+from pft.models import AuditLog, ExportJob, ImportJob
 
 
 class Command(BaseCommand):
@@ -48,6 +48,12 @@ class Command(BaseCommand):
 
         stale_imports.update(source_payload="")
         stale_exports.update(content_text="", content_b64="")
+
+        audit_days = max(days, 365)  # audit history keeps at least a year
+        audit_cutoff = timezone.now() - timezone.timedelta(days=audit_days)
+        pruned_audit = AuditLog.objects.filter(created_at__lt=audit_cutoff).delete()[0]
+        if pruned_audit:
+            self.stdout.write(f"Pruned {pruned_audit} audit entries older than {audit_days} days.")
 
         self.stdout.write(
             self.style.SUCCESS(

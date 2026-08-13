@@ -72,6 +72,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/v1/audit-log/:
+    get:
+      operationId: v1_audit_log_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAuditLogList'
+          description: ''
+  /api/v1/audit-log/{id}/:
+    get:
+      operationId: v1_audit_log_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
+  /api/v1/audit-log/export/:
+    get:
+      operationId: v1_audit_log_export_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditLog'
+          description: ''
   /api/v1/budgets/:
     get:
       operationId: v1_budgets_list
@@ -4312,6 +4373,50 @@ components:
         * `credit` - Credit Card
         * `asset` - Asset
         * `liability` - Liability
+    ActionEnum:
+      enum:
+      - created
+      - updated
+      - deleted
+      type: string
+      description: |-
+        * `created` - Created
+        * `updated` - Updated
+        * `deleted` - Deleted
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organization:
+          type: integer
+        actor_email:
+          type: string
+          maxLength: 254
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        entity_type:
+          type: string
+          maxLength: 64
+        entity_id:
+          type: string
+          maxLength: 64
+        summary:
+          type: string
+          maxLength: 255
+        changes: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - created_at
+      - entity_type
+      - id
+      - organization
+      - summary
     Budget:
       type: object
       properties:
@@ -4927,6 +5032,29 @@ components:
       - my_role
       - name
       - personal
+    PaginatedAuditLogList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditLog'
     PaginatedBudgetList:
       type: object
       required:

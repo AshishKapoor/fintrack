@@ -11,6 +11,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
+from .audit import record
 from .finance_serializers import (
     AccountSerializer,
     BudgetFileSerializer,
@@ -44,6 +45,7 @@ from .finance_services import (
 )
 from .models import (
     Account,
+    AuditLog,
     BudgetFile,
     BudgetMonth,
     CategoryGroupV2,
@@ -96,15 +98,36 @@ class UserScopedModelViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         instance = serializer.save()
-        self.check_budget_file_writable(self._budget_file_of(instance))
+        budget_file = self._budget_file_of(instance)
+        self.check_budget_file_writable(budget_file)
+        self._audit(AuditLog.ACTION_CREATED, instance, budget_file)
 
     def perform_update(self, serializer):
-        self.check_budget_file_writable(self._budget_file_of(serializer.instance))
+        budget_file = self._budget_file_of(serializer.instance)
+        self.check_budget_file_writable(budget_file)
         serializer.save()
+        self._audit(AuditLog.ACTION_UPDATED, serializer.instance, budget_file)
 
     def perform_destroy(self, instance):
-        self.check_budget_file_writable(self._budget_file_of(instance))
+        budget_file = self._budget_file_of(instance)
+        self.check_budget_file_writable(budget_file)
+        summary_name = str(instance)
         instance.delete()
+        self._audit(
+            AuditLog.ACTION_DELETED, instance, budget_file, name_override=summary_name
+        )
+
+    def _audit(self, action, instance, budget_file, name_override=None):
+        if budget_file is None or budget_file.organization_id is None:
+            return
+        label = name_override or str(instance)
+        record(
+            organization=budget_file.organization,
+            actor=self.request.user,
+            action=action,
+            entity=instance,
+            summary=f"{action.capitalize()} {type(instance).__name__} {label}"[:255],
+        )
 
     @staticmethod
     def _budget_file_of(instance):

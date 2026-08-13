@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Link } from 'react-router-dom'
-import { login } from '@/lib/auth'
+import { login, LoginError } from '@/lib/auth'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -22,9 +22,14 @@ export function LoginPage() {
     try {
       await login(email, password)
       navigate('/home')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError('Invalid credentials')
+    } catch (err) {
+      if (err instanceof LoginError && err.kind === 'invalid') {
+        setError('Invalid credentials')
+      } else if (err instanceof LoginError && err.kind === 'network') {
+        setError('Cannot reach the server — is the API running and reachable?')
+      } else {
+        setError('Something went wrong on the server. Please try again.')
+      }
       console.error(err)
     } finally {
       setIsLoading(false)

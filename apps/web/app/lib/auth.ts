@@ -66,14 +66,36 @@ export function removeTokens() {
   removeCookie(TOKEN_EXPIRY_KEY)
 }
 
+export type LoginErrorKind = 'invalid' | 'server' | 'network'
+
+export class LoginError extends Error {
+  kind: LoginErrorKind
+
+  constructor(kind: LoginErrorKind, message: string) {
+    super(message)
+    this.name = 'LoginError'
+    this.kind = kind
+  }
+}
+
 export async function login(email: string, password: string) {
-  const response = await fetch(`${PFT_BASE_URL}/api/token/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${PFT_BASE_URL}/api/token/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
+  } catch {
+    // fetch itself only throws on network-level failures (server down, DNS,
+    // CORS/CSP blocked) - never on HTTP error statuses.
+    throw new LoginError('network', 'Could not reach the server')
+  }
+  if (response.status === 400 || response.status === 401) {
+    throw new LoginError('invalid', 'Invalid credentials')
+  }
   if (!response.ok) {
-    throw new Error('Invalid credentials')
+    throw new LoginError('server', `Server error (${response.status})`)
   }
   const data = await response.json()
   setTokens(data.access, data.refresh)

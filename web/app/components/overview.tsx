@@ -1,6 +1,5 @@
 'use client'
 
-import { Transaction } from '@/client/pft/transaction'
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts'
 import {
   ChartConfig,
@@ -11,7 +10,8 @@ import {
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign } from 'lucide-react'
 import { formatCurrency, useCurrency } from '@/context/currency-context'
-import { TypeEnum } from '@/client/pft/typeEnum'
+import { useMonthlyCashFlow } from '@/lib/ledger'
+import { AnimateSpinner } from '@/components/spinner'
 
 interface MonthlyData {
   name: string
@@ -31,13 +31,23 @@ const chartConfig = {
 } satisfies ChartConfig
 
 interface OverviewProps {
-  transactions: Transaction[]
+  startDate?: string
+  endDate?: string
 }
 
-export function Overview({ transactions }: OverviewProps) {
+export function Overview({ startDate, endDate }: OverviewProps) {
   const { currency } = useCurrency()
+  // Server-side monthly series over the whole range - the previous version
+  // bucketed a (paginated) transaction list in the browser.
+  const { data, isLoading } = useMonthlyCashFlow(startDate, endDate)
 
-  if (!transactions.length) {
+  if (isLoading) {
+    return <AnimateSpinner size={48} />
+  }
+
+  const rows = data?.rows ?? []
+
+  if (!rows.length) {
     return (
       <EmptyPlaceholder
         icon={<CircleDollarSign className='w-12 h-12' />}
@@ -47,35 +57,14 @@ export function Overview({ transactions }: OverviewProps) {
     )
   }
 
-  const monthlyData = transactions.reduce((acc: MonthlyData[], transaction) => {
-    const date = new Date(transaction.transaction_date)
-    const monthYear = date.toLocaleString('default', { month: 'short', year: '2-digit' })
-
-    const existingMonth = acc.find((item) => item.name === monthYear)
-    if (existingMonth) {
-      if (transaction.type === TypeEnum.income) {
-        existingMonth.income += Number(transaction.amount)
-      } else {
-        existingMonth.expenses += Number(transaction.amount)
-      }
-    } else {
-      acc.push({
-        name: monthYear,
-        income: transaction.type === TypeEnum.income ? Number(transaction.amount) : 0,
-        expenses: transaction.type === TypeEnum.income ? 0 : Number(transaction.amount),
-      })
-    }
-    return acc
-  }, [])
-
-  // Sort by date and take last 6 months
-  const sortedData = monthlyData
-    .sort((a, b) => {
-      const [aMonth, aYear] = a.name.split(' ')
-      const [bMonth, bYear] = b.name.split(' ')
-      return new Date(`${aMonth} 20${aYear}`).getTime() - new Date(`${bMonth} 20${bYear}`).getTime()
-    })
-    .slice(-6)
+  const sortedData: MonthlyData[] = rows.slice(-6).map((row) => ({
+    name: new Date(row.year, row.month - 1, 1).toLocaleString('default', {
+      month: 'short',
+      year: '2-digit',
+    }),
+    income: Number(row.income),
+    expenses: Number(row.expenses),
+  }))
 
   return (
     <ChartContainer config={chartConfig}>

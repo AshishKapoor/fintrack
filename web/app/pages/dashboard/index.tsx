@@ -1,24 +1,17 @@
-import {
-  useV1BudgetsList,
-  useV1CategoriesList,
-  useV1TransactionsList,
-} from '@/client/pft/v1/v1'
+import { useV1FinanceCategoriesList, useV1FinanceTransactionsList } from '@/client/gen/pft/v1/v1'
+import { useCashFlow } from '@/lib/ledger'
 import { BudgetProgress } from '@/components/budget-progress'
 import { Overview } from '@/components/overview'
 import { PinnedReports } from '@/components/pinned-reports'
 import { RecentTransactions } from '@/components/recent-transactions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Transaction } from '@/client/pft/transaction'
-
 import { AnimateSpinner } from '@/components/spinner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 import { CurrencyDisplay } from '@/components/ui/currency-display'
-import { TypeEnum } from '@/client/pft/typeEnum'
-
 import { DatePickerWithRange } from '@/components/date-range-picker'
 import { useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
@@ -87,43 +80,37 @@ export default function DashboardPage() {
   }
   const hasPreviousRange = Boolean(prevStartParam && prevEndParam)
 
-  const { isLoading: isLoadingCategories, data: categories } = useV1CategoriesList(
-    {},
-    { swr: { revalidateOnMount: true } },
+  const { isLoading: isLoadingCategories, data: categories } = useV1FinanceCategoriesList()
+  // Range totals computed server-side over the whole ledger. The old client
+  // summed a transaction list, which - once the endpoint became paginated -
+  // silently summed only the first page.
+  const { isLoading: isLoadingFlow, data: flow } = useCashFlow(
+    selectedStartParam,
+    selectedEndParam,
   )
-  const { isLoading: isLoadingBudgets } = useV1BudgetsList({}, { swr: { revalidateOnMount: true } })
-  const { isLoading: isLoadingTransactions, data: transactions } = useV1TransactionsList(
-    {
-      start_date: selectedStartParam,
-      end_date: selectedEndParam,
-    },
-    { swr: { revalidateOnMount: true } },
+  const { isLoading: isLoadingPrevFlow, data: prevFlow } = useCashFlow(
+    prevStartParam,
+    prevEndParam,
+    hasPreviousRange,
   )
-  const { isLoading: isLoadingPreviousTransactions, data: previousTransactions } =
-    useV1TransactionsList(
-      {
-        start_date: prevStartParam,
-        end_date: prevEndParam,
-      },
-      {
-        swr: {
-          revalidateOnMount: true,
-          isPaused: () => !hasPreviousRange,
-        },
-      },
-    )
+  // One-row probe so the empty state can distinguish "no transactions in range"
+  // from "net happens to be zero".
+  const { isLoading: isLoadingProbe, data: probe } = useV1FinanceTransactionsList({
+    page_size: 1,
+    ...({ start_date: selectedStartParam, end_date: selectedEndParam } as object),
+  })
 
   if (
     isLoadingCategories ||
-    isLoadingBudgets ||
-    isLoadingTransactions ||
-    (hasPreviousRange && isLoadingPreviousTransactions)
+    isLoadingFlow ||
+    isLoadingProbe ||
+    (hasPreviousRange && isLoadingPrevFlow)
   ) {
     return <AnimateSpinner size={64} />
   }
 
   // Show empty state if no categories exist
-  if (!categories?.results?.length) {
+  if (!categories?.length) {
     return (
       <div className='p-6'>
         <EmptyPlaceholder
@@ -142,48 +129,15 @@ export default function DashboardPage() {
     )
   }
 
-  const filteredTransactions = transactions?.results || []
+  const stats = {
+    totalBalance: Number(flow?.net ?? 0),
+    monthlyIncome: Number(flow?.income ?? 0),
+    monthlyExpenses: Number(flow?.expenses ?? 0),
+  }
 
-  // Calculate stats for selected range
-  const stats = filteredTransactions.reduce(
-    (acc, transaction: Transaction) => {
-      const amount = Number(transaction.amount) || 0
-      if (transaction.type === TypeEnum.income) {
-        acc.totalBalance += amount
-        acc.monthlyIncome += amount
-      } else {
-        acc.totalBalance -= amount
-        acc.monthlyExpenses += amount
-      }
-      return acc
-    },
-    {
-      totalBalance: 0,
-      monthlyIncome: 0,
-      monthlyExpenses: 0,
-    },
-  )
-
-  // For comparison, calculate stats for previous period of same length
-  let prevTransactions: Transaction[] = []
-  let prevStats = { prevMonthIncome: 0, prevMonthExpenses: 0 }
-  if (hasPreviousRange) {
-    prevTransactions = previousTransactions?.results || []
-    prevStats = prevTransactions.reduce(
-      (acc, transaction: Transaction) => {
-        const amount = Number(transaction.amount) || 0
-        if (transaction.type === TypeEnum.income) {
-          acc.prevMonthIncome += amount
-        } else {
-          acc.prevMonthExpenses += amount
-        }
-        return acc
-      },
-      {
-        prevMonthIncome: 0,
-        prevMonthExpenses: 0,
-      },
-    )
+  const prevStats = {
+    prevMonthIncome: hasPreviousRange ? Number(prevFlow?.income ?? 0) : 0,
+    prevMonthExpenses: hasPreviousRange ? Number(prevFlow?.expenses ?? 0) : 0,
   }
 
   const calculatePercentageChange = (current: number, previous: number) => {
@@ -208,7 +162,7 @@ export default function DashboardPage() {
   const savingsRateChange = calculatePercentageChange(savingsRate, prevSavingsRate)
 
   // Show empty state if no transactions exist for the selected range
-  if (!filteredTransactions.length) {
+  if (!probe?.count) {
     return (
       <div className='p-6'>
         <EmptyPlaceholder
@@ -295,7 +249,7 @@ export default function DashboardPage() {
               <CardDescription>Your income and expenses for the selected period</CardDescription>
               </CardHeader>
               <CardContent className=''>
-                <Overview transactions={filteredTransactions} />
+                <Overview startDate={selectedStartParam} endDate={selectedEndParam} />
               </CardContent>
             </Card>
             <Card className='md:col-span-4'>

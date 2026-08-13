@@ -1,7 +1,13 @@
 import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
-import { v1FinanceAccountsCreate, v1FinanceAccountsList } from '@/client/gen/pft/v1/v1'
+import {
+  v1FinanceAccountsCreate,
+  v1FinanceAccountsList,
+  v1FinanceBudgetMonthsList,
+  v1FinanceBudgetMonthsSnapshotRetrieve,
+  v1FinanceReportsRunCreate,
+} from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
-import { useSWRConfig } from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 
 /**
  * Helpers for reading and writing ledger transactions natively through the
@@ -87,9 +93,101 @@ export function useInvalidateLedger() {
     mutate(
       (key) => {
         const url = Array.isArray(key) ? key[0] : key
-        return typeof url === 'string' && url.includes('/transactions/')
+        if (typeof url !== 'string') return false
+        // Transaction lists, plus every aggregate derived from them.
+        return (
+          url.includes('/transactions/') ||
+          url.startsWith('report/') ||
+          url === 'envelope-snapshot'
+        )
       },
       undefined,
       { revalidate: true },
     )
+}
+
+// ---- Server-side aggregates for the dashboard ------------------------------
+
+export interface CashFlowResult {
+  income: string
+  expenses: string
+  net: string
+}
+
+export interface MonthlyFlowRow {
+  year: number
+  month: number
+  income: string
+  expenses: string
+  net: string
+}
+
+async function runReport<T>(payload: Record<string, unknown>): Promise<T> {
+  const budgetFileId = await getDefaultBudgetFileId()
+  return (await v1FinanceReportsRunCreate({
+    budget_file: budgetFileId,
+    ...payload,
+  } as never)) as T
+}
+
+/**
+ * Range totals computed by the server over the whole ledger. Replaces summing
+ * a transaction list client-side, which - once the list endpoint became
+ * paginated - silently summed only the first page.
+ */
+export function useCashFlow(startDate?: string, endDate?: string, enabled = true) {
+  return useSWR(
+    enabled && startDate && endDate ? ['report/cash_flow', startDate, endDate] : null,
+    () =>
+      runReport<CashFlowResult>({
+        report_type: 'cash_flow',
+        start_date: startDate,
+        end_date: endDate,
+      }),
+  )
+}
+
+/** Income and expenses per calendar month, for the overview chart. */
+export function useMonthlyCashFlow(startDate?: string, endDate?: string) {
+  return useSWR(
+    startDate && endDate ? ['report/monthly_cash_flow', startDate, endDate] : null,
+    () =>
+      runReport<{ rows: MonthlyFlowRow[] }>({
+        report_type: 'monthly_cash_flow',
+        start_date: startDate,
+        end_date: endDate,
+      }),
+  )
+}
+
+export interface EnvelopeSnapshotRow {
+  category_id: number
+  category: string
+  assigned: string
+  carryover: string
+  spent: string
+  remaining: string
+  overspent: string
+}
+
+export interface EnvelopeSnapshot {
+  assignments: EnvelopeSnapshotRow[]
+}
+
+/**
+ * The current month's envelope snapshot, or null when no budget month exists
+ * yet - the dashboard shows its set-a-budget empty state in that case.
+ */
+export function useCurrentEnvelopeSnapshot() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  return useSWR(['envelope-snapshot', year, month] as const, async () => {
+    const months = await v1FinanceBudgetMonthsList()
+    const current = months.find((item) => item.year === year && item.month === month)
+    if (!current) return null
+    return (await v1FinanceBudgetMonthsSnapshotRetrieve(
+      String(current.id),
+    )) as unknown as EnvelopeSnapshot
+  })
 }

@@ -98,7 +98,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.21.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.4.19",
+    "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.9.0",
     "jsdom": "^30.0.1",
     "orval": "^7.8.0",

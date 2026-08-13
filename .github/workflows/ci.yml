@@ -138,6 +138,38 @@ jobs:
 
       - run: pnpm run build
 
+  sdk-ts:
+    name: SDK (TypeScript)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-ts
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: packages/sdk-ts/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # The committed generated client must match the committed schema.
+      - name: Generated client is current
+        run: |
+          pnpm run generate
+          git diff --exit-code src/gen || {
+            echo "::error::packages/sdk-ts/src/gen is stale. Run 'pnpm run generate' and commit."; exit 1; }
+
+      - name: Build
+        run: pnpm run build
+
   stack:
     name: Docker stack smoke test
     runs-on: ubuntu-latest

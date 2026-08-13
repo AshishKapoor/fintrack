@@ -61,8 +61,20 @@ These are real and tracked, not hidden:
   database as plaintext, as do completed exports. Run
   `manage.py prune_finance_jobs` periodically; see
   [docs/self-hosting.md](docs/self-hosting.md).
-- **The finance endpoints are unpaginated**, so a large ledger returns in one
+- **Most finance list endpoints are unpaginated** (transactions are the
+  exception), so a large ledger's accounts, categories, or payees return in one
   response.
+
+## Workspaces and roles
+
+Budget files can be shared through organizations. Roles are enforced
+server-side: `viewer` is read-only everywhere, `member` can write finance
+data, `admin` manages members and invitations, `owner` can delete the
+workspace. Workspace activity is recorded to an audit log that only owners and
+admins can read (`/api/v1/audit-log/`, with CSV export). Tenant scoping is
+centralised in `apps/api/pft/tenancy.py` and covered by
+`test_tenant_isolation.py` and `test_organizations.py` — any change to a
+queryset, serializer, or permission needs a test there.
 
 ## History
 

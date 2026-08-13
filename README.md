@@ -35,19 +35,21 @@ no subscriptions, no third-party services, no vendor lock-in.
 - 📅 **Flexible views** — browse transactions by day, week, or month
 - 🔁 **Scheduled transactions and rules** for recurring activity
 - 📈 **Reports** on spending, budgets, and trends
-- 📦 **Import / export** your data (CSV, JSON) plus encrypted backup bundles
+- 📦 **Import / export** your data (CSV, OFX, QIF, YNAB and more in; CSV, JSON, XLSX out) plus encrypted backup & restore from the UI
 - 🔒 **100% self-hosted** — your data never leaves your server
-- 👤 **Multi-user support** (optional)
+- 👥 **Shared workspaces** — organizations with owner / admin / member / viewer roles, invitations, and a manager-visible audit log
 - 🌗 **Light / dark mode** with a responsive UI for mobile and desktop
-- 🔌 **API-first architecture** with OpenAPI docs out of the box
+- 🔌 **API-first architecture** with OpenAPI docs, plus official [TypeScript](packages/sdk-ts) and [Python](packages/sdk-py) SDKs
 
 ## 🛠️ Tech stack
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | [React 19](https://react.dev/), [Vite](https://vitejs.dev/), [TailwindCSS](https://tailwindcss.com/), [Zustand](https://zustand-demo.pmnd.rs/), [pnpm](https://pnpm.io/) |
+| Frontend | [React 19](https://react.dev/), [Vite](https://vitejs.dev/), [TailwindCSS](https://tailwindcss.com/), [SWR](https://swr.vercel.app/), [pnpm](https://pnpm.io/) |
 | Backend | [Django 5](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
+| Background jobs | [Celery](https://docs.celeryq.dev/) + [Redis](https://redis.io/) (imports/exports; falls back to inline without a broker) |
 | Database | [PostgreSQL](https://www.postgresql.org/) |
+| SDKs | [`@fintrack/sdk`](packages/sdk-ts) (TypeScript) and [`fintrack-sdk`](packages/sdk-py) (Python), generated from the OpenAPI schema |
 | Infrastructure | Docker & Docker Compose, hot reload in development |
 
 ## 🚀 Quick Start
@@ -70,12 +72,9 @@ images, and starts every service. Once it finishes, open:
 | API docs (Swagger UI) | http://localhost:8000/api/docs/ |
 | API docs (ReDoc) | http://localhost:8000/api/redoc/ |
 
-Log in with the default admin account — **change these credentials immediately**:
-
-```
-email:    admin@example.com
-password: fintrack
-```
+There is no default account — register through the UI; the first account you
+create is yours. (For a Django admin user, see
+[docs/self-hosting.md](docs/self-hosting.md#creating-your-account).)
 
 Other lifecycle commands:
 
@@ -124,17 +123,23 @@ more details on each service.
 
 ```
 fintrack/
-├── apps/api/            # Django backend (DRF, JWT auth, OpenAPI schema)
-│   ├── app/        # Django project settings
-│   └── pft/        # Main Django app (finance domain)
-├── apps/web/            # React frontend (Vite, TailwindCSS, Zustand)
-│   ├── app/        # Application source
-│   └── schema/     # Generated API schema / client
-├── docs/           # Project documentation and feature audits
-├── scripts/        # Maintenance and audit scripts
+├── apps/
+│   ├── api/            # Django backend (DRF, JWT auth, OpenAPI schema)
+│   │   ├── app/        # Django project settings
+│   │   └── pft/        # Main Django app (finance domain)
+│   ├── web/            # React frontend (Vite, TailwindCSS, SWR)
+│   │   ├── app/        # Application source (client/gen/ is the orval client)
+│   │   ├── e2e/        # Playwright end-to-end suite
+│   │   └── schema/     # OpenAPI schema (pft.yaml), kept in sync by CI
+│   └── landing/        # Next.js marketing site (not part of the self-hosted stack)
+├── packages/
+│   ├── sdk-ts/         # @fintrack/sdk — TypeScript client (npm)
+│   └── sdk-py/         # fintrack-sdk — Python client (PyPI)
+├── docs/               # Self-hosting guide, ADRs, blog, feature audits
+├── scripts/            # Maintenance and audit scripts
 ├── docker-compose.yml
-├── setup.sh        # One-command setup for self-hosting
-└── Makefile        # Common development tasks
+├── setup.sh            # One-command setup for self-hosting
+└── Makefile            # Common development tasks
 ```
 
 ## ⚙️ Configuration
@@ -165,6 +170,16 @@ make test-api        # API smoke tests
 make test-api-all    # full API test suite
 ```
 
+Frontend units and end-to-end tests:
+
+```bash
+cd apps/web && pnpm run test              # vitest units
+```
+
+```bash
+docker compose up -d && cd apps/web && pnpm exec playwright test   # e2e against the real stack
+```
+
 Missing `.env` files are created automatically (via `./setup.sh configure`)
 before any Docker-based target runs — no separate bootstrap step is needed.
 
@@ -174,12 +189,27 @@ FinTrack is API-first. Interactive documentation is served by the backend at
 [/api/docs/](http://localhost:8000/api/docs/) (Swagger UI) and
 [/api/redoc/](http://localhost:8000/api/redoc/) (ReDoc).
 
-- `/api/v1/*` — core auth, profile, and compatibility endpoints
+- `/api/v1/*` — auth, profile, workspaces (`orgs`), and the manager-only `audit-log`
 - `/api/v1/finance/*` — the finance domain:
   - `budget-files`, `accounts`, `category-groups`, `categories`, `payees`, `tags`
   - `transactions`, `postings`, `scheduled-transactions`, `rules`
   - `budget-months`, `envelope-assignments`, `reports`
   - `exports`, `imports`, `backups`
+
+### Official SDKs
+
+```bash
+npm install @fintrack/sdk        # TypeScript — plain fetch, zero runtime deps
+```
+
+```bash
+pip install fintrack-sdk         # Python — sync + asyncio variants per operation
+```
+
+Both are generated from the committed OpenAPI schema
+([`apps/web/schema/pft.yaml`](apps/web/schema/pft.yaml)), which CI keeps in
+lockstep with the backend. See [packages/sdk-ts](packages/sdk-ts) and
+[packages/sdk-py](packages/sdk-py) for usage.
 
 ## 🗺️ Roadmap
 

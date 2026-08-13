@@ -1,53 +1,54 @@
-# Frontend
+# FinTrack Web
 
-## Screenshot
-![Screenshot 2025-04-17 at 12 05 51 PM](https://github.com/user-attachments/assets/67519e75-19b0-44f8-abe1-d5c57f8a710d)
+React 19 single-page app: Vite, TailwindCSS + shadcn/ui, SWR for data, and a
+generated (orval) API client. Served by nginx in the Docker stack, which also
+proxies `/api/` to the backend.
 
+For how the system fits together, read [ARCHITECTURE.md](../../ARCHITECTURE.md).
 
-## Getting Started
+## Run it
 
-### 1. Project Setup Framework Boilerplate (Vite)
+```bash
+cp .env.example .env      # VITE_BASE_DOMAIN, default http://localhost:8000
+pnpm install
+pnpm dev                  # :5173, expects the API running
+```
 
-Folder Structure (components/, pages/, assets/, hooks/, utils/)
+pnpm's version is pinned by `packageManager`; `corepack enable` once and forget.
 
-Basic Routing (React Router)
+## Layout
 
-State Management Ready (Zustand)
+```
+app/
+├── pages/                one directory per route
+├── components/           feature components (ui/ = shadcn primitives)
+├── client/
+│   ├── httpPFTClient.ts  axios: auth header, 401 refresh-and-retry, toasts
+│   └── gen/              orval output — tracked in git, never hand-edited
+├── lib/                  ledger.ts (posting builders, SWR invalidation),
+│                         auth, backup, import/export, dates
+├── context/              currency + organization providers
+└── hooks/                Zustand stores
+e2e/                      Playwright suite (runs against the Docker stack)
+schema/pft.yaml           OpenAPI schema — the contract with the backend
+```
 
-pnpm
+## Development
 
-### Styling Setup
-Tailwind CSS, Dark Mode Toggle
+```bash
+pnpm run lint             # eslint
+pnpm run test             # vitest units
+pnpm run build            # tsc -b && vite build
+pnpm orval                # regenerate app/client/gen/ after schema changes
+```
 
-### Components
-Navbar
+End-to-end tests need the real stack:
 
-Sidebar
+```bash
+docker compose up -d
+pnpm exec playwright install chromium
+pnpm exec playwright test
+```
 
-Button, Input, Modal, Toast
-
-Loading Spinner / Skeleton
-
-Error & Empty States
-
-### Auth Placeholder
-Login / Signup UI
-
-Mock auth logic or placeholder for future integration
-
-### API Integration Setup
-Axios / Fetch Wrapper
-
-.env.example config support
-
-### Dev Tools
-Linting (ESLint + Prettier)
-
-Git with .gitignore
-
-## Bonus Extras
-Mobile Responsive layout
-
-Dark/Light theme switcher
-
-Icon library (lucide-react)
+CI runs all of the above, plus a diff gate that fails if `app/client/gen/`
+does not match `schema/pft.yaml`.

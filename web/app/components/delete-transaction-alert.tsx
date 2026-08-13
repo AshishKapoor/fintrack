@@ -10,10 +10,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import {
-  useInvalidateTransactions,
-  useV1TransactionsDestroy,
-} from '@/client/pft/v1/v1'
+import { v1FinanceTransactionsDestroy } from '@/client/gen/pft/v1/v1'
+import { useInvalidateLedger } from '@/lib/ledger'
 import { toast } from 'sonner'
 
 export function DeleteTransactionAlert({
@@ -26,13 +24,12 @@ export function DeleteTransactionAlert({
   transactionId: string
   currentPage?: number
 }) {
-  const { trigger: deleteTransaction } = useV1TransactionsDestroy(transactionId)
-  const refreshTransactions = useInvalidateTransactions()
+  const refreshLedger = useInvalidateLedger()
 
   const handleDeleteTransaction = async () => {
     try {
-      await deleteTransaction()
-      await refreshTransactions()
+      await v1FinanceTransactionsDestroy(transactionId)
+      await refreshLedger()
       toast.success('Transaction deleted successfully')
       onOpenChange(false)
     } catch (err) {

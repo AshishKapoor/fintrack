@@ -1,4 +1,4 @@
-import { useInvalidateTransactions } from '@/client/pft/v1/v1'
+import { useInvalidateLedger } from '@/lib/ledger'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -57,7 +57,7 @@ export function ImportTransactionsDialog({
   const [preview, setPreview] = useState<ImportPreview | null>(null)
   const [jobId, setJobId] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
-  const invalidateTransactions = useInvalidateTransactions()
+  const invalidateTransactions = useInvalidateLedger()
 
   const reset = () => {
     setStep('choose')

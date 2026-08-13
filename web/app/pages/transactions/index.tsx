@@ -1,9 +1,8 @@
 'use client'
 
-import { Transaction } from '@/client/pft/transaction'
-import { TypeEnum } from '@/client/pft/typeEnum'
-
-import { useV1CategoriesList, useV1TransactionsList } from '@/client/pft/v1/v1'
+import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
+import { useV1FinanceTransactionsList } from '@/client/gen/pft/v1/v1'
+import { displayFields } from '@/lib/ledger'
 import { AddTransactionDialog } from '@/components/add-transaction-dialog'
 import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
@@ -52,14 +51,12 @@ import {
   Filter,
   MoreHorizontal,
   Pencil,
-  Plus,
   Repeat,
   Search,
   Trash,
   Upload,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
@@ -75,7 +72,7 @@ export default function TransactionsPage() {
   const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null)
+  const [selectedTransaction, setSelectedTransaction] = useState<LedgerTransaction | null>(null)
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all')
@@ -103,11 +100,15 @@ export default function TransactionsPage() {
     data: transactions,
     isLoading: isLoadingTransactions,
     mutate: refreshTransactions,
-  } = useV1TransactionsList({
+  } = useV1FinanceTransactionsList({
     page: currentPage,
     ...(debouncedSearch ? { search: debouncedSearch } : {}),
-    ...(transactionType !== 'all' ? { type: transactionType } : {}),
-    ...(date ? { start_date: formatDateForApi(date), end_date: formatDateForApi(date) } : {}),
+    // These are querystring filters the endpoint supports beyond the generated
+    // params type (type / date range); the SDK passes unknown params through.
+    ...(transactionType !== 'all' ? ({ type: transactionType } as object) : {}),
+    ...(date
+      ? ({ start_date: formatDateForApi(date), end_date: formatDateForApi(date) } as object)
+      : {}),
     ordering: ORDERING[sortOrder],
   })
 
@@ -117,30 +118,8 @@ export default function TransactionsPage() {
     setCurrentPage(1)
   }
 
-  const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-
-  if (isLoadingTransactions || isLoadingCategories) {
+  if (isLoadingTransactions) {
     return <AnimateSpinner size={64} />
-  }
-
-  // Check if there are any categories first
-  if (!categories?.results?.length) {
-    return (
-      <div className='p-6'>
-        <EmptyPlaceholder
-          icon={<CircleDollarSign className='w-12 h-12' />}
-          title='No categories available'
-          description='You need to create categories before adding transactions. Head over to the categories page to create some!'
-          action={
-            <Link to='/categories'>
-              <Button>
-                <Plus className='mr-2 h-4 w-4' /> Create Categories
-              </Button>
-            </Link>
-          }
-        />
-      </div>
-    )
   }
 
   // Show empty state for no transactions
@@ -172,23 +151,23 @@ export default function TransactionsPage() {
   // count disagreed with what was shown.
   const filteredTransactions = Array.isArray(transactions?.results) ? transactions.results : []
 
-  const getCategoryName = (categoryId: number | null | undefined) =>
-    categories?.results?.find((category) => category.id === categoryId)?.name || 'Uncategorized'
-
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
       toast.error('No transactions available for export')
       return
     }
 
-    const rows = filteredTransactions.map((transaction) => ({
-      id: transaction.id,
-      date: transaction.transaction_date,
-      title: transaction.title,
-      category: getCategoryName(transaction.category),
-      type: transaction.type,
-      amount: transaction.amount,
-    }))
+    const rows = filteredTransactions.map((transaction) => {
+      const display = displayFields(transaction)
+      return {
+        id: transaction.id,
+        date: transaction.transaction_date,
+        title: display.title,
+        category: display.categoryName || 'Uncategorized',
+        type: display.kind,
+        amount: display.amount.toFixed(2),
+      }
+    })
 
     const { content, mimeType, extension } = serializeExport(rows, format)
     const filename = `fintrack-transactions-${formatDateForApi(new Date())}.${extension}`
@@ -325,20 +304,21 @@ export default function TransactionsPage() {
               </TableRow>
             ) : (
               filteredTransactions?.map((transaction) => {
-                const category = categories?.results?.find((c) => c.id === transaction.category)
-                const isTransfer = transaction.category === null && /transfer/i.test(transaction.title)
-                const categoryName = isTransfer ? 'Transfer' : category?.name || 'Uncategorized'
+                const display = displayFields(transaction)
+                // A transfer has two account legs and no category leg.
+                const isTransfer = transaction.posting_lines.every((line) => line.category === null)
+                const categoryName = isTransfer ? 'Transfer' : display.categoryName || 'Uncategorized'
 
                 return (
                   <TableRow key={transaction.id}>
                     <TableCell>
                       {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                     </TableCell>
-                    <TableCell>{transaction.title}</TableCell>
+                    <TableCell>{display.title}</TableCell>
                     <TableCell>{categoryName}</TableCell>
                     <TableCell>
                       <div className='flex items-center gap-2'>
-                        {transaction.type === TypeEnum.income ? (
+                        {display.kind === 'income' ? (
                           <ArrowUpIcon className='h-4 w-4 text-emerald-600' />
                         ) : (
                           <ArrowDownIcon className='h-4 w-4 text-rose-600' />
@@ -346,12 +326,10 @@ export default function TransactionsPage() {
                         <span
                           className={cn(
                             'tabular-nums',
-                            transaction.type === TypeEnum.income
-                              ? 'text-emerald-600'
-                              : 'text-rose-600',
+                            display.kind === 'income' ? 'text-emerald-600' : 'text-rose-600',
                           )}
                         >
-                          <CurrencyDisplay amount={parseFloat(transaction.amount)} />
+                          <CurrencyDisplay amount={display.amount} />
                         </span>
                       </div>
                     </TableCell>

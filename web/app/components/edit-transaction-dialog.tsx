@@ -1,13 +1,14 @@
 'use client'
 
-import { Transaction } from '@/client/pft/transaction'
-import { TypeEnum } from '@/client/pft/typeEnum'
-
+import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
+import { useV1FinanceCategoriesList, v1FinanceTransactionsUpdate } from '@/client/gen/pft/v1/v1'
 import {
-  useInvalidateTransactions,
-  useV1CategoriesList,
-  useV1TransactionsUpdate,
-} from '@/client/pft/v1/v1'
+  buildPostings,
+  displayFields,
+  resolveDefaultAccountId,
+  useInvalidateLedger,
+  type TransactionKind,
+} from '@/lib/ledger'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -42,17 +43,16 @@ export function EditTransactionDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  transaction: Transaction
+  transaction: LedgerTransaction
 }) {
-  const [type, setType] = useState<TypeEnum>(TypeEnum.expense)
+  const [kind, setKind] = useState<TransactionKind>('expense')
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
 
-  const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const refreshTransactions = useInvalidateTransactions()
-  const { trigger: updateTransaction } = useV1TransactionsUpdate(transaction?.id?.toString()) // Ensure id is a string
+  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const refreshLedger = useInvalidateLedger()
 
   // Initialize form with transaction data. Deferred a tick so the setState
   // burst runs outside the effect body (react-hooks/set-state-in-effect).
@@ -62,32 +62,34 @@ export function EditTransactionDialog({
 
     function initialise() {
       if (!transaction) return
-      const category = categories?.results?.find((c) => c.id === transaction.category)
-      setType(category?.type || TypeEnum.expense)
-      setTitle(transaction.title || '')
-      setAmount(transaction.amount?.toString() || '')
-      setSelectedCategory(transaction.category?.toString() || '')
+      const display = displayFields(transaction)
+      setKind(display.kind)
+      setTitle(display.title)
+      setAmount(display.amount.toFixed(2))
+      setSelectedCategory(display.categoryId ? String(display.categoryId) : '')
 
       if (transaction.transaction_date) {
         setDate(new Date(transaction.transaction_date))
       }
     }
-  }, [transaction, categories])
+  }, [transaction])
 
   const handleUpdateTransaction = async () => {
     if (!date) return
 
     try {
-      await updateTransaction({
-        type,
-        title,
-        amount,
-        category: parseInt(selectedCategory),
+      // A PUT replaces the posting set wholesale: the API deletes the old legs
+      // and writes the new balanced pair, keeping the invariant intact.
+      const accountLeg = transaction.posting_lines.find((line) => line.account !== null)
+      const accountId = accountLeg?.account ?? (await resolveDefaultAccountId())
+      await v1FinanceTransactionsUpdate(String(transaction.id), {
+        budget_file: transaction.budget_file,
         transaction_date: format(date, 'yyyy-MM-dd'),
-        user: transaction.user,
+        memo: title,
+        postings: buildPostings(accountId, parseInt(selectedCategory), amount, kind),
       })
 
-      await refreshTransactions()
+      await refreshLedger()
 
       toast.success('Transaction updated successfully')
       onOpenChange(false)
@@ -101,7 +103,9 @@ export function EditTransactionDialog({
     return null
   }
 
-  const filteredCategories = categories?.results?.filter((category) => category.type === type) || []
+  const filteredCategories = (categories ?? []).filter(
+    (category) => category.kind === kind && !category.is_archived,
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -115,21 +119,21 @@ export function EditTransactionDialog({
             <Label htmlFor='transaction-type'>Transaction Type</Label>
             <RadioGroup
               id='transaction-type'
-              value={type}
+              value={kind}
               onValueChange={(value) => {
-                setType(value as TypeEnum)
+                setKind(value as TransactionKind)
                 setSelectedCategory('')
               }}
               className='flex'
             >
               <div className='flex items-center space-x-2'>
-                <RadioGroupItem value={TypeEnum.expense} id='expense' />
+                <RadioGroupItem value='expense' id='expense' />
                 <Label htmlFor='expense' className='cursor-pointer'>
                   Expense
                 </Label>
               </div>
               <div className='flex items-center space-x-2 ml-4'>
-                <RadioGroupItem value={TypeEnum.income} id='income' />
+                <RadioGroupItem value='income' id='income' />
                 <Label htmlFor='income' className='cursor-pointer'>
                   Income
                 </Label>
@@ -187,7 +191,7 @@ export function EditTransactionDialog({
               <SelectContent>
                 {filteredCategories.length === 0 ? (
                   <div className='p-2 text-sm text-center text-muted-foreground'>
-                    No {type === TypeEnum.income ? 'income' : 'expense'} categories found
+                    No {kind} categories found
                   </div>
                 ) : (
                   filteredCategories.map((category) => (

@@ -25,14 +25,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { useV1FinanceCategoriesList, v1FinanceTransactionsCreate } from '@/client/gen/pft/v1/v1'
+import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import {
-  useInvalidateTransactions,
-  useV1CategoriesList,
-  useV1TransactionsCreate,
-} from '@/client/pft/v1/v1'
+  buildPostings,
+  resolveDefaultAccountId,
+  useInvalidateLedger,
+  type TransactionKind,
+} from '@/lib/ledger'
 import { toast } from 'sonner'
-import { getUser } from '@/lib/auth'
-import { TypeEnum } from '@/client/pft/typeEnum'
 
 export function AddTransactionDialog({
   open,
@@ -41,41 +42,47 @@ export function AddTransactionDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const [type, setType] = useState<TypeEnum>(TypeEnum.expense)
+  const [kind, setKind] = useState<TransactionKind>('expense')
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [saving, setSaving] = useState(false)
 
-  const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const refreshTransactions = useInvalidateTransactions()
-  const { trigger: createTransaction } = useV1TransactionsCreate()
+  // Native finance categories through the generated SDK: the classification
+  // field is `kind`, and ids are CategoryV2 ids. No adapter, no /me round-trip
+  // (the old create path fetched the user only to send an id the API ignored).
+  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const refreshLedger = useInvalidateLedger()
 
   const handleCreateTransaction = async () => {
-    if (!date) return
-
+    if (!date || saving) return
+    setSaving(true)
     try {
-      const user = await getUser()
-      await createTransaction({
-        type,
-        title,
-        amount,
-        category: parseInt(selectedCategory),
+      const [budgetFileId, accountId] = await Promise.all([
+        getDefaultBudgetFileId(),
+        resolveDefaultAccountId(),
+      ])
+      await v1FinanceTransactionsCreate({
+        budget_file: budgetFileId,
         transaction_date: format(date, 'yyyy-MM-dd'),
-        user: user.id,
+        memo: title,
+        postings: buildPostings(accountId, parseInt(selectedCategory), amount, kind),
       })
-      await refreshTransactions()
+      await refreshLedger()
       toast.success('Transaction created successfully')
       onOpenChange(false)
       // Reset form
       setTitle('')
       setAmount('')
       setSelectedCategory('')
-      setDate(new Date()) // Reset to today's date
-      setType(TypeEnum.expense)
+      setDate(new Date())
+      setKind('expense')
     } catch (err) {
       console.error('Failed to create transaction:', err)
       toast.error('Failed to create transaction')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -83,7 +90,9 @@ export function AddTransactionDialog({
     return null
   }
 
-  const filteredCategories = categories?.results?.filter((category) => category.type === type) || []
+  const filteredCategories = (categories ?? []).filter(
+    (category) => category.kind === kind && !category.is_archived,
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,21 +106,21 @@ export function AddTransactionDialog({
             <Label htmlFor='transaction-type'>Transaction Type</Label>
             <RadioGroup
               id='transaction-type'
-              value={type}
+              value={kind}
               onValueChange={(value) => {
-                setType(value as TypeEnum)
+                setKind(value as TransactionKind)
                 setSelectedCategory('')
               }}
-              className='flex'
+              className='flex gap-4'
             >
               <div className='flex items-center space-x-2'>
-                <RadioGroupItem value={TypeEnum.expense} id='expense' />
+                <RadioGroupItem value='expense' id='expense' />
                 <Label htmlFor='expense' className='cursor-pointer'>
                   Expense
                 </Label>
               </div>
-              <div className='flex items-center space-x-2 ml-4'>
-                <RadioGroupItem value={TypeEnum.income} id='income' />
+              <div className='flex items-center space-x-2'>
+                <RadioGroupItem value='income' id='income' />
                 <Label htmlFor='income' className='cursor-pointer'>
                   Income
                 </Label>
@@ -133,8 +142,8 @@ export function AddTransactionDialog({
               id='amount'
               type='number'
               placeholder='0.00'
-              step='0.01'
               min='0'
+              step='0.01'
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
@@ -160,7 +169,7 @@ export function AddTransactionDialog({
               <PopoverTrigger asChild>
                 <Button
                   id='date'
-                  variant={'outline'}
+                  variant='outline'
                   className={cn(
                     'w-full justify-start text-left font-normal',
                     !date && 'text-muted-foreground',
@@ -170,13 +179,8 @@ export function AddTransactionDialog({
                   {date ? format(date, 'PPP') : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className='w-auto p-0' align='start'>
-                <Calendar
-                  mode='single'
-                  selected={date}
-                  onSelect={setDate}
-                  disabled={(date) => date > new Date()}
-                />
+              <PopoverContent className='w-auto p-0'>
+                <Calendar mode='single' selected={date} onSelect={setDate} autoFocus />
               </PopoverContent>
             </Popover>
           </div>
@@ -188,9 +192,9 @@ export function AddTransactionDialog({
           <Button
             type='submit'
             onClick={handleCreateTransaction}
-            disabled={!title || !amount || !selectedCategory}
+            disabled={!title || !amount || !selectedCategory || saving}
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>
       </DialogContent>

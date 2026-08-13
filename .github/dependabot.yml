@@ -14,6 +14,11 @@ updates:
     groups:
       radix:
         patterns: ["@radix-ui/*"]
+    ignore:
+      # orval 8 changed the custom-mutator contract to fetch-style calls;
+      # migrating the whole client is a deliberate project, not a dep bump.
+      - dependency-name: orval
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /apps/landing
@@ -23,6 +28,13 @@ updates:
     groups:
       radix:
         patterns: ["@radix-ui/*"]
+    ignore:
+      # TypeScript 7 (the native-port preview) breaks Next's path aliases.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # Tailwind 4 on the landing site is a real migration, tracked separately.
+      - dependency-name: tailwindcss
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /

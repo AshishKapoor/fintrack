@@ -222,6 +222,52 @@ class Invitation(models.Model):
         ordering = ["-created_at"]
 
 
+class AuditLog(models.Model):
+    """An append-only record of who changed what, per organization.
+
+    TransactionEvent covers ledger writes; this generalises the idea to every
+    mutation a bookkeeper or auditor would ask about - members, roles,
+    invitations, budget files, categories, accounts, backups, imports. Rows are
+    written by the domain code (not middleware), so each entry says what
+    happened in domain terms rather than which HTTP verb fired.
+
+    Append-only: no update or delete surface exists outside retention pruning.
+    """
+
+    ACTION_CREATED = "created"
+    ACTION_UPDATED = "updated"
+    ACTION_DELETED = "deleted"
+    ACTION_CHOICES = (
+        (ACTION_CREATED, "Created"),
+        (ACTION_UPDATED, "Updated"),
+        (ACTION_DELETED, "Deleted"),
+    )
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="audit_logs"
+    )
+    actor = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="audit_entries"
+    )
+    actor_email = models.CharField(max_length=254, blank=True)
+    action = models.CharField(max_length=16, choices=ACTION_CHOICES)
+    entity_type = models.CharField(max_length=64)
+    entity_id = models.CharField(max_length=64, blank=True)
+    summary = models.CharField(max_length=255)
+    changes = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["organization", "-created_at"]),
+            models.Index(fields=["organization", "entity_type"]),
+        ]
+
+    def __str__(self):
+        return f"{self.actor_email or 'system'} {self.action} {self.entity_type} {self.entity_id}"
+
+
 class BudgetFile(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="budget_files"

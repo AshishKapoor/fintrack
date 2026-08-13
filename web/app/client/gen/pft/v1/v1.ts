@@ -19,6 +19,7 @@ import type {
 
 import type {
   Account,
+  AuditLog,
   Budget,
   BudgetFile,
   BudgetMonth,
@@ -32,6 +33,7 @@ import type {
   LedgerPostingRead,
   LedgerTransaction,
   Organization,
+  PaginatedAuditLogList,
   PaginatedBudgetList,
   PaginatedCategoryList,
   PaginatedLedgerTransactionList,
@@ -64,6 +66,7 @@ import type {
   TransactionRule,
   UserProfile,
   UserRegistration,
+  V1AuditLogListParams,
   V1BudgetsListParams,
   V1CategoriesListParams,
   V1FinanceTransactionsListParams,
@@ -103,6 +106,103 @@ type NonReadonly<T> = [T] extends [UnionToIntersection<T>] ? {
   
   
   
+export const v1AuditLogList = (
+    params?: V1AuditLogListParams,
+ ) => {
+    return httpPFTClient<PaginatedAuditLogList>(
+    {url: `/api/v1/audit-log/`, method: 'GET',
+        params
+    },
+    );
+  }
+
+
+
+export const getV1AuditLogListKey = (params?: V1AuditLogListParams,) => [`/api/v1/audit-log/`, ...(params ? [params]: [])] as const;
+
+export type V1AuditLogListQueryResult = NonNullable<Awaited<ReturnType<typeof v1AuditLogList>>>
+export type V1AuditLogListQueryError = unknown
+
+export const useV1AuditLogList = <TError = unknown>(
+  params?: V1AuditLogListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1AuditLogList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1AuditLogListKey(params) : null);
+  const swrFn = () => v1AuditLogList(params)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1AuditLogRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<AuditLog>(
+    {url: `/api/v1/audit-log/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1AuditLogRetrieveKey = (id: string,) => [`/api/v1/audit-log/${id}/`] as const;
+
+export type V1AuditLogRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1AuditLogRetrieve>>>
+export type V1AuditLogRetrieveQueryError = unknown
+
+export const useV1AuditLogRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1AuditLogRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1AuditLogRetrieveKey(id) : null);
+  const swrFn = () => v1AuditLogRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1AuditLogExportRetrieve = (
+    
+ ) => {
+    return httpPFTClient<AuditLog>(
+    {url: `/api/v1/audit-log/export/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1AuditLogExportRetrieveKey = () => [`/api/v1/audit-log/export/`] as const;
+
+export type V1AuditLogExportRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1AuditLogExportRetrieve>>>
+export type V1AuditLogExportRetrieveQueryError = unknown
+
+export const useV1AuditLogExportRetrieve = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1AuditLogExportRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1AuditLogExportRetrieveKey() : null);
+  const swrFn = () => v1AuditLogExportRetrieve()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
 /**
  * Deprecated legacy resource; use /api/v1/finance/ instead.
  * @deprecated

@@ -8,6 +8,8 @@
 
 export * from './account';
 export * from './accountTypeEnum';
+export * from './actionEnum';
+export * from './auditLog';
 export * from './budget';
 export * from './budgetFile';
 export * from './budgetMonth';
@@ -31,6 +33,7 @@ export * from './ledgerPostingWrite';
 export * from './ledgerTransaction';
 export * from './modeEnum';
 export * from './organization';
+export * from './paginatedAuditLogList';
 export * from './paginatedBudgetList';
 export * from './paginatedCategoryList';
 export * from './paginatedLedgerTransactionList';
@@ -69,6 +72,7 @@ export * from './transactionRule';
 export * from './typeF1eEnum';
 export * from './userProfile';
 export * from './userRegistration';
+export * from './v1AuditLogListParams';
 export * from './v1BudgetsListParams';
 export * from './v1CategoriesListParams';
 export * from './v1FinanceTransactionsListParams';

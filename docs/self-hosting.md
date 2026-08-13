@@ -69,7 +69,7 @@ server {
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Imports and exports are computed synchronously.
+        # Import previews parse synchronously; give large files headroom.
         proxy_read_timeout 300s;
         client_max_body_size 20m;
     }
@@ -168,9 +168,13 @@ different signing key invalidates every session and token.
 
 ### Application-level backups
 
-The API also has an encrypted backup bundle endpoint
-(`/api/v1/finance/backups/`), which stores a client-encrypted archive. It is
-not yet exposed in the UI, and it is not a substitute for a database dump.
+Settings → Backup in the UI creates an encrypted backup bundle
+(`/api/v1/finance/backups/`): the archive is encrypted in the browser
+(AES-GCM, key derived from your passphrase) before upload, and restore replays
+it through the public API. It covers one budget file's finance data — useful
+for moving between instances — but it is not a substitute for a database dump,
+which is the only thing that captures users, workspaces, and every file at
+once.
 
 ## Upgrading
 

@@ -76,13 +76,17 @@ User
 `+10.00` against the Food category. A transfer is two *account* postings and no
 category, tied together by `transfer_group`.
 
-This is enforced in two places, which is worth knowing:
+This is enforced in three places, which is worth knowing:
 
 - `LedgerPosting` has a database `CheckConstraint`
   (`ledger_posting_exactly_one_target`) guaranteeing each posting references an
   account **or** a category, never both and never neither.
-- The zero-sum rule is enforced in the serializer
-  (`finance_serializers._validate_postings`), not in the database.
+- The zero-sum rule is validated in the serializer
+  (`finance_serializers._validate_postings`) so API callers get a clean 400.
+- The zero-sum rule is *also* enforced in the database by a deferred
+  constraint trigger (migration `0006`): at commit time, any transaction whose
+  postings do not sum to zero aborts. Bulk paths, imports, and future bugs
+  cannot corrupt the ledger even if they bypass the serializer.
 
 Business logic lives in `apps/api/pft/finance_services.py`: balances and net worth,
 cash flow, spending trends, envelope snapshots, the rules engine, schedule
@@ -96,15 +100,12 @@ Both are live and routed at the same time. On signup, `pft/signals.py` seeds
 "Cash" account, two category groups and ten `CategoryV2` rows. Nothing keeps
 them in sync afterwards.
 
-The web app reads through the legacy shapes but **writes to the finance API**.
-That translation lives in one file, `apps/web/app/client/pft/v1/v1.ts`: it resolves
-the default budget file and account, maps a `LedgerTransaction` and its postings
-back into a flat `Transaction`, and splits a flat write back into balanced
-postings.
-
-That file is hand-written and lives next to — not inside — `apps/web/app/client/gen/`,
-which is orval's output directory. Do not run `pnpm orval` expecting it to
-produce this; it will overwrite it with something that does not compile.
+The web app talks to the finance API **directly**. The generated orval client
+in `apps/web/app/client/gen/` (tracked in git, regenerated with `pnpm orval`,
+guarded by a CI diff gate) provides the typed calls, and
+`apps/web/app/lib/ledger.ts` supplies the small amount of domain vocabulary on
+top: building balanced postings from form input, display helpers, and SWR
+invalidation. The old read-legacy/write-finance adapter is gone.
 
 ### Where this is going
 
@@ -120,10 +121,10 @@ Link: </api/v1/finance/>; rel="successor-version"
 Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
 ```
 
-The remaining steps, not yet done:
+The remaining steps:
 
-1. Move the UI onto `/api/v1/finance/*` directly, removing the adapter in
-   `apps/web/app/client/pft/v1/v1.ts`.
+1. ~~Move the UI onto `/api/v1/finance/*` directly~~ — done; the adapter is
+   deleted and the UI runs on the generated client.
 2. Remove the legacy endpoints and models in `v1.0.0`.
 3. Rename `CategoryV2` and `CategoryGroupV2` — the "V2" suffix is an accident of
    history that is currently baked into the public schema.
@@ -146,25 +147,41 @@ Request
       → finance_services.*         ← business logic
 ```
 
-### Tenant scoping is per-viewset, and that is the risk
+## Workspaces (organizations)
 
-`UserScopedModelViewSet` only sets `permission_classes = [IsAuthenticated]`.
-Despite the name, **it does not scope anything.** Every viewset is responsible
-for filtering its own queryset:
+A `BudgetFile` is owned either by a single user (`organization` is NULL — the
+personal case) or by an `Organization`. Membership carries a role:
+
+| Role | Can |
+|---|---|
+| `viewer` | read everything in the workspace |
+| `member` | read and write finance data |
+| `admin` | member + manage members and invitations |
+| `owner` | admin + delete the workspace |
+
+`Invitation` rows let admins invite by email; accepting creates a
+`Membership`. Manager-visible activity is recorded via `pft/audit.py` and
+served read-only (with CSV export) at `/api/v1/audit-log/`.
+
+### Tenant scoping: one Q object, used everywhere
+
+All finance querysets are scoped through `pft/tenancy.py`:
 
 ```python
-# /api/v1/*        - the user owns the row directly
-Transaction.objects.filter(user=self.request.user)
+# read access: personal files + files in any org you belong to
+Account.objects.filter(budget_file_q(request.user))
 
-# /api/v1/finance/* - ownership is reached through the budget file
-Account.objects.filter(budget_file__user=self.request.user)
-LedgerPosting.objects.filter(transaction__budget_file__user=self.request.user)
-EnvelopeAssignment.objects.filter(budget_month__budget_file__user=self.request.user)
+# write access: viewer role is excluded
+LedgerTransaction.objects.filter(budget_file_q(request.user, write=True))
+
+# BudgetFile itself uses prefix="pk"
+BudgetFile.objects.filter(budget_file_q(request.user, prefix="pk"))
 ```
 
 `LedgerPosting`, `LedgerTransactionTag`, `EnvelopeAssignment` and
-`TransactionEvent` have **no user column at all** — they rely entirely on that
-FK chain. One missing filter is a cross-tenant leak.
+`TransactionEvent` have **no user column at all** — they rely entirely on the
+FK chain to the budget file. One missing filter is a cross-tenant leak, and the
+base viewset gates writes so a `viewer` is read-only across the board.
 
 Filtering the queryset is also not sufficient on its own. Any field that
 accepts an ID from the request body must be ownership-checked, or a user can
@@ -186,20 +203,19 @@ apps/web/app/
 ├── client/
 │   ├── httpPFTClient.ts  axios instance, auth header, 401 refresh-and-retry,
 │   │                     error toasts, offline mutation queue
-│   ├── pft/              hand-maintained API client (see above)
-│   └── gen/              orval output - generated, gitignored
-├── lib/                  auth (JWT cookies), finance-client, dates, analytics
+│   └── gen/              orval output — generated, TRACKED in git, guarded by
+│                         a CI regen-diff gate
+├── lib/                  auth (JWT cookies), ledger.ts (posting builders, SWR
+│                         invalidation), finance-client (thin helpers), backup,
+│                         import/export, dates, analytics
+├── e2e/  (../e2e)        Playwright suite — runs against the real stack in CI
 ├── hooks/                Zustand stores
-└── context/              currency provider
+└── context/              currency + organization providers
 ```
 
 Data fetching is SWR keyed on URL-ish strings. Note that global revalidation is
 switched off in `main.tsx`, so data refreshes on explicit mutation rather than
 on focus or reconnect.
-
-`apps/web/app/lib/finance-client.ts` is a *second* hand-written client used by the
-reports and rules pages. It duplicates helpers from `client/pft/v1/v1.ts`,
-including a separate budget-file cache. Merging the two is a good contribution.
 
 ## Authentication
 
@@ -240,9 +256,36 @@ Migrations are not reversible: the data migrations have no-op reverse functions.
 apps/api/pft/tests/
 ├── test_api_smoke.py         registration, JWT, CRUD, filtering, pagination
 ├── test_api_finance_v1.py    ledger, envelopes, reports, import/export, backups
+├── test_ledger_invariants.py zero-sum DB trigger, Hypothesis property tests
+├── test_ledger_filtering.py  server-side search / ordering / pagination
 ├── test_tenant_isolation.py  user B cannot read or write user A's data
-└── test_auth_hardening.py    logout, token revocation, throttling
+├── test_organizations.py     workspaces, roles, invitations
+├── test_audit_log.py         audit recording and manager-only access
+├── test_auth_hardening.py    logout, token revocation, throttling
+└── test_account_deletion.py  account deletion cascades
 ```
 
-There is no frontend test harness yet. Adding vitest plus one Playwright smoke
-path is a genuinely valuable contribution.
+The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright
+end-to-end suite (`apps/web/e2e/`) that drives the real Docker stack through
+nginx — login, transactions, budgets, import, backup/restore, and a two-browser
+shared-workspace scenario. Both run in CI.
+
+## Monorepo and SDKs
+
+```
+apps/       api, web, landing — deployables
+packages/   sdk-ts (@fintrack/sdk on npm), sdk-py (fintrack-sdk on PyPI)
+```
+
+The OpenAPI schema is the contract between all of them:
+
+```
+drf-spectacular  ──▶  apps/web/schema/pft.yaml  ──▶  orval ──▶ apps/web/app/client/gen/
+                                                 ──▶  orval ──▶ packages/sdk-ts/src/gen/
+                                                 ──▶  openapi-python-client ──▶ packages/sdk-py/
+```
+
+CI enforces three lockstep gates: the committed schema matches the backend
+(schema-sync), the web client matches the schema (orval regen diff), and the
+Python SDK matches schema + generation + `post_generate.py` patch. Change the
+API and CI tells you exactly which artifacts to regenerate.

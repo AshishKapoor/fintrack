@@ -92,7 +92,7 @@
     "@types/axios": "^0.14.4",
     "@types/flubber": "^0.4.0",
     "@types/node": "^22.14.0",
-    "@types/react": "^19.0.10",
+    "@types/react": "^19.2.18",
     "@types/react-dom": "^19.0.4",
     "@vitejs/plugin-react-swc": "^3.8.0",
     "@vitest/coverage-v8": "^4.1.10",

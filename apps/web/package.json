@@ -62,7 +62,7 @@
     "date-fns": "^4.4.0",
     "embla-carousel-react": "^8.6.0",
     "flubber": "^0.4.2",
-    "framer-motion": "^12.7.3",
+    "framer-motion": "^13.0.0",
     "input-otp": "^1.4.2",
     "lucide": "^0.487.0",
     "lucide-react": "^0.487.0",

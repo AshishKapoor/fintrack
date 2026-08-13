@@ -72,9 +72,15 @@ images, and starts every service. Once it finishes, open:
 | API docs (Swagger UI) | http://localhost:8000/api/docs/ |
 | API docs (ReDoc) | http://localhost:8000/api/redoc/ |
 
-There is no default account — register through the UI; the first account you
-create is yours. (For a Django admin user, see
-[docs/self-hosting.md](docs/self-hosting.md#creating-your-account).)
+There is no default account. To get started:
+
+1. Open http://localhost:5173/register
+2. Create your account with an email and password
+3. Log in with those credentials
+
+The first account you create is yours — there are no pre-seeded users.
+For a Django admin (superuser) account, see
+[docs/self-hosting.md](docs/self-hosting.md#creating-your-account).
 
 Other lifecycle commands:
 

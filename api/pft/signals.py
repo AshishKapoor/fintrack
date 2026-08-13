@@ -2,7 +2,15 @@ from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from .models import Account, BudgetFile, Category, CategoryGroupV2, CategoryV2
+from .models import (
+    Account,
+    BudgetFile,
+    Category,
+    CategoryGroupV2,
+    CategoryV2,
+    Membership,
+    Organization,
+)
 
 User = get_user_model()
 
@@ -43,8 +51,16 @@ def create_default_categories(sender, instance, created, **kwargs):
 
         Category.objects.bulk_create(categories_to_create)
 
+        organization = Organization.objects.create(
+            name=f"{instance.email}'s space", personal=True
+        )
+        Membership.objects.create(
+            organization=organization, user=instance, role=Membership.ROLE_OWNER
+        )
+
         budget_file = BudgetFile.objects.create(
             user=instance,
+            organization=organization,
             name="Primary Budget",
             is_default=True,
         )

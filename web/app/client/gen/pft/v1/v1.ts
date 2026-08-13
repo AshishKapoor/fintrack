@@ -31,6 +31,7 @@ import type {
   ImportJob,
   LedgerPostingRead,
   LedgerTransaction,
+  Organization,
   PaginatedBudgetList,
   PaginatedCategoryList,
   PaginatedLedgerTransactionList,
@@ -47,6 +48,7 @@ import type {
   PatchedExportJob,
   PatchedImportJob,
   PatchedLedgerTransaction,
+  PatchedOrganization,
   PatchedPayee,
   PatchedSavedReport,
   PatchedScheduledTransaction,
@@ -5272,6 +5274,454 @@ export const useV1MeRetrieve = <TError = unknown>(
   const swrFn = () => v1MeRetrieve()
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsList = (
+    
+ ) => {
+    return httpPFTClient<Organization[]>(
+    {url: `/api/v1/orgs/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsListKey = () => [`/api/v1/orgs/`] as const;
+
+export type V1OrgsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1OrgsList>>>
+export type V1OrgsListQueryError = unknown
+
+export const useV1OrgsList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsListKey() : null);
+  const swrFn = () => v1OrgsList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsCreate = (
+    organization: NonReadonly<Organization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: organization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsCreateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Organization> }): Promise<Organization> => {
+    return v1OrgsCreate(arg);
+  }
+}
+export const getV1OrgsCreateMutationKey = () => [`/api/v1/orgs/`] as const;
+
+export type V1OrgsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsCreate>>>
+export type V1OrgsCreateMutationError = unknown
+
+export const useV1OrgsCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsCreate>>, TError, Key, NonReadonly<Organization>, Awaited<ReturnType<typeof v1OrgsCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsCreateMutationKey();
+  const swrFn = getV1OrgsCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsRetrieveKey = (id: string,) => [`/api/v1/orgs/${id}/`] as const;
+
+export type V1OrgsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1OrgsRetrieve>>>
+export type V1OrgsRetrieveQueryError = unknown
+
+export const useV1OrgsRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsRetrieveKey(id) : null);
+  const swrFn = () => v1OrgsRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsUpdate = (
+    id: string,
+    organization: NonReadonly<Organization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: organization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Organization> }): Promise<Organization> => {
+    return v1OrgsUpdate(id, arg);
+  }
+}
+export const getV1OrgsUpdateMutationKey = (id: string,) => [`/api/v1/orgs/${id}/`] as const;
+
+export type V1OrgsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsUpdate>>>
+export type V1OrgsUpdateMutationError = unknown
+
+export const useV1OrgsUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsUpdate>>, TError, Key, NonReadonly<Organization>, Awaited<ReturnType<typeof v1OrgsUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsUpdateMutationKey(id);
+  const swrFn = getV1OrgsUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsPartialUpdate = (
+    id: string,
+    patchedOrganization: NonReadonly<PatchedOrganization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedOrganization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsPartialUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedOrganization> }): Promise<Organization> => {
+    return v1OrgsPartialUpdate(id, arg);
+  }
+}
+export const getV1OrgsPartialUpdateMutationKey = (id: string,) => [`/api/v1/orgs/${id}/`] as const;
+
+export type V1OrgsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsPartialUpdate>>>
+export type V1OrgsPartialUpdateMutationError = unknown
+
+export const useV1OrgsPartialUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsPartialUpdate>>, TError, Key, NonReadonly<PatchedOrganization>, Awaited<ReturnType<typeof v1OrgsPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsPartialUpdateMutationKey(id);
+  const swrFn = getV1OrgsPartialUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsDestroy = (
+    id: string,
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/orgs/${id}/`, method: 'DELETE'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsDestroyMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }): Promise<void> => {
+    return v1OrgsDestroy(id);
+  }
+}
+export const getV1OrgsDestroyMutationKey = (id: string,) => [`/api/v1/orgs/${id}/`] as const;
+
+export type V1OrgsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsDestroy>>>
+export type V1OrgsDestroyMutationError = unknown
+
+export const useV1OrgsDestroy = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1OrgsDestroy>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsDestroyMutationKey(id);
+  const swrFn = getV1OrgsDestroyMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsInvitationsRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/invitations/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsInvitationsRetrieveKey = (id: string,) => [`/api/v1/orgs/${id}/invitations/`] as const;
+
+export type V1OrgsInvitationsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1OrgsInvitationsRetrieve>>>
+export type V1OrgsInvitationsRetrieveQueryError = unknown
+
+export const useV1OrgsInvitationsRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsInvitationsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsInvitationsRetrieveKey(id) : null);
+  const swrFn = () => v1OrgsInvitationsRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsInvitationsCreate = (
+    id: string,
+    organization: NonReadonly<Organization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/invitations/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: organization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsInvitationsCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Organization> }): Promise<Organization> => {
+    return v1OrgsInvitationsCreate(id, arg);
+  }
+}
+export const getV1OrgsInvitationsCreateMutationKey = (id: string,) => [`/api/v1/orgs/${id}/invitations/`] as const;
+
+export type V1OrgsInvitationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsInvitationsCreate>>>
+export type V1OrgsInvitationsCreateMutationError = unknown
+
+export const useV1OrgsInvitationsCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsInvitationsCreate>>, TError, Key, NonReadonly<Organization>, Awaited<ReturnType<typeof v1OrgsInvitationsCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsInvitationsCreateMutationKey(id);
+  const swrFn = getV1OrgsInvitationsCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsMembersRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/members/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsMembersRetrieveKey = (id: string,) => [`/api/v1/orgs/${id}/members/`] as const;
+
+export type V1OrgsMembersRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1OrgsMembersRetrieve>>>
+export type V1OrgsMembersRetrieveQueryError = unknown
+
+export const useV1OrgsMembersRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsMembersRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsMembersRetrieveKey(id) : null);
+  const swrFn = () => v1OrgsMembersRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsMembersPartialUpdate = (
+    id: string,
+    membershipId: string,
+    patchedOrganization: NonReadonly<PatchedOrganization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/${id}/members/${membershipId}/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedOrganization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsMembersPartialUpdateMutationFetcher = (id: string,
+    membershipId: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedOrganization> }): Promise<Organization> => {
+    return v1OrgsMembersPartialUpdate(id, membershipId, arg);
+  }
+}
+export const getV1OrgsMembersPartialUpdateMutationKey = (id: string,
+    membershipId: string,) => [`/api/v1/orgs/${id}/members/${membershipId}/`] as const;
+
+export type V1OrgsMembersPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsMembersPartialUpdate>>>
+export type V1OrgsMembersPartialUpdateMutationError = unknown
+
+export const useV1OrgsMembersPartialUpdate = <TError = unknown>(
+  id: string,
+    membershipId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsMembersPartialUpdate>>, TError, Key, NonReadonly<PatchedOrganization>, Awaited<ReturnType<typeof v1OrgsMembersPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsMembersPartialUpdateMutationKey(id,membershipId);
+  const swrFn = getV1OrgsMembersPartialUpdateMutationFetcher(id,membershipId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsMembersRemoveDestroy = (
+    id: string,
+    membershipId: string,
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/orgs/${id}/members/${membershipId}/remove/`, method: 'DELETE'
+    },
+    );
+  }
+
+
+
+export const getV1OrgsMembersRemoveDestroyMutationFetcher = (id: string,
+    membershipId: string, ) => {
+  return (_: Key, __: { arg: Arguments }): Promise<void> => {
+    return v1OrgsMembersRemoveDestroy(id, membershipId);
+  }
+}
+export const getV1OrgsMembersRemoveDestroyMutationKey = (id: string,
+    membershipId: string,) => [`/api/v1/orgs/${id}/members/${membershipId}/remove/`] as const;
+
+export type V1OrgsMembersRemoveDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsMembersRemoveDestroy>>>
+export type V1OrgsMembersRemoveDestroyMutationError = unknown
+
+export const useV1OrgsMembersRemoveDestroy = <TError = unknown>(
+  id: string,
+    membershipId: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsMembersRemoveDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1OrgsMembersRemoveDestroy>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsMembersRemoveDestroyMutationKey(id,membershipId);
+  const swrFn = getV1OrgsMembersRemoveDestroyMutationFetcher(id,membershipId);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+export const v1OrgsAcceptInvitationCreate = (
+    organization: NonReadonly<Organization>,
+ ) => {
+    return httpPFTClient<Organization>(
+    {url: `/api/v1/orgs/accept-invitation/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: organization
+    },
+    );
+  }
+
+
+
+export const getV1OrgsAcceptInvitationCreateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Organization> }): Promise<Organization> => {
+    return v1OrgsAcceptInvitationCreate(arg);
+  }
+}
+export const getV1OrgsAcceptInvitationCreateMutationKey = () => [`/api/v1/orgs/accept-invitation/`] as const;
+
+export type V1OrgsAcceptInvitationCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1OrgsAcceptInvitationCreate>>>
+export type V1OrgsAcceptInvitationCreateMutationError = unknown
+
+export const useV1OrgsAcceptInvitationCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1OrgsAcceptInvitationCreate>>, TError, Key, NonReadonly<Organization>, Awaited<ReturnType<typeof v1OrgsAcceptInvitationCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1OrgsAcceptInvitationCreateMutationKey();
+  const swrFn = getV1OrgsAcceptInvitationCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,

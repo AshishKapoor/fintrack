@@ -132,9 +132,108 @@ class Budget(models.Model):
         return f"{self.user.username} - {self.category.name} - {self.month}/{self.year}"
 
 
+class Organization(models.Model):
+    """The tenancy boundary.
+
+    Every user gets a personal organization on signup; budget files belong to
+    an organization, and access flows through Membership. `personal` marks the
+    auto-created org so the UI can label it and management endpoints can refuse
+    to delete it. This is the expand phase of the user->organization move:
+    BudgetFile.user stays in place until v1.0.0 (see ARCHITECTURE.md).
+    """
+
+    name = models.CharField(max_length=120)
+    personal = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+
+    def __str__(self):
+        return self.name
+
+
+class Membership(models.Model):
+    """A user's role inside an organization.
+
+    Roles are deliberately a small fixed ladder rather than free permissions:
+    owner manages the org itself, admin manages members and all data, member
+    reads and writes data, viewer only reads.
+    """
+
+    ROLE_OWNER = "owner"
+    ROLE_ADMIN = "admin"
+    ROLE_MEMBER = "member"
+    ROLE_VIEWER = "viewer"
+    ROLE_CHOICES = (
+        (ROLE_OWNER, "Owner"),
+        (ROLE_ADMIN, "Admin"),
+        (ROLE_MEMBER, "Member"),
+        (ROLE_VIEWER, "Viewer"),
+    )
+    WRITE_ROLES = {ROLE_OWNER, ROLE_ADMIN, ROLE_MEMBER}
+    MANAGE_ROLES = {ROLE_OWNER, ROLE_ADMIN}
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="memberships"
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
+    role = models.CharField(max_length=12, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "user"], name="unique_membership"
+            )
+        ]
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.user} in {self.organization} as {self.role}"
+
+
+class Invitation(models.Model):
+    """An email invitation into an organization, accepted by token."""
+
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="invitations"
+    )
+    email = models.EmailField()
+    role = models.CharField(
+        max_length=12, choices=Membership.ROLE_CHOICES, default=Membership.ROLE_MEMBER
+    )
+    token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    invited_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name="sent_invitations"
+    )
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "email"],
+                condition=Q(accepted_at__isnull=True),
+                name="unique_pending_invitation",
+            )
+        ]
+        ordering = ["-created_at"]
+
+
 class BudgetFile(models.Model):
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="budget_files"
+    )
+    # Nullable during the expand phase; every row is backfilled to its owner's
+    # personal organization by migration 0007, and new rows always set it.
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="budget_files",
+        null=True,
+        blank=True,
     )
     name = models.CharField(max_length=120)
     currency_code = models.CharField(max_length=3, default="USD")

@@ -14,8 +14,11 @@ from .models import (
     EnvelopeAssignment,
     ExportJob,
     ImportJob,
+    Invitation,
     LedgerPosting,
     LedgerTransaction,
+    Membership,
+    Organization,
     Payee,
     SavedReport,
     ScheduledTransaction,
@@ -256,6 +259,28 @@ class EncryptedBackupBundleAdmin(admin.ModelAdmin):
     list_display = ("created_at", "budget_file", "bundle_id", "encryption_algorithm")
     readonly_fields = ("bundle_id", "created_at")
     exclude = ("ciphertext", "salt", "nonce")
+
+
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+    list_display = ("name", "personal", "created_at")
+    list_filter = ("personal",)
+    search_fields = ("name",)
+
+
+@admin.register(Membership)
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ("organization", "user", "role", "created_at")
+    list_filter = ("role",)
+    search_fields = ("user__email", "organization__name")
+
+
+@admin.register(Invitation)
+class InvitationAdmin(admin.ModelAdmin):
+    list_display = ("organization", "email", "role", "accepted_at", "created_at")
+    list_filter = ("role",)
+    search_fields = ("email",)
+    readonly_fields = ("token",)
 
 
 admin.site.site_header = "FinTrack Admin"

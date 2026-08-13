@@ -1,5 +1,7 @@
 from django.urls import include, path
+from rest_framework.routers import DefaultRouter
 
+from .org_views import OrganizationViewSet
 from .routers import router
 from .views import (
     ChangePasswordView,
@@ -9,10 +11,14 @@ from .views import (
     UpdateProfileView,
 )
 
+org_router = DefaultRouter()
+org_router.register("orgs", OrganizationViewSet, basename="org")
+
 app_name = "pft"
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("", include(org_router.urls)),
     path("register/", RegisterUserAPIView.as_view(), name="register"),
     path("me/", MeView.as_view(), name="me"),
     path("profile/update/", UpdateProfileView.as_view(), name="update-profile"),

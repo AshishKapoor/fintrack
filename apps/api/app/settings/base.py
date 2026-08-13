@@ -120,6 +120,10 @@ INSTALLED_APPS = [
 # global here changes their response shape and needs a matching frontend change.
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # JSON only. Advertising form and multipart in the schema made every
+    # generated client emit three body encodings per operation, and the Python
+    # generator picked multipart, which cannot carry nested postings.
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),

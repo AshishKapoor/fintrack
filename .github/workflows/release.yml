@@ -87,3 +87,27 @@ jobs:
             exit 0
           fi
           pnpm publish --access public --no-git-checks
+
+  publish-sdk-py:
+    # Publishes fintrack-sdk to PyPI when a PYPI_API_TOKEN secret exists;
+    # without it the job builds and exits, so forks are unaffected.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Build
+        working-directory: packages/sdk-py
+        run: uv build
+
+      - name: Publish
+        working-directory: packages/sdk-py
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$UV_PUBLISH_TOKEN" ]; then
+            echo "PYPI_API_TOKEN not configured; skipping publish."
+            exit 0
+          fi
+          uv publish

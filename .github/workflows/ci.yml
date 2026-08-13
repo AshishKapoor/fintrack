@@ -170,6 +170,34 @@ jobs:
       - name: Build
         run: pnpm run build
 
+  sdk-py:
+    name: SDK (Python)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/sdk-py
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Generated client is current
+        run: |
+          uvx openapi-python-client generate \
+            --path ../../apps/web/schema/pft.yaml \
+            --output-path fintrack_sdk --meta none --overwrite
+          python3 post_generate.py
+          git diff --exit-code fintrack_sdk || {
+            echo "::error::packages/sdk-py/fintrack_sdk is stale. Regenerate and commit."; exit 1; }
+
+      - name: Build and import
+        run: |
+          uv build
+          uv venv .ci-venv
+          uv pip install -p .ci-venv dist/*.whl
+          .ci-venv/bin/python -c "import fintrack_sdk; from fintrack_sdk import AuthenticatedClient; print('import OK')"
+
   stack:
     name: Docker stack smoke test
     runs-on: ubuntu-latest

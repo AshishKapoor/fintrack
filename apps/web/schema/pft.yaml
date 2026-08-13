@@ -16,12 +16,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TokenObtainPair'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenObtainPair'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TokenObtainPair'
         required: true
       responses:
         '200':
@@ -56,12 +50,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/TokenRefresh'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TokenRefresh'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/TokenRefresh'
         required: true
@@ -166,12 +154,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Budget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Budget'
         required: true
       security:
       - jwtAuth: []
@@ -221,12 +203,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Budget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Budget'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Budget'
         required: true
       security:
       - jwtAuth: []
@@ -252,12 +228,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedBudget'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedBudget'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedBudget'
       security:
@@ -320,12 +290,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Category'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Category'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Category'
         required: true
       security:
       - jwtAuth: []
@@ -375,12 +339,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Category'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Category'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Category'
         required: true
       security:
       - jwtAuth: []
@@ -406,12 +364,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCategory'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCategory'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedCategory'
       security:
@@ -480,12 +432,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Account'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Account'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Account'
         required: true
       security:
       - jwtAuth: []
@@ -545,12 +491,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Account'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Account'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Account'
         required: true
       security:
       - jwtAuth: []
@@ -581,12 +521,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedAccount'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedAccount'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedAccount'
       security:
@@ -659,12 +593,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EncryptedBackupBundle'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EncryptedBackupBundle'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EncryptedBackupBundle'
         required: true
       security:
       - jwtAuth: []
@@ -724,12 +652,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EncryptedBackupBundle'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EncryptedBackupBundle'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EncryptedBackupBundle'
         required: true
       security:
       - jwtAuth: []
@@ -760,12 +682,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedEncryptedBackupBundle'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedEncryptedBackupBundle'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedEncryptedBackupBundle'
       security:
@@ -859,12 +775,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BudgetFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
         required: true
       security:
       - jwtAuth: []
@@ -924,12 +834,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BudgetFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
         required: true
       security:
       - jwtAuth: []
@@ -960,12 +864,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedBudgetFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedBudgetFile'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedBudgetFile'
       security:
@@ -1049,12 +947,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BudgetFile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BudgetFile'
         required: true
       security:
       - jwtAuth: []
@@ -1102,12 +994,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/BudgetMonth'
         required: true
@@ -1169,12 +1055,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
         required: true
       security:
       - jwtAuth: []
@@ -1205,12 +1085,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedBudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedBudgetMonth'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedBudgetMonth'
       security:
@@ -1265,12 +1139,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/BudgetMonth'
         required: true
@@ -1333,12 +1201,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
         required: true
       security:
       - jwtAuth: []
@@ -1370,12 +1232,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/BudgetMonth'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/BudgetMonth'
         required: true
@@ -1425,12 +1281,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/CategoryV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CategoryV2'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/CategoryV2'
         required: true
@@ -1492,12 +1342,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CategoryV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CategoryV2'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CategoryV2'
         required: true
       security:
       - jwtAuth: []
@@ -1528,12 +1372,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCategoryV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCategoryV2'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedCategoryV2'
       security:
@@ -1606,12 +1444,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CategoryGroupV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
         required: true
       security:
       - jwtAuth: []
@@ -1671,12 +1503,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CategoryGroupV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
         required: true
       security:
       - jwtAuth: []
@@ -1707,12 +1533,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedCategoryGroupV2'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedCategoryGroupV2'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedCategoryGroupV2'
       security:
@@ -1785,12 +1605,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EnvelopeAssignment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EnvelopeAssignment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EnvelopeAssignment'
         required: true
       security:
       - jwtAuth: []
@@ -1850,12 +1664,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EnvelopeAssignment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EnvelopeAssignment'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EnvelopeAssignment'
         required: true
       security:
       - jwtAuth: []
@@ -1886,12 +1694,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedEnvelopeAssignment'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedEnvelopeAssignment'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedEnvelopeAssignment'
       security:
@@ -1964,12 +1766,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ExportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ExportJob'
         required: true
       security:
       - jwtAuth: []
@@ -2029,12 +1825,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ExportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ExportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ExportJob'
         required: true
       security:
       - jwtAuth: []
@@ -2065,12 +1855,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedExportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedExportJob'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedExportJob'
       security:
@@ -2170,12 +1954,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
         required: true
       security:
       - jwtAuth: []
@@ -2235,12 +2013,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
         required: true
       security:
       - jwtAuth: []
@@ -2271,12 +2043,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedImportJob'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedImportJob'
       security:
@@ -2333,12 +2099,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
         required: true
       security:
       - jwtAuth: []
@@ -2370,12 +2130,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ImportJob'
         required: true
@@ -2425,12 +2179,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Payee'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Payee'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/Payee'
         required: true
@@ -2492,12 +2240,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Payee'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Payee'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Payee'
         required: true
       security:
       - jwtAuth: []
@@ -2528,12 +2270,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedPayee'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedPayee'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedPayee'
       security:
@@ -2656,12 +2392,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SavedReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
         required: true
       security:
       - jwtAuth: []
@@ -2721,12 +2451,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SavedReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
         required: true
       security:
       - jwtAuth: []
@@ -2757,12 +2481,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSavedReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSavedReport'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedSavedReport'
       security:
@@ -2819,12 +2537,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SavedReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
         required: true
       security:
       - jwtAuth: []
@@ -2850,12 +2562,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SavedReport'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/SavedReport'
         required: true
@@ -2905,12 +2611,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/TransactionRule'
         required: true
@@ -2972,12 +2672,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TransactionRule'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
         required: true
       security:
       - jwtAuth: []
@@ -3008,12 +2702,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTransactionRule'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTransactionRule'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedTransactionRule'
       security:
@@ -3064,12 +2752,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/TransactionRule'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/TransactionRule'
         required: true
       security:
       - jwtAuth: []
@@ -3117,12 +2799,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ScheduledTransaction'
         required: true
@@ -3184,12 +2860,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScheduledTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
         required: true
       security:
       - jwtAuth: []
@@ -3220,12 +2890,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedScheduledTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedScheduledTransaction'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedScheduledTransaction'
       security:
@@ -3276,12 +2940,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ScheduledTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ScheduledTransaction'
         required: true
       security:
       - jwtAuth: []
@@ -3329,12 +2987,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Tag'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Tag'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/Tag'
         required: true
@@ -3396,12 +3048,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Tag'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Tag'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Tag'
         required: true
       security:
       - jwtAuth: []
@@ -3432,12 +3078,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTag'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTag'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedTag'
       security:
@@ -3533,12 +3173,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LedgerTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
         required: true
       security:
       - jwtAuth: []
@@ -3598,12 +3232,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LedgerTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
         required: true
       security:
       - jwtAuth: []
@@ -3634,12 +3262,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedLedgerTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedLedgerTransaction'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedLedgerTransaction'
       security:
@@ -3696,12 +3318,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/LedgerTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
         required: true
       security:
       - jwtAuth: []
@@ -3727,12 +3343,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/LedgerTransaction'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/LedgerTransaction'
         required: true
@@ -3780,12 +3390,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Organization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Organization'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Organization'
         required: true
       security:
       - jwtAuth: []
@@ -3831,12 +3435,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Organization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Organization'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Organization'
         required: true
       security:
       - jwtAuth: []
@@ -3860,12 +3458,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganization'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedOrganization'
       security:
@@ -3927,12 +3519,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Organization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Organization'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Organization'
         required: true
       security:
       - jwtAuth: []
@@ -3985,12 +3571,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/PatchedOrganization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganization'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedOrganization'
       security:
       - jwtAuth: []
       responses:
@@ -4030,12 +3610,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/Organization'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Organization'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/Organization'
         required: true
@@ -4084,12 +3658,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserProfile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserProfile'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/UserProfile'
       security:
       - jwtAuth: []
       responses:
@@ -4106,12 +3674,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfile'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedUserProfile'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedUserProfile'
       security:
@@ -4131,12 +3693,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/UserRegistration'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/UserRegistration'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserRegistration'
         required: true
@@ -4195,12 +3751,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Transaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Transaction'
         required: true
       security:
       - jwtAuth: []
@@ -4250,12 +3800,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Transaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Transaction'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Transaction'
         required: true
       security:
       - jwtAuth: []
@@ -4281,12 +3825,6 @@ paths:
       requestBody:
         content:
           application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedTransaction'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedTransaction'
-          multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedTransaction'
       security:

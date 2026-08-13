@@ -27,8 +27,16 @@ from .models import (
 
 class UserOwnedBudgetFileMixin:
     def _validate_budget_file_owner(self, budget_file: BudgetFile):
+        """Creation targets must be budget files the caller can write.
+
+        Reads scope through tenancy.budget_file_q in the viewsets; this is the
+        write-side ownership check, now membership-based: any write role in the
+        budget file's organization qualifies, a viewer does not.
+        """
+        from .tenancy import can_access
+
         request = self.context["request"]
-        if budget_file.user_id != request.user.id:
+        if not can_access(request.user, budget_file, write=True):
             raise serializers.ValidationError("Budget file not found.")
 
 
@@ -40,10 +48,23 @@ class BudgetFileSerializer(serializers.ModelSerializer):
             "name",
             "currency_code",
             "is_default",
+            "organization",
             "created_at",
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
+        extra_kwargs = {"organization": {"required": False, "allow_null": True}}
+
+    def validate_organization(self, value):
+        """A budget file may only be created in an org the caller can write."""
+        if value is None:
+            return value
+        from .tenancy import can_access_organization
+
+        request = self.context["request"]
+        if not can_access_organization(request.user, value, write=True):
+            raise serializers.ValidationError("Unknown organization.")
+        return value
 
 
 class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):

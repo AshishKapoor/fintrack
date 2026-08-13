@@ -13,6 +13,8 @@ export interface BudgetFile {
   /** @maxLength 3 */
   currency_code?: string;
   is_default?: boolean;
+  /** @nullable */
+  organization?: number | null;
   readonly created_at: string;
   readonly updated_at: string;
 }

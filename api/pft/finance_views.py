@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
@@ -62,6 +62,7 @@ from .models import (
     TransactionRule,
 )
 from .tasks import execute_import_job_task, run_export_job_task
+from .tenancy import budget_file_q, can_access, personal_organization
 
 
 def parse_iso_date(raw, field_name):
@@ -79,21 +80,56 @@ def parse_iso_date(raw, field_name):
 class UserScopedModelViewSet(viewsets.ModelViewSet):
     """Base class for the finance viewsets.
 
-    NOTE: this only enforces authentication. Every subclass is still responsible
-    for scoping its own get_queryset() to request.user.
+    Enforces authentication and, on unsafe methods, that the target budget
+    file admits writes for this user (viewers are read-only). Every subclass
+    remains responsible for scoping its own get_queryset() through
+    tenancy.budget_file_q - see ARCHITECTURE.md.
     """
 
     permission_classes = [permissions.IsAuthenticated]
+
+    def check_budget_file_writable(self, budget_file):
+        if budget_file is None:
+            return
+        if not can_access(self.request.user, budget_file, write=True):
+            raise PermissionDenied("Your role in this organization is read-only.")
+
+    def perform_create(self, serializer):
+        instance = serializer.save()
+        self.check_budget_file_writable(self._budget_file_of(instance))
+
+    def perform_update(self, serializer):
+        self.check_budget_file_writable(self._budget_file_of(serializer.instance))
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        self.check_budget_file_writable(self._budget_file_of(instance))
+        instance.delete()
+
+    @staticmethod
+    def _budget_file_of(instance):
+        if isinstance(instance, BudgetFile):
+            return instance
+        if getattr(instance, "budget_file_id", None) is not None:
+            return instance.budget_file
+        if getattr(instance, "budget_month_id", None) is not None:
+            return instance.budget_month.budget_file
+        if getattr(instance, "transaction_id", None) is not None:
+            return instance.transaction.budget_file
+        return None
 
 
 class BudgetFileViewSet(UserScopedModelViewSet):
     serializer_class = BudgetFileSerializer
 
     def get_queryset(self):
-        return BudgetFile.objects.filter(user=self.request.user).order_by("id")
+        return BudgetFile.objects.filter(budget_file_q(self.request.user, prefix='pk')).order_by("id")
 
     def perform_create(self, serializer):
-        budget_file = serializer.save(user=self.request.user)
+        organization = serializer.validated_data.get("organization") or personal_organization(
+            self.request.user
+        )
+        budget_file = serializer.save(user=self.request.user, organization=organization)
         has_existing_default = BudgetFile.objects.filter(
             user=self.request.user,
             is_default=True,
@@ -107,7 +143,7 @@ class BudgetFileViewSet(UserScopedModelViewSet):
     @action(detail=True, methods=["post"], url_path="set-default")
     def set_default(self, request, pk=None):
         budget_file = self.get_object()
-        BudgetFile.objects.filter(user=request.user, is_default=True).update(
+        BudgetFile.objects.filter(budget_file_q(request.user, prefix='pk'), is_default=True).update(
             is_default=False
         )
         budget_file.is_default = True
@@ -131,7 +167,7 @@ class AccountViewSet(UserScopedModelViewSet):
     serializer_class = AccountSerializer
 
     def get_queryset(self):
-        return Account.objects.filter(budget_file__user=self.request.user).order_by(
+        return Account.objects.filter(budget_file_q(self.request.user)).order_by(
             "id"
         )
 
@@ -140,9 +176,7 @@ class CategoryGroupViewSet(UserScopedModelViewSet):
     serializer_class = CategoryGroupV2Serializer
 
     def get_queryset(self):
-        queryset = CategoryGroupV2.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("sort_order", "id")
+        queryset = CategoryGroupV2.objects.filter(budget_file_q(self.request.user)).order_by("sort_order", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -153,9 +187,7 @@ class CategoryV2ViewSet(UserScopedModelViewSet):
     serializer_class = CategoryV2Serializer
 
     def get_queryset(self):
-        queryset = CategoryV2.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("id")
+        queryset = CategoryV2.objects.filter(budget_file_q(self.request.user)).order_by("id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -166,7 +198,7 @@ class PayeeViewSet(UserScopedModelViewSet):
     serializer_class = PayeeSerializer
 
     def get_queryset(self):
-        queryset = Payee.objects.filter(budget_file__user=self.request.user).order_by(
+        queryset = Payee.objects.filter(budget_file_q(self.request.user)).order_by(
             "id"
         )
         budget_file = self.request.query_params.get("budget_file")
@@ -179,7 +211,7 @@ class TagViewSet(UserScopedModelViewSet):
     serializer_class = TagSerializer
 
     def get_queryset(self):
-        queryset = Tag.objects.filter(budget_file__user=self.request.user).order_by(
+        queryset = Tag.objects.filter(budget_file_q(self.request.user)).order_by(
             "id"
         )
         budget_file = self.request.query_params.get("budget_file")
@@ -206,7 +238,7 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
 
     def get_queryset(self):
         queryset = (
-            LedgerTransaction.objects.filter(budget_file__user=self.request.user)
+            LedgerTransaction.objects.filter(budget_file_q(self.request.user))
             .select_related("payee")
             .prefetch_related("postings__account", "postings__category", "tags")
             .annotate(
@@ -260,16 +292,17 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
             )
 
         queryset = LedgerTransaction.objects.filter(
-            id__in=ids,
-            budget_file__user=request.user,
+            budget_file_q(request.user),
+            id__in=ids
         )
 
         # `payee` is a raw id from the request body. Without this check a user
         # could attach another tenant's payee to their own transactions.
         if patch.get("payee") is not None:
             owned_payee = Payee.objects.filter(
-                pk=patch["payee"], budget_file__user=request.user
-            ).exists()
+            budget_file_q(request.user),
+            pk=patch["payee"]
+        ).exists()
             if not owned_payee:
                 return Response(
                     {"detail": "Unknown payee."},
@@ -300,7 +333,7 @@ class PostingViewSet(UserScopedModelViewSet):
 
     def get_queryset(self):
         queryset = LedgerPosting.objects.filter(
-            transaction__budget_file__user=self.request.user
+            budget_file_q(self.request.user, prefix="transaction__budget_file"),
         ).select_related("account", "category", "transaction")
         tx_id = self.request.query_params.get("transaction")
         if tx_id:
@@ -312,9 +345,7 @@ class BudgetMonthViewSet(UserScopedModelViewSet):
     serializer_class = BudgetMonthSerializer
 
     def get_queryset(self):
-        queryset = BudgetMonth.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("-year", "-month", "-id")
+        queryset = BudgetMonth.objects.filter(budget_file_q(self.request.user)).order_by("-year", "-month", "-id")
         budget_file = self.request.query_params.get("budget_file")
         year = self.request.query_params.get("year")
         month = self.request.query_params.get("month")
@@ -358,7 +389,7 @@ class EnvelopeAssignmentViewSet(UserScopedModelViewSet):
 
     def get_queryset(self):
         queryset = EnvelopeAssignment.objects.filter(
-            budget_month__budget_file__user=self.request.user
+            budget_file_q(self.request.user, prefix="budget_month__budget_file"),
         ).select_related("budget_month", "category")
         budget_month_id = self.request.query_params.get("budget_month")
         category_id = self.request.query_params.get("category")
@@ -373,9 +404,7 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
     serializer_class = ScheduledTransactionSerializer
 
     def get_queryset(self):
-        queryset = ScheduledTransaction.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("next_run_date", "id")
+        queryset = ScheduledTransaction.objects.filter(budget_file_q(self.request.user)).order_by("next_run_date", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -411,9 +440,7 @@ class TransactionRuleViewSet(UserScopedModelViewSet):
     serializer_class = TransactionRuleSerializer
 
     def get_queryset(self):
-        queryset = TransactionRule.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("priority", "id")
+        queryset = TransactionRule.objects.filter(budget_file_q(self.request.user)).order_by("priority", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -432,7 +459,8 @@ class TransactionRuleViewSet(UserScopedModelViewSet):
             )
 
         transactions = LedgerTransaction.objects.filter(
-            id__in=ids, budget_file__user=request.user
+            budget_file_q(request.user),
+            id__in=ids
         ).order_by("id")
 
         results = []
@@ -446,9 +474,7 @@ class ReportViewSet(UserScopedModelViewSet):
     serializer_class = SavedReportSerializer
 
     def get_queryset(self):
-        queryset = SavedReport.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("-updated_at", "-id")
+        queryset = SavedReport.objects.filter(budget_file_q(self.request.user)).order_by("-updated_at", "-id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -467,7 +493,7 @@ class ReportViewSet(UserScopedModelViewSet):
             )
 
         budget_file = BudgetFile.objects.filter(
-            id=budget_file_id, user=request.user
+            budget_file_q(request.user, prefix='pk'), id=budget_file_id
         ).first()
         if not budget_file:
             return Response({"detail": "Budget file not found"}, status=404)
@@ -494,7 +520,7 @@ class ExportJobViewSet(UserScopedModelViewSet):
     serializer_class = ExportJobSerializer
 
     def get_queryset(self):
-        return ExportJob.objects.filter(budget_file__user=self.request.user).order_by(
+        return ExportJob.objects.filter(budget_file_q(self.request.user)).order_by(
             "-created_at", "-id"
         )
 
@@ -531,9 +557,7 @@ class BackupBundleViewSet(UserScopedModelViewSet):
     serializer_class = EncryptedBackupBundleSerializer
 
     def get_queryset(self):
-        return EncryptedBackupBundle.objects.filter(
-            budget_file__user=self.request.user
-        ).order_by("-created_at", "-id")
+        return EncryptedBackupBundle.objects.filter(budget_file_q(self.request.user)).order_by("-created_at", "-id")
 
     def perform_create(self, serializer):
         serializer.save(requested_by=self.request.user)
@@ -560,7 +584,7 @@ class ImportJobViewSet(UserScopedModelViewSet):
     serializer_class = ImportJobSerializer
 
     def get_queryset(self):
-        return ImportJob.objects.filter(budget_file__user=self.request.user).order_by(
+        return ImportJob.objects.filter(budget_file_q(self.request.user)).order_by(
             "-created_at", "-id"
         )
 

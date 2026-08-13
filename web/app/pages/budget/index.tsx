@@ -1,12 +1,7 @@
 'use client'
 
-import {
-  useV1BudgetsCreate,
-  useV1BudgetsList,
-  useV1CategoriesList,
-  useV1TransactionsList,
-  v1BudgetsUpdate,
-} from '@/client/pft/v1/v1'
+import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
+import { upsertEnvelopeAssignment, useCurrentEnvelopeSnapshot, useInvalidateLedger } from '@/lib/ledger'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import {
@@ -43,22 +38,23 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { Link } from 'react-router-dom'
-import { TypeEnum } from '@/client/pft/typeEnum'
 
 export default function BudgetsPage() {
   const [showAddBudget, setShowAddBudget] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [budgetAmount, setBudgetAmount] = useState<string>('')
   const [editingBudget, setEditingBudget] = useState<{
-    id: number
     category: number
+    categoryName: string
     amount_limit: string
   } | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  const { data: budgets, isLoading: isLoadingBudgets, mutate: refreshBudgets } = useV1BudgetsList()
-  const { data: categories, isLoading: isLoadingCategories } = useV1CategoriesList()
-  const { data: transactions, isLoading: isLoadingTransactions } = useV1TransactionsList()
-  const { trigger: createBudget } = useV1BudgetsCreate()
+  // Envelope-backed natively: the snapshot carries assigned and spent per
+  // category, computed by the server - no client-side transaction summing.
+  const { data: snapshot, isLoading: isLoadingBudgets } = useCurrentEnvelopeSnapshot()
+  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const refreshLedger = useInvalidateLedger()
 
   const currentMonth = new Date()
   const currentMonthDisplay = currentMonth.toLocaleString('default', {
@@ -66,73 +62,49 @@ export default function BudgetsPage() {
     year: 'numeric',
   })
 
-  // Calculate spent amounts for each budget
-  const calculateSpentAmount = (categoryId: number) => {
-    if (!Array.isArray(transactions?.results)) return 0
-
-    const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1)
-    const lastDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0)
-
-    return transactions.results
-      .filter((transaction) => {
-        const transactionDate = new Date(transaction.transaction_date)
-        return (
-          transaction.category === categoryId &&
-          transactionDate >= firstDayOfMonth &&
-          transactionDate <= lastDayOfMonth &&
-          categories?.results?.find((c) => c.id === transaction.category)?.type === TypeEnum.expense
-        )
-      })
-      .reduce((total, transaction) => total + parseFloat(transaction.amount), 0)
-  }
-
   const handleCreateBudget = async () => {
+    if (saving) return
+    setSaving(true)
     try {
-      await createBudget({
-        category: parseInt(selectedCategory),
-        amount_limit: budgetAmount,
-        month: currentMonth.getMonth() + 1,
-        year: currentMonth.getFullYear(),
-      })
-      toast.success('Budget created successfully')
+      await upsertEnvelopeAssignment(parseInt(selectedCategory), budgetAmount)
+      toast.success('Budget saved successfully')
       setShowAddBudget(false)
       setSelectedCategory('')
       setBudgetAmount('')
-      refreshBudgets()
+      await refreshLedger()
     } catch (err) {
       console.error('Failed to create budget:', err)
       toast.error('Failed to create budget')
+    } finally {
+      setSaving(false)
     }
   }
 
   const handleUpdateBudget = async () => {
-    if (!editingBudget) return
-
+    if (!editingBudget || saving) return
+    setSaving(true)
     try {
-      const payload = {
-        category: editingBudget.category,
-        amount_limit: editingBudget.amount_limit, // Keep as string
-        month: currentMonth.getMonth() + 1,
-        year: currentMonth.getFullYear(),
-      }
-
-      await v1BudgetsUpdate(String(editingBudget.id), payload)
+      await upsertEnvelopeAssignment(editingBudget.category, editingBudget.amount_limit)
       toast.success('Budget updated successfully')
       setEditingBudget(null)
-      refreshBudgets()
+      await refreshLedger()
     } catch (err) {
       console.error('Failed to update budget:', err)
       toast.error('Failed to update budget')
+    } finally {
+      setSaving(false)
     }
   }
 
-  if (isLoadingBudgets || isLoadingCategories || isLoadingTransactions) {
+  if (isLoadingBudgets || isLoadingCategories) {
     return <AnimateSpinner size={64} />
   }
 
-  const expenseCategories = Array.isArray(categories?.results)
-    ? categories?.results.filter((category) => category?.type === TypeEnum?.expense)
-    : []
+  const expenseCategories = (categories ?? []).filter(
+    (category) => category.kind === 'expense' && !category.is_archived,
+  )
+
+  const budgetRows = snapshot?.assignments ?? []
 
   // Check if there are any expense categories first
   if (!expenseCategories?.length) {
@@ -155,7 +127,7 @@ export default function BudgetsPage() {
   }
 
   // Then check if there are any budgets
-  if (!budgets?.results?.length) {
+  if (!budgetRows.length) {
     return (
       <div className='p-6'>
         <EmptyPlaceholder
@@ -229,29 +201,25 @@ export default function BudgetsPage() {
       </div>
 
       <div className='grid gap-6 sm:grid-cols-2 lg:grid-cols-3'>
-        {Array.isArray(budgets?.results) &&
-          budgets?.results?.map((budget) => {
-            const category = categories?.results?.find((c) => c.id === budget.category)
-            if (!category) return null
-
-            const spent = calculateSpentAmount(budget.category)
-            const limit = parseFloat(budget.amount_limit)
-            const percentage = (spent / limit) * 100
+        {budgetRows.map((row) => {
+            const spent = Number(row.spent)
+            const limit = Number(row.assigned) + Number(row.carryover)
+            const percentage = limit ? (spent / limit) * 100 : 0
 
             return (
-              <Card key={budget.id}>
+              <Card key={row.category_id}>
                 <CardHeader className='pb-2'>
                   <div className='flex items-center justify-between'>
-                    <CardTitle>{category.name}</CardTitle>
+                    <CardTitle>{row.category}</CardTitle>
                     <Button
                       variant='ghost'
                       size='icon'
                       className='h-8 w-8'
                       onClick={() =>
                         setEditingBudget({
-                          id: budget.id,
-                          category: budget.category,
-                          amount_limit: budget.amount_limit,
+                          category: row.category_id,
+                          categoryName: row.category,
+                          amount_limit: row.assigned,
                         })
                       }
                     >

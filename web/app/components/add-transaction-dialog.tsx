@@ -26,7 +26,7 @@ import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useV1FinanceCategoriesList, v1FinanceTransactionsCreate } from '@/client/gen/pft/v1/v1'
-import { getDefaultBudgetFileId } from '@/lib/finance-client'
+import { getDefaultBudgetFile, getDefaultBudgetFileId } from '@/lib/finance-client'
 import {
   buildPostings,
   resolveDefaultAccountId,
@@ -34,6 +34,7 @@ import {
   type TransactionKind,
 } from '@/lib/ledger'
 import { toast } from 'sonner'
+import useSWR from 'swr'
 
 export function AddTransactionDialog({
   open,
@@ -53,6 +54,7 @@ export function AddTransactionDialog({
   // field is `kind`, and ids are CategoryV2 ids. No adapter, no /me round-trip
   // (the old create path fetched the user only to send an id the API ignored).
   const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 
   const handleCreateTransaction = async () => {
@@ -91,7 +93,10 @@ export function AddTransactionDialog({
   }
 
   const filteredCategories = (categories ?? []).filter(
-    (category) => category.kind === kind && !category.is_archived,
+    (category) =>
+      category.kind === kind &&
+      !category.is_archived &&
+      (activeFile ? category.budget_file === activeFile.id : true),
   )
 
   return (

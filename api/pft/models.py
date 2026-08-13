@@ -243,10 +243,12 @@ class BudgetFile(models.Model):
 
     class Meta:
         constraints = [
+            # One default per user per workspace: the same user legitimately
+            # holds a default file in their personal org AND in each shared org.
             models.UniqueConstraint(
-                fields=["user"],
+                fields=["user", "organization"],
                 condition=Q(is_default=True),
-                name="unique_default_budget_file_per_user",
+                name="unique_default_budget_file_per_user_org",
             )
         ]
         ordering = ["id"]

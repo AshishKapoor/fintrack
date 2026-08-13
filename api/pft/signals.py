@@ -58,44 +58,53 @@ def create_default_categories(sender, instance, created, **kwargs):
             organization=organization, user=instance, role=Membership.ROLE_OWNER
         )
 
-        budget_file = BudgetFile.objects.create(
+        BudgetFile.objects.create(
             user=instance,
             organization=organization,
             name="Primary Budget",
             is_default=True,
         )
-        Account.objects.create(
-            budget_file=budget_file,
-            name="Cash",
-            type=Account.TYPE_CHECKING,
-        )
-        income_group = CategoryGroupV2.objects.create(
-            budget_file=budget_file,
-            name="Income",
-            sort_order=0,
-        )
-        expense_group = CategoryGroupV2.objects.create(
-            budget_file=budget_file,
-            name="Expenses",
-            sort_order=1,
-        )
-        CategoryV2.objects.bulk_create(
-            [
-                CategoryV2(
-                    budget_file=budget_file,
-                    group=income_group,
-                    name=name,
-                    kind=CategoryV2.KIND_INCOME,
-                )
-                for name in DEFAULT_INCOME_CATEGORIES
-            ]
-            + [
-                CategoryV2(
-                    budget_file=budget_file,
-                    group=expense_group,
-                    name=name,
-                    kind=CategoryV2.KIND_EXPENSE,
-                )
-                for name in DEFAULT_EXPENSE_CATEGORIES
-            ]
-        )
+
+
+@receiver(post_save, sender=BudgetFile)
+def seed_budget_file_defaults(sender, instance, created, **kwargs):
+    """Every new budget file starts usable.
+
+    Shared workspaces create budget files long after signup, so the seeding
+    lives here rather than on the User signal: a Cash account, the two groups
+    and the standard category set - the same as a fresh personal file.
+    """
+    if not created:
+        return
+
+    Account.objects.create(
+        budget_file=instance,
+        name="Cash",
+        type=Account.TYPE_CHECKING,
+    )
+    income_group = CategoryGroupV2.objects.create(
+        budget_file=instance, name="Income", sort_order=0
+    )
+    expense_group = CategoryGroupV2.objects.create(
+        budget_file=instance, name="Expenses", sort_order=1
+    )
+    CategoryV2.objects.bulk_create(
+        [
+            CategoryV2(
+                budget_file=instance,
+                group=income_group,
+                name=name,
+                kind=CategoryV2.KIND_INCOME,
+            )
+            for name in DEFAULT_INCOME_CATEGORIES
+        ]
+        + [
+            CategoryV2(
+                budget_file=instance,
+                group=expense_group,
+                name=name,
+                kind=CategoryV2.KIND_EXPENSE,
+            )
+            for name in DEFAULT_EXPENSE_CATEGORIES
+        ]
+    )

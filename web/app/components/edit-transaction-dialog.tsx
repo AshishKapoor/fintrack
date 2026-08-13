@@ -9,6 +9,7 @@ import {
   useInvalidateLedger,
   type TransactionKind,
 } from '@/lib/ledger'
+import { getDefaultBudgetFile } from '@/lib/finance-client'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -35,6 +36,7 @@ import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import useSWR from 'swr'
 
 export function EditTransactionDialog({
   open,
@@ -52,6 +54,7 @@ export function EditTransactionDialog({
   const [selectedCategory, setSelectedCategory] = useState('')
 
   const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 
   // Initialize form with transaction data. Deferred a tick so the setState
@@ -104,7 +107,10 @@ export function EditTransactionDialog({
   }
 
   const filteredCategories = (categories ?? []).filter(
-    (category) => category.kind === kind && !category.is_archived,
+    (category) =>
+      category.kind === kind &&
+      !category.is_archived &&
+      (activeFile ? category.budget_file === activeFile.id : true),
   )
 
   return (

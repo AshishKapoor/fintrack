@@ -25,36 +25,44 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import Typography from '@/components/ui/typography'
 import {
-  useV1CategoriesList,
-  useV1CategoriesCreate,
-  v1CategoriesDestroy,
-  v1CategoriesUpdate,
-} from '@/client/pft/v1/v1'
-import { toast } from 'sonner'
+  useV1FinanceCategoriesList,
+  v1FinanceCategoriesCreate,
+  v1FinanceCategoriesDestroy,
+  v1FinanceCategoriesUpdate,
+} from '@/client/gen/pft/v1/v1'
+import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import { AnimateSpinner } from '@/components/spinner'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
-import { TypeEnum } from '@/client/pft/typeEnum'
+import { toast } from 'sonner'
 
 export default function CategoriesPage() {
   const [showAddCategory, setShowAddCategory] = useState(false)
-  const [categoryType, setCategoryType] = useState<TypeEnum>(TypeEnum.expense)
+  const [categoryType, setCategoryType] = useState<'income' | 'expense'>('expense')
   const [categoryName, setCategoryName] = useState('')
   const [editingCategory, setEditingCategory] = useState<{
     id: number
     name: string
-    type: TypeEnum
+    type: 'income' | 'expense'
   } | null>(null)
 
-  const { data: categories, isLoading, mutate: refreshCategories } = useV1CategoriesList()
-  const { trigger: createCategory } = useV1CategoriesCreate()
+  const { data: categories, isLoading, mutate: refreshCategories } = useV1FinanceCategoriesList()
 
-  const categoriesList = Array.isArray(categories) ? categories : categories?.results || []
+  // Native CategoryV2: the classification field is `kind`. Adapt to the
+  // page's existing `type` vocabulary at the boundary.
+  const categoriesList = (categories ?? [])
+    .filter((category) => !category.is_archived)
+    .map((category) => ({
+      id: category.id,
+      name: category.name,
+      type: (category.kind ?? 'expense') as 'income' | 'expense',
+    }))
 
   const handleCreateCategory = async () => {
     try {
-      await createCategory({
+      await v1FinanceCategoriesCreate({
+        budget_file: await getDefaultBudgetFileId(),
         name: categoryName,
-        type: categoryType,
+        kind: categoryType,
       })
       toast.success('Category created successfully')
       setShowAddCategory(false)
@@ -70,9 +78,10 @@ export default function CategoriesPage() {
     if (!editingCategory) return
 
     try {
-      await v1CategoriesUpdate(editingCategory.id.toString(), {
+      await v1FinanceCategoriesUpdate(editingCategory.id.toString(), {
+        budget_file: await getDefaultBudgetFileId(),
         name: editingCategory.name,
-        type: editingCategory.type,
+        kind: editingCategory.type,
       })
       toast.success('Category updated successfully')
       setEditingCategory(null)
@@ -85,7 +94,7 @@ export default function CategoriesPage() {
 
   const handleDeleteCategory = async (categoryId: number) => {
     try {
-      await v1CategoriesDestroy(categoryId.toString())
+      await v1FinanceCategoriesDestroy(categoryId.toString())
       toast.success('Category deleted successfully')
       refreshCategories()
     } catch (err) {
@@ -125,17 +134,17 @@ export default function CategoriesPage() {
                 <RadioGroup
                   id='category-type'
                   value={categoryType}
-                  onValueChange={(value) => setCategoryType(value as TypeEnum)}
+                  onValueChange={(value) => setCategoryType(value as 'income' | 'expense')}
                   className='flex'
                 >
                   <div className='flex items-center space-x-2'>
-                    <RadioGroupItem value={TypeEnum.expense} id='expense-type' />
+                    <RadioGroupItem value='expense' id='expense-type' />
                     <Label htmlFor='expense-type' className='cursor-pointer'>
                       Expense
                     </Label>
                   </div>
                   <div className='flex items-center space-x-2 ml-4'>
-                    <RadioGroupItem value={TypeEnum.income} id='income-type' />
+                    <RadioGroupItem value='income' id='income-type' />
                     <Label htmlFor='income-type' className='cursor-pointer'>
                       Income
                     </Label>
@@ -189,7 +198,7 @@ export default function CategoriesPage() {
               </TableHeader>
               <TableBody>
                 {categoriesList
-                  .filter((category) => category.type === TypeEnum.expense)
+                  .filter((category) => category.type === 'expense')
                   .map((category) => (
                     <TableRow key={category.id}>
                       <TableCell className='font-medium'>
@@ -242,7 +251,7 @@ export default function CategoriesPage() {
               </TableHeader>
               <TableBody>
                 {categoriesList
-                  .filter((category) => category.type === TypeEnum.income)
+                  .filter((category) => category.type === 'income')
                   .map((category) => (
                     <TableRow key={category.id}>
                       <TableCell className='font-medium'>
@@ -296,17 +305,17 @@ export default function CategoriesPage() {
               <RadioGroup
                 id='category-type'
                 value={categoryType}
-                onValueChange={(value) => setCategoryType(value as TypeEnum)}
+                onValueChange={(value) => setCategoryType(value as 'income' | 'expense')}
                 className='flex'
               >
                 <div className='flex items-center space-x-2'>
-                  <RadioGroupItem value={TypeEnum.expense} id='expense-type' />
+                  <RadioGroupItem value='expense' id='expense-type' />
                   <Label htmlFor='expense-type' className='cursor-pointer'>
                     Expense
                   </Label>
                 </div>
                 <div className='flex items-center space-x-2 ml-4'>
-                  <RadioGroupItem value={TypeEnum.income} id='income-type' />
+                  <RadioGroupItem value='income' id='income-type' />
                   <Label htmlFor='income-type' className='cursor-pointer'>
                     Income
                   </Label>
@@ -348,18 +357,18 @@ export default function CategoriesPage() {
                 id='edit-category-type'
                 value={editingCategory?.type}
                 onValueChange={(value) =>
-                  setEditingCategory((prev) => (prev ? { ...prev, type: value as TypeEnum } : null))
+                  setEditingCategory((prev) => (prev ? { ...prev, type: value as 'income' | 'expense' } : null))
                 }
                 className='flex'
               >
                 <div className='flex items-center space-x-2'>
-                  <RadioGroupItem value={TypeEnum.expense} id='edit-expense-type' />
+                  <RadioGroupItem value='expense' id='edit-expense-type' />
                   <Label htmlFor='edit-expense-type' className='cursor-pointer'>
                     Expense
                   </Label>
                 </div>
                 <div className='flex items-center space-x-2 ml-4'>
-                  <RadioGroupItem value={TypeEnum.income} id='edit-income-type' />
+                  <RadioGroupItem value='income' id='edit-income-type' />
                   <Label htmlFor='edit-income-type' className='cursor-pointer'>
                     Income
                   </Label>

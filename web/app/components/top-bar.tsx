@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { OrgSwitcher } from '@/components/org-switcher'
 import { currencies, useCurrency } from '@/context/currency-context'
 import { getUser, logout } from '@/lib/auth'
 import { Menu } from 'lucide-react'
@@ -47,6 +48,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
       </div>
 
       <div className='ml-auto flex items-center gap-2'>
+        <OrgSwitcher />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant='outline' size='sm'>

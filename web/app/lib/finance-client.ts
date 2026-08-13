@@ -181,8 +181,10 @@ export const getDefaultBudgetFile = async (): Promise<BudgetFile> => {
   const { activeOrganizationId } = await import('@/context/organization-context')
   const orgId = activeOrganizationId()
   if (orgId != null) {
-    const scoped = files.filter((item) => item.organization === orgId)
-    if (scoped.length) files = scoped
+    // Scope strictly: an empty result means the workspace has no budget file
+    // yet, and the creation path below must create it THERE - falling back to
+    // the full list would silently write into the personal workspace.
+    files = files.filter((item) => item.organization === orgId)
   }
 
   let selected = files.find((item) => item.is_default) || files[0]
@@ -193,6 +195,9 @@ export const getDefaultBudgetFile = async (): Promise<BudgetFile> => {
       // made an INR-displaying UI store USD server-side.
       currency_code: guessCurrencyCode(),
       is_default: true,
+      // In a shared workspace the file must join that workspace, not fall
+      // back to the creator's personal org.
+      ...(orgId != null ? { organization: orgId } : {}),
     })
   }
 

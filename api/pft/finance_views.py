@@ -132,6 +132,7 @@ class BudgetFileViewSet(UserScopedModelViewSet):
         budget_file = serializer.save(user=self.request.user, organization=organization)
         has_existing_default = BudgetFile.objects.filter(
             user=self.request.user,
+            organization=budget_file.organization,
             is_default=True,
         ).exclude(id=budget_file.id)
         if budget_file.is_default:

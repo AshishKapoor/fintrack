@@ -1,5 +1,6 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
 import { BackupManager } from '@/components/backup-manager'
+import { WorkspaceSettings } from '@/components/workspace-settings'
 import { DeleteAccountDialog } from '@/components/delete-account-dialog'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
@@ -25,7 +26,7 @@ import { Textarea } from '@/components/ui/textarea'
 import Typography from '@/components/ui/typography'
 import { useToast } from '@/hooks/use-toast'
 import { AxiosError } from 'axios'
-import { DatabaseBackup, Key, User } from 'lucide-react'
+import { Building2, DatabaseBackup, Key, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 interface UserProfile {
@@ -183,6 +184,10 @@ export default function UserSettingsPage() {
               <Bell className='mr-2 h-4 w-4' />
               Notifications
             </TabsTrigger> */}
+            <TabsTrigger value='workspace'>
+              <Building2 className='mr-2 h-4 w-4' />
+              Workspace
+            </TabsTrigger>
             <TabsTrigger value='backups'>
               <DatabaseBackup className='mr-2 h-4 w-4' />
               Backups
@@ -430,6 +435,10 @@ export default function UserSettingsPage() {
               </CardFooter>
             </Card>
           </TabsContent> */}
+          <TabsContent value='workspace' className='space-y-6'>
+            <WorkspaceSettings />
+          </TabsContent>
+
           <TabsContent value='backups' className='space-y-6'>
             <BackupManager />
           </TabsContent>

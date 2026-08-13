@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useV1CategoriesList } from '@/client/pft/v1/v1'
+import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
 import {
   createScheduledTransaction,
   createTransactionRule,
@@ -157,15 +157,16 @@ export default function RulesAndRecurringPage() {
 
   const [loading, setLoading] = useState(false)
 
-  const { data: categoriesData } = useV1CategoriesList()
-  const categories = categoriesData?.results || []
+  const { data: categoriesData } = useV1FinanceCategoriesList()
+  // Native CategoryV2 rows: the classification field is `kind`.
+  const categories = useMemo(() => categoriesData ?? [], [categoriesData])
 
   const expenseCategories = useMemo(
-    () => categories.filter((item) => item.type === 'expense'),
+    () => categories.filter((item) => item.kind === 'expense'),
     [categories],
   )
   const incomeCategories = useMemo(
-    () => categories.filter((item) => item.type === 'income'),
+    () => categories.filter((item) => item.kind === 'income'),
     [categories],
   )
 

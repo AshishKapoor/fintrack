@@ -2,8 +2,12 @@ import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
 import {
   v1FinanceAccountsCreate,
   v1FinanceAccountsList,
+  v1FinanceBudgetMonthsCreate,
   v1FinanceBudgetMonthsList,
   v1FinanceBudgetMonthsSnapshotRetrieve,
+  v1FinanceEnvelopeAssignmentsCreate,
+  v1FinanceEnvelopeAssignmentsList,
+  v1FinanceEnvelopeAssignmentsPartialUpdate,
   v1FinanceReportsRunCreate,
 } from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
@@ -189,5 +193,47 @@ export function useCurrentEnvelopeSnapshot() {
     return (await v1FinanceBudgetMonthsSnapshotRetrieve(
       String(current.id),
     )) as unknown as EnvelopeSnapshot
+  })
+}
+
+// ---- Envelope writes (the budgets page) ------------------------------------
+
+/** Find or create the envelope BudgetMonth for the current calendar month. */
+export async function getOrCreateCurrentBudgetMonth(): Promise<number> {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const months = await v1FinanceBudgetMonthsList()
+  const existing = months.find((item) => item.year === year && item.month === month)
+  if (existing) return existing.id
+
+  const created = await v1FinanceBudgetMonthsCreate({
+    budget_file: await getDefaultBudgetFileId(),
+    year,
+    month,
+    mode: 'envelope',
+  })
+  return created.id
+}
+
+/**
+ * Set this month's budget for a category: create the assignment, or update it
+ * when one already exists. Mirrors the upsert the legacy budgets endpoint did.
+ */
+export async function upsertEnvelopeAssignment(categoryId: number, amount: string) {
+  const budgetMonthId = await getOrCreateCurrentBudgetMonth()
+  const assignments = await v1FinanceEnvelopeAssignmentsList()
+  const existing = assignments.find(
+    (item) => item.budget_month === budgetMonthId && item.category === categoryId,
+  )
+  if (existing) {
+    return v1FinanceEnvelopeAssignmentsPartialUpdate(String(existing.id), {
+      assigned_amount: amount,
+    })
+  }
+  return v1FinanceEnvelopeAssignmentsCreate({
+    budget_month: budgetMonthId,
+    category: categoryId,
+    assigned_amount: amount,
   })
 }

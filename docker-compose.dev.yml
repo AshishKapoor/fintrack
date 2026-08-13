@@ -23,6 +23,15 @@ services:
       - ./api:/app
       - api_run:/app/run
 
+  worker:
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings.dev
+      DJANGO_ENV: development
+      DEBUG: "True"
+    volumes:
+      - ./api:/app
+      - api_run:/app/run
+
   db:
     ports:
       - "5432:5432"

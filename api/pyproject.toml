@@ -5,6 +5,7 @@ description = "FinTrack API - privacy-first, self-hostable personal finance trac
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "celery[redis]>=5.4",
     "django>=5.1.7",
     "django-extensions>=3.2.3",
     "djangorestframework>=3.15.2",

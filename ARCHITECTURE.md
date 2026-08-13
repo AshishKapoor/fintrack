@@ -23,6 +23,10 @@ explained in full below.
   rendering and no Node process at runtime.
 - `api/` is Django + Django REST Framework behind gunicorn. Authentication is
   JWT (SimpleJWT); there are no server-side sessions for the API.
+- `worker/` is the same image running Celery against Redis. Import execution
+  and exports run there; job state lives on the `ImportJob`/`ExportJob` rows,
+  which clients poll. With no `REDIS_URL`, tasks run eagerly inline — the test
+  suite and bare-metal trials need no broker.
 - `landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 

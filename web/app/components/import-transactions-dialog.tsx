@@ -121,7 +121,8 @@ export function ImportTransactionsDialog({
       close()
     } catch (error: unknown) {
       const message =
-        (error as { errorMessage?: string })?.errorMessage ?? 'The import failed.'
+        (error as { errorMessage?: string })?.errorMessage ??
+        (error instanceof Error ? error.message : 'The import failed.')
       toast.error(message)
       setStep('preview')
     } finally {

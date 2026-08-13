@@ -40,6 +40,8 @@ jobs:
       DATABASE_PASSWORD: fintrack
       DATABASE_HOST: localhost
       DATABASE_PORT: 5432
+      # No broker in the unit-test job; tasks run inline.
+      CELERY_TASK_ALWAYS_EAGER: "True"
 
     defaults:
       run:

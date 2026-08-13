@@ -188,7 +188,12 @@ class FinanceApiV1Tests(APITestCase):
             format="json",
         )
         self.assertEqual(export_response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(export_response.data["status"], "completed")
+        # The create response is the pre-enqueue snapshot; the job itself runs
+        # on the worker (inline here, under eager mode). Poll the row, as a
+        # client would.
+        self.assertEqual(export_response.data["status"], "pending")
+        job = self.client.get(f"/api/v1/finance/exports/{export_response.data['id']}/")
+        self.assertEqual(job.data["status"], "completed")
 
         download_response = self.client.get(
             f"/api/v1/finance/exports/{export_response.data['id']}/download/"
@@ -240,13 +245,19 @@ class FinanceApiV1Tests(APITestCase):
         self.assertEqual(preview_response.status_code, status.HTTP_200_OK)
         self.assertEqual(preview_response.data["detected_rows"], 2)
 
+        # Execute is asynchronous: 202 now, outcome on the job row. Tests run
+        # with CELERY_TASK_ALWAYS_EAGER, so by the time the response returns
+        # the "background" work has already happened inline.
         execute_response = self.client.post(
             f"/api/v1/finance/imports/{import_job_id}/execute/",
             {},
             format="json",
         )
-        self.assertEqual(execute_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(execute_response.data["created"], 2)
+        self.assertEqual(execute_response.status_code, status.HTTP_202_ACCEPTED)
+
+        job_response = self.client.get(f"/api/v1/finance/imports/{import_job_id}/")
+        self.assertEqual(job_response.data["status"], ImportJob.STATUS_COMPLETED)
+        self.assertEqual(job_response.data["preview_summary"]["created"], 2)
 
     def test_import_preview_supports_qif_camt_and_ynab(self):
         qif_payload = (

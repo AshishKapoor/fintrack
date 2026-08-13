@@ -52,9 +52,11 @@ These are real and tracked, not hidden:
   takeover. They carry `SameSite=Strict`, and `Secure` over HTTPS, but not
   `HttpOnly`. Moving the access token into memory with an HttpOnly refresh
   cookie is planned.
-- **Import and export run synchronously in the request.** Payloads are capped
-  (`FINTRACK_MAX_IMPORT_BYTES`, `FINTRACK_MAX_BACKUP_BYTES`) but there is no
-  background queue, so a large import ties up a worker.
+- **Import execution and exports run on a background worker** (Celery + Redis
+  in the Docker stack). Payloads are capped (`FINTRACK_MAX_IMPORT_BYTES`,
+  `FINTRACK_MAX_BACKUP_BYTES`). Without `REDIS_URL` set (bare-metal trials),
+  tasks fall back to running inline in the request. Import *preview* is a
+  parse-only pass and stays synchronous by design.
 - **`ImportJob.source_payload` retains the raw uploaded bank file** in the
   database as plaintext, as do completed exports. Run
   `manage.py prune_finance_jobs` periodically; see

@@ -256,3 +256,18 @@ FINTRACK_MAX_BACKUP_BYTES = int(
 # How long finished import/export jobs keep their payloads. These hold plaintext
 # financial data; `manage.py prune_finance_jobs` clears anything older.
 FINTRACK_JOB_RETENTION_DAYS = int(os.getenv("FINTRACK_JOB_RETENTION_DAYS", 30))
+
+# --- Background jobs ---------------------------------------------------------
+# With REDIS_URL set, imports and exports run on the Celery worker instead of
+# inside the web request. Without it (bare-metal trials, the test suite) tasks
+# run eagerly inline, so nothing requires a broker to merely work.
+REDIS_URL = os.getenv("REDIS_URL")
+
+CELERY_BROKER_URL = REDIS_URL
+CELERY_TASK_ALWAYS_EAGER = env_bool("CELERY_TASK_ALWAYS_EAGER", REDIS_URL is None)
+CELERY_TASK_EAGER_PROPAGATES = True
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+# Job state lives on the ImportJob/ExportJob rows, not in a result backend.
+CELERY_RESULT_BACKEND = None
+CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 600))
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 100

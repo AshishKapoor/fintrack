@@ -37,10 +37,8 @@ from .finance_services import (
     compute_net_worth,
     copy_budget_month_from_previous,
     decode_export_job_content,
-    execute_import_job,
     materialize_scheduled_transaction,
     preview_import_job,
-    run_export_job,
     run_report,
     zero_budget_month,
 )
@@ -63,6 +61,7 @@ from .models import (
     TransactionEvent,
     TransactionRule,
 )
+from .tasks import execute_import_job_task, run_export_job_task
 
 
 def parse_iso_date(raw, field_name):
@@ -501,7 +500,9 @@ class ExportJobViewSet(UserScopedModelViewSet):
 
     def perform_create(self, serializer):
         export_job = serializer.save(requested_by=self.request.user)
-        run_export_job(export_job)
+        # Runs on the worker (or inline when CELERY_TASK_ALWAYS_EAGER). The
+        # client polls the job row; download/ answers 409 until completed.
+        run_export_job_task.delay(export_job.id)
 
     @action(detail=True, methods=["get"], url_path="download")
     def download(self, request, pk=None):
@@ -574,6 +575,25 @@ class ImportJobViewSet(UserScopedModelViewSet):
 
     @action(detail=True, methods=["post"], url_path="execute")
     def execute(self, request, pk=None):
+        """Start the import and return 202; poll the job for the outcome.
+
+        Row-by-row execution is the heavy half of importing (preview is a
+        parse-only pass and stays synchronous), so it runs on the worker. The
+        job row carries status and, on completion, created/skipped counts in
+        preview_summary.
+        """
         import_job = self.get_object()
-        result = execute_import_job(import_job)
-        return Response(result)
+        if import_job.status == ImportJob.STATUS_IMPORTING:
+            return Response(
+                {"detail": "Import is already running."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        import_job.status = ImportJob.STATUS_IMPORTING
+        import_job.save(update_fields=["status", "updated_at"])
+        execute_import_job_task.delay(import_job.id)
+
+        import_job.refresh_from_db()
+        return Response(
+            self.get_serializer(import_job).data, status=status.HTTP_202_ACCEPTED
+        )

@@ -36,10 +36,10 @@ clean:
 	docker compose down -v --remove-orphans
 
 test-api: bootstrap
-	$(COMPOSE_DEV) run --rm --entrypoint sh migrate -lc "uv run manage.py test pft.tests.test_api_smoke"
+	$(COMPOSE_DEV) run --rm -e CELERY_TASK_ALWAYS_EAGER=True --entrypoint sh migrate -lc "uv run manage.py test pft.tests.test_api_smoke"
 
 test-api-all: bootstrap
-	$(COMPOSE_DEV) run --rm --entrypoint sh migrate -lc "uv run manage.py test"
+	$(COMPOSE_DEV) run --rm -e CELERY_TASK_ALWAYS_EAGER=True --entrypoint sh migrate -lc "uv run manage.py test"
 
 feature-audit:
 	python3 scripts/feature_audit.py

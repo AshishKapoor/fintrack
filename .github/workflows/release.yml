@@ -26,7 +26,7 @@ jobs:
             context: ./apps/web
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: docker/setup-qemu-action@v3
 
@@ -62,7 +62,7 @@ jobs:
     # without it the job builds and exits, so forks are unaffected.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v4
         with:
@@ -93,7 +93,7 @@ jobs:
     # without it the job builds and exits, so forks are unaffected.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v7
 

@@ -4,6 +4,7 @@ import App from './app.tsx'
 import { BrowserRouter } from 'react-router-dom'
 import { SWRConfig } from 'swr'
 import { CurrencyProvider } from './context/currency-context'
+import { OrganizationProvider } from './context/organization-context'
 import { initAnalytics } from './lib/analytics'
 
 initAnalytics()
@@ -20,9 +21,11 @@ createRoot(document.getElementById('root')!).render(
           revalidateOnMount: undefined,
         }}
       >
-        <CurrencyProvider>
-          <App />
-        </CurrencyProvider>
+        <OrganizationProvider>
+          <CurrencyProvider>
+            <App />
+          </CurrencyProvider>
+        </OrganizationProvider>
       </SWRConfig>
     </BrowserRouter>
   </StrictMode>,

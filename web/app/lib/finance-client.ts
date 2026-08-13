@@ -12,6 +12,7 @@ export interface BudgetFile {
   name: string
   currency_code: string
   is_default: boolean
+  organization?: number | null
 }
 
 export interface FinanceAccount {
@@ -163,12 +164,26 @@ function guessCurrencyCode(): string {
 
 let budgetFileCache: BudgetFile | null = null
 
+/** Called when the active organization changes: the cached file is stale. */
+export function clearBudgetFileCache() {
+  budgetFileCache = null
+}
+
 /** Resolve the caller's default budget file, creating one if none exists. */
 export const getDefaultBudgetFile = async (): Promise<BudgetFile> => {
   if (budgetFileCache) return budgetFileCache
 
   const response = await get<PaginatedResponse<BudgetFile> | BudgetFile[]>('/api/v1/finance/budget-files/')
-  const files = asPaginated<BudgetFile>(response).results
+  let files = asPaginated<BudgetFile>(response).results
+
+  // Membership scoping returns files from every organization the user is in;
+  // the UI works within the active one.
+  const { activeOrganizationId } = await import('@/context/organization-context')
+  const orgId = activeOrganizationId()
+  if (orgId != null) {
+    const scoped = files.filter((item) => item.organization === orgId)
+    if (scoped.length) files = scoped
+  }
 
   let selected = files.find((item) => item.is_default) || files[0]
   if (!selected) {

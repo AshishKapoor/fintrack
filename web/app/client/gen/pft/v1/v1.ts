@@ -632,8 +632,10 @@ export const useV1CategoriesDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsList = (
     
@@ -670,8 +672,10 @@ export const useV1FinanceAccountsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsCreate = (
     account: NonReadonly<Account>,
@@ -715,8 +719,10 @@ export const useV1FinanceAccountsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsRetrieve = (
     id: string,
@@ -753,8 +759,10 @@ export const useV1FinanceAccountsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsUpdate = (
     id: string,
@@ -799,8 +807,10 @@ export const useV1FinanceAccountsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsPartialUpdate = (
     id: string,
@@ -845,8 +855,10 @@ export const useV1FinanceAccountsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsDestroy = (
     id: string,
@@ -888,8 +900,10 @@ export const useV1FinanceAccountsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsList = (
     
@@ -926,8 +940,10 @@ export const useV1FinanceBackupsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsCreate = (
     encryptedBackupBundle: NonReadonly<EncryptedBackupBundle>,
@@ -971,8 +987,10 @@ export const useV1FinanceBackupsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsRetrieve = (
     id: string,
@@ -1009,8 +1027,10 @@ export const useV1FinanceBackupsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsUpdate = (
     id: string,
@@ -1055,8 +1075,10 @@ export const useV1FinanceBackupsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsPartialUpdate = (
     id: string,
@@ -1101,8 +1123,10 @@ export const useV1FinanceBackupsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsDestroy = (
     id: string,
@@ -1144,8 +1168,10 @@ export const useV1FinanceBackupsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsLatestRetrieve = (
     
@@ -1182,8 +1208,10 @@ export const useV1FinanceBackupsLatestRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesList = (
     
@@ -1220,8 +1248,10 @@ export const useV1FinanceBudgetFilesList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesCreate = (
     budgetFile: NonReadonly<BudgetFile>,
@@ -1265,8 +1295,10 @@ export const useV1FinanceBudgetFilesCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesRetrieve = (
     id: string,
@@ -1303,8 +1335,10 @@ export const useV1FinanceBudgetFilesRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesUpdate = (
     id: string,
@@ -1349,8 +1383,10 @@ export const useV1FinanceBudgetFilesUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesPartialUpdate = (
     id: string,
@@ -1395,8 +1431,10 @@ export const useV1FinanceBudgetFilesPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesDestroy = (
     id: string,
@@ -1438,8 +1476,10 @@ export const useV1FinanceBudgetFilesDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesBalancesRetrieve = (
     id: string,
@@ -1476,8 +1516,10 @@ export const useV1FinanceBudgetFilesBalancesRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesSetDefaultCreate = (
     id: string,
@@ -1522,8 +1564,10 @@ export const useV1FinanceBudgetFilesSetDefaultCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsList = (
     
@@ -1560,8 +1604,10 @@ export const useV1FinanceBudgetMonthsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsCreate = (
     budgetMonth: NonReadonly<BudgetMonth>,
@@ -1605,8 +1651,10 @@ export const useV1FinanceBudgetMonthsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsRetrieve = (
     id: string,
@@ -1643,8 +1691,10 @@ export const useV1FinanceBudgetMonthsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsUpdate = (
     id: string,
@@ -1689,8 +1739,10 @@ export const useV1FinanceBudgetMonthsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsPartialUpdate = (
     id: string,
@@ -1735,8 +1787,10 @@ export const useV1FinanceBudgetMonthsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsDestroy = (
     id: string,
@@ -1778,8 +1832,10 @@ export const useV1FinanceBudgetMonthsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsCopyPreviousCreate = (
     id: string,
@@ -1824,8 +1880,10 @@ export const useV1FinanceBudgetMonthsCopyPreviousCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsSnapshotRetrieve = (
     id: string,
@@ -1862,8 +1920,10 @@ export const useV1FinanceBudgetMonthsSnapshotRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsThreeMonthAverageCreate = (
     id: string,
@@ -1908,8 +1968,10 @@ export const useV1FinanceBudgetMonthsThreeMonthAverageCreate = <TError = unknown
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsZeroOutCreate = (
     id: string,
@@ -1954,8 +2016,10 @@ export const useV1FinanceBudgetMonthsZeroOutCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesList = (
     
@@ -1992,8 +2056,10 @@ export const useV1FinanceCategoriesList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesCreate = (
     categoryV2: NonReadonly<CategoryV2>,
@@ -2037,8 +2103,10 @@ export const useV1FinanceCategoriesCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesRetrieve = (
     id: string,
@@ -2075,8 +2143,10 @@ export const useV1FinanceCategoriesRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesUpdate = (
     id: string,
@@ -2121,8 +2191,10 @@ export const useV1FinanceCategoriesUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesPartialUpdate = (
     id: string,
@@ -2167,8 +2239,10 @@ export const useV1FinanceCategoriesPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesDestroy = (
     id: string,
@@ -2210,8 +2284,10 @@ export const useV1FinanceCategoriesDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsList = (
     
@@ -2248,8 +2324,10 @@ export const useV1FinanceCategoryGroupsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsCreate = (
     categoryGroupV2: NonReadonly<CategoryGroupV2>,
@@ -2293,8 +2371,10 @@ export const useV1FinanceCategoryGroupsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsRetrieve = (
     id: string,
@@ -2331,8 +2411,10 @@ export const useV1FinanceCategoryGroupsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsUpdate = (
     id: string,
@@ -2377,8 +2459,10 @@ export const useV1FinanceCategoryGroupsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsPartialUpdate = (
     id: string,
@@ -2423,8 +2507,10 @@ export const useV1FinanceCategoryGroupsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsDestroy = (
     id: string,
@@ -2466,8 +2552,10 @@ export const useV1FinanceCategoryGroupsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsList = (
     
@@ -2504,8 +2592,10 @@ export const useV1FinanceEnvelopeAssignmentsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsCreate = (
     envelopeAssignment: NonReadonly<EnvelopeAssignment>,
@@ -2549,8 +2639,10 @@ export const useV1FinanceEnvelopeAssignmentsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsRetrieve = (
     id: string,
@@ -2587,8 +2679,10 @@ export const useV1FinanceEnvelopeAssignmentsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsUpdate = (
     id: string,
@@ -2633,8 +2727,10 @@ export const useV1FinanceEnvelopeAssignmentsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsPartialUpdate = (
     id: string,
@@ -2679,8 +2775,10 @@ export const useV1FinanceEnvelopeAssignmentsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsDestroy = (
     id: string,
@@ -2722,8 +2820,10 @@ export const useV1FinanceEnvelopeAssignmentsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsList = (
     
@@ -2760,8 +2860,10 @@ export const useV1FinanceExportsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsCreate = (
     exportJob: NonReadonly<ExportJob>,
@@ -2805,8 +2907,10 @@ export const useV1FinanceExportsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsRetrieve = (
     id: string,
@@ -2843,8 +2947,10 @@ export const useV1FinanceExportsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsUpdate = (
     id: string,
@@ -2889,8 +2995,10 @@ export const useV1FinanceExportsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsPartialUpdate = (
     id: string,
@@ -2935,8 +3043,10 @@ export const useV1FinanceExportsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsDestroy = (
     id: string,
@@ -2978,8 +3088,10 @@ export const useV1FinanceExportsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsDownloadRetrieve = (
     id: string,
@@ -3016,8 +3128,10 @@ export const useV1FinanceExportsDownloadRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsList = (
     
@@ -3054,8 +3168,10 @@ export const useV1FinanceImportsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsCreate = (
     importJob: NonReadonly<ImportJob>,
@@ -3099,8 +3215,10 @@ export const useV1FinanceImportsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsRetrieve = (
     id: string,
@@ -3137,8 +3255,10 @@ export const useV1FinanceImportsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsUpdate = (
     id: string,
@@ -3183,8 +3303,10 @@ export const useV1FinanceImportsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsPartialUpdate = (
     id: string,
@@ -3229,8 +3351,10 @@ export const useV1FinanceImportsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsDestroy = (
     id: string,
@@ -3320,8 +3444,10 @@ export const useV1FinanceImportsExecuteCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsPreviewCreate = (
     id: string,
@@ -3366,8 +3492,10 @@ export const useV1FinanceImportsPreviewCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesList = (
     
@@ -3404,8 +3532,10 @@ export const useV1FinancePayeesList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesCreate = (
     payee: NonReadonly<Payee>,
@@ -3449,8 +3579,10 @@ export const useV1FinancePayeesCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesRetrieve = (
     id: string,
@@ -3487,8 +3619,10 @@ export const useV1FinancePayeesRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesUpdate = (
     id: string,
@@ -3533,8 +3667,10 @@ export const useV1FinancePayeesUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesPartialUpdate = (
     id: string,
@@ -3579,8 +3715,10 @@ export const useV1FinancePayeesPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesDestroy = (
     id: string,
@@ -3622,8 +3760,10 @@ export const useV1FinancePayeesDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePostingsList = (
     
@@ -3660,8 +3800,10 @@ export const useV1FinancePostingsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePostingsRetrieve = (
     id: string,
@@ -3698,8 +3840,10 @@ export const useV1FinancePostingsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsList = (
     
@@ -3736,8 +3880,10 @@ export const useV1FinanceReportsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsCreate = (
     savedReport: NonReadonly<SavedReport>,
@@ -3781,8 +3927,10 @@ export const useV1FinanceReportsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsRetrieve = (
     id: string,
@@ -3819,8 +3967,10 @@ export const useV1FinanceReportsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsUpdate = (
     id: string,
@@ -3865,8 +4015,10 @@ export const useV1FinanceReportsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsPartialUpdate = (
     id: string,
@@ -3911,8 +4063,10 @@ export const useV1FinanceReportsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsDestroy = (
     id: string,
@@ -3954,8 +4108,10 @@ export const useV1FinanceReportsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsRunCreate2 = (
     id: string,
@@ -4000,8 +4156,10 @@ export const useV1FinanceReportsRunCreate2 = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsRunCreate = (
     savedReport: NonReadonly<SavedReport>,
@@ -4045,8 +4203,10 @@ export const useV1FinanceReportsRunCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesList = (
     
@@ -4083,8 +4243,10 @@ export const useV1FinanceRulesList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesCreate = (
     transactionRule: NonReadonly<TransactionRule>,
@@ -4128,8 +4290,10 @@ export const useV1FinanceRulesCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesRetrieve = (
     id: string,
@@ -4166,8 +4330,10 @@ export const useV1FinanceRulesRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesUpdate = (
     id: string,
@@ -4212,8 +4378,10 @@ export const useV1FinanceRulesUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesPartialUpdate = (
     id: string,
@@ -4258,8 +4426,10 @@ export const useV1FinanceRulesPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesDestroy = (
     id: string,
@@ -4301,8 +4471,10 @@ export const useV1FinanceRulesDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesApplyCreate = (
     transactionRule: NonReadonly<TransactionRule>,
@@ -4346,8 +4518,10 @@ export const useV1FinanceRulesApplyCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsList = (
     
@@ -4384,8 +4558,10 @@ export const useV1FinanceScheduledTransactionsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsCreate = (
     scheduledTransaction: NonReadonly<ScheduledTransaction>,
@@ -4429,8 +4605,10 @@ export const useV1FinanceScheduledTransactionsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsRetrieve = (
     id: string,
@@ -4467,8 +4645,10 @@ export const useV1FinanceScheduledTransactionsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsUpdate = (
     id: string,
@@ -4513,8 +4693,10 @@ export const useV1FinanceScheduledTransactionsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsPartialUpdate = (
     id: string,
@@ -4559,8 +4741,10 @@ export const useV1FinanceScheduledTransactionsPartialUpdate = <TError = unknown>
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsDestroy = (
     id: string,
@@ -4602,8 +4786,10 @@ export const useV1FinanceScheduledTransactionsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsRunDueCreate = (
     scheduledTransaction: NonReadonly<ScheduledTransaction>,
@@ -4647,8 +4833,10 @@ export const useV1FinanceScheduledTransactionsRunDueCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsList = (
     
@@ -4685,8 +4873,10 @@ export const useV1FinanceTagsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsCreate = (
     tag: NonReadonly<Tag>,
@@ -4730,8 +4920,10 @@ export const useV1FinanceTagsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsRetrieve = (
     id: string,
@@ -4768,8 +4960,10 @@ export const useV1FinanceTagsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsUpdate = (
     id: string,
@@ -4814,8 +5008,10 @@ export const useV1FinanceTagsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsPartialUpdate = (
     id: string,
@@ -4860,8 +5056,10 @@ export const useV1FinanceTagsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsDestroy = (
     id: string,
@@ -4903,8 +5101,10 @@ export const useV1FinanceTagsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsList = (
     params?: V1FinanceTransactionsListParams,
@@ -4942,8 +5142,10 @@ export const useV1FinanceTransactionsList = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsCreate = (
     ledgerTransaction: NonReadonly<LedgerTransaction>,
@@ -4987,8 +5189,10 @@ export const useV1FinanceTransactionsCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsRetrieve = (
     id: string,
@@ -5025,8 +5229,10 @@ export const useV1FinanceTransactionsRetrieve = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsUpdate = (
     id: string,
@@ -5071,8 +5277,10 @@ export const useV1FinanceTransactionsUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsPartialUpdate = (
     id: string,
@@ -5117,8 +5325,10 @@ export const useV1FinanceTransactionsPartialUpdate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsDestroy = (
     id: string,
@@ -5160,8 +5370,10 @@ export const useV1FinanceTransactionsDestroy = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsApplyRulesCreate = (
     id: string,
@@ -5206,8 +5418,10 @@ export const useV1FinanceTransactionsApplyRulesCreate = <TError = unknown>(
 /**
  * Base class for the finance viewsets.
 
-NOTE: this only enforces authentication. Every subclass is still responsible
-for scoping its own get_queryset() to request.user.
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTransactionsBulkUpdateCreate = (
     ledgerTransaction: NonReadonly<LedgerTransaction>,

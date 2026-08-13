@@ -386,8 +386,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -406,8 +408,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -437,8 +441,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -461,8 +467,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -497,8 +505,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -532,8 +542,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -553,8 +565,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -573,8 +587,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -604,8 +620,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -628,8 +646,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -664,8 +684,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -699,8 +721,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -720,8 +744,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -739,8 +765,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -759,8 +787,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -790,8 +820,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -814,8 +846,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -850,8 +884,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -885,8 +921,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -906,8 +944,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -931,8 +971,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -968,8 +1010,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -988,8 +1032,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -1019,8 +1065,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1043,8 +1091,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1079,8 +1129,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1114,8 +1166,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1135,8 +1189,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1172,8 +1228,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1197,8 +1255,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1234,8 +1294,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1271,8 +1333,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -1291,8 +1355,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -1322,8 +1388,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1346,8 +1414,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1382,8 +1452,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1417,8 +1489,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1438,8 +1512,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -1458,8 +1534,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -1489,8 +1567,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1513,8 +1593,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1549,8 +1631,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1584,8 +1668,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1605,8 +1691,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -1625,8 +1713,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -1656,8 +1746,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1680,8 +1772,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1716,8 +1810,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1751,8 +1847,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1772,8 +1870,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -1792,8 +1892,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -1823,8 +1925,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1847,8 +1951,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1883,8 +1989,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1918,8 +2026,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1939,8 +2049,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -1964,8 +2076,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -1984,8 +2098,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2015,8 +2131,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2039,8 +2157,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2075,8 +2195,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2110,8 +2232,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2170,8 +2294,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2207,8 +2333,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -2227,8 +2355,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2258,8 +2388,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2282,8 +2414,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2318,8 +2452,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2353,8 +2489,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2374,8 +2512,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -2395,8 +2535,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2420,8 +2562,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -2440,8 +2584,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2471,8 +2617,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2495,8 +2643,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2531,8 +2681,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2566,8 +2718,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2587,8 +2741,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2624,8 +2780,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2655,8 +2813,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -2675,8 +2835,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2706,8 +2868,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2730,8 +2894,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2766,8 +2932,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2801,8 +2969,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2822,8 +2992,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2853,8 +3025,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -2873,8 +3047,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -2904,8 +3080,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2928,8 +3106,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2964,8 +3144,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -2999,8 +3181,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3020,8 +3204,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -3051,8 +3237,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       security:
@@ -3071,8 +3259,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -3102,8 +3292,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3126,8 +3318,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3162,8 +3356,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3197,8 +3393,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3218,8 +3416,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - name: ordering
         required: false
@@ -3261,8 +3461,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -3292,8 +3494,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3316,8 +3520,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3352,8 +3558,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3387,8 +3595,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3408,8 +3618,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       parameters:
       - in: path
         name: id
@@ -3445,8 +3657,10 @@ paths:
       description: |-
         Base class for the finance viewsets.
 
-        NOTE: this only enforces authentication. Every subclass is still responsible
-        for scoping its own get_queryset() to request.user.
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
       tags:
       - v1
       requestBody:
@@ -4142,6 +4356,9 @@ components:
           maxLength: 3
         is_default:
           type: boolean
+        organization:
+          type: integer
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -4871,6 +5088,9 @@ components:
           maxLength: 3
         is_default:
           type: boolean
+        organization:
+          type: integer
+          nullable: true
         created_at:
           type: string
           format: date-time

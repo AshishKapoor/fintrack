@@ -429,3 +429,97 @@ class LegacyDeprecationTests(TenantIsolationTestCase):
         response = self.client.get("/api/v1/finance/transactions/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn("Deprecation", response.headers)
+
+
+class OrganizationSharingTests(TenantIsolationTestCase):
+    """The new boundary: sharing happens through org membership and roles."""
+
+    def add_bob_to_alices_org(self, role):
+        from pft.models import Membership
+
+        return Membership.objects.create(
+            organization=self.alice.budget_file.organization,
+            user=self.bob.user,
+            role=role,
+        )
+
+    def test_membership_grants_read(self):
+        self.add_bob_to_alices_org(role="member")
+        response = self.client.get(
+            f"/api/v1/finance/accounts/{self.alice.account.id}/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_membership_grants_write(self):
+        self.add_bob_to_alices_org(role="member")
+        response = self.client.post(
+            "/api/v1/finance/transactions/",
+            {
+                "budget_file": self.alice.budget_file.id,
+                "transaction_date": "2026-03-10",
+                "memo": "Shared entry",
+                "postings": [
+                    {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
+                    {
+                        "category": self.alice.category_v2.id,
+                        "amount": "5.00",
+                        "sort_order": 1,
+                    },
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+    def test_viewer_can_read_but_not_write(self):
+        self.add_bob_to_alices_org(role="viewer")
+
+        read = self.client.get(f"/api/v1/finance/accounts/{self.alice.account.id}/")
+        self.assertEqual(read.status_code, status.HTTP_200_OK)
+
+        write = self.client.post(
+            "/api/v1/finance/transactions/",
+            {
+                "budget_file": self.alice.budget_file.id,
+                "transaction_date": "2026-03-10",
+                "memo": "Viewer trespass",
+                "postings": [
+                    {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
+                    {
+                        "category": self.alice.category_v2.id,
+                        "amount": "5.00",
+                        "sort_order": 1,
+                    },
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(write.status_code, status.HTTP_400_BAD_REQUEST)
+
+        delete = self.client.delete(
+            f"/api/v1/finance/accounts/{self.alice.account.id}/"
+        )
+        self.assertEqual(delete.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_non_membership_still_hides_everything(self):
+        # Bob has no membership in Alice's org: unchanged 404s.
+        response = self.client.get(
+            f"/api/v1/finance/accounts/{self.alice.account.id}/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_leaving_revokes_access(self):
+        membership = self.add_bob_to_alices_org(role="member")
+        self.assertEqual(
+            self.client.get(
+                f"/api/v1/finance/accounts/{self.alice.account.id}/"
+            ).status_code,
+            status.HTTP_200_OK,
+        )
+        membership.delete()
+        self.assertEqual(
+            self.client.get(
+                f"/api/v1/finance/accounts/{self.alice.account.id}/"
+            ).status_code,
+            status.HTTP_404_NOT_FOUND,
+        )

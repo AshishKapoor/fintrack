@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@hookform/resolvers':
         specifier: ^5.7.1
-        version: 5.7.1(@standard-schema/spec@1.1.0)(react-hook-form@7.85.0(react@19.2.8))(zod@3.25.76)
+        version: 5.7.1(@standard-schema/spec@1.1.0)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)
       '@radix-ui/react-accordion':
         specifier: 1.2.20
         version: 1.2.20(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -153,8 +153,8 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
       zod:
-        specifier: ^3.24.1
-        version: 3.25.76
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@types/node':
         specifier: ^22
@@ -1714,8 +1714,8 @@ packages:
       react: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
       react-dom: ^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc
 
-  zod@3.25.76:
-    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+  zod@4.4.3:
+    resolution: {integrity: sha512-ytENFjIJFl2UwYglde2jchW2Hwm4GJFLDiSXWdTrJQBIN9Fcyp7n4DhxJEiWNAJMV1/BqWfW/kkg71UDcHJyTQ==}
 
 snapshots:
 
@@ -1745,13 +1745,13 @@ snapshots:
 
   '@floating-ui/utils@0.2.12': {}
 
-  '@hookform/resolvers@5.7.1(@standard-schema/spec@1.1.0)(react-hook-form@7.85.0(react@19.2.8))(zod@3.25.76)':
+  '@hookform/resolvers@5.7.1(@standard-schema/spec@1.1.0)(react-hook-form@7.85.0(react@19.2.8))(zod@4.4.3)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.85.0(react@19.2.8)
     optionalDependencies:
       '@standard-schema/spec': 1.1.0
-      zod: 3.25.76
+      zod: 4.4.3
 
   '@img/colour@1.1.0':
     optional: true
@@ -3122,4 +3122,4 @@ snapshots:
       - '@types/react'
       - '@types/react-dom'
 
-  zod@3.25.76: {}
+  zod@4.4.3: {}

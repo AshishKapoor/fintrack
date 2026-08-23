@@ -817,7 +817,12 @@ export default function RulesAndRecurringPage() {
           <Card>
             <CardHeader>
               <CardTitle>Recurring Transactions</CardTitle>
-              <CardDescription>Manage execution schedules and template postings.</CardDescription>
+              <CardDescription>
+                Manage execution schedules and template postings. Due schedules post
+                automatically every hour on deployments running the beat scheduler; use
+                Run Due to trigger them immediately, or as the only option on deployments
+                without a background worker.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>

@@ -330,15 +330,24 @@ CELERY_RESULT_BACKEND = None
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 600))
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
 
-# Runs once a day on whichever process runs `celery -A app beat` (the "beat"
-# service in docker-compose.yml). Without a beat process this schedule simply
-# never fires - prune_finance_jobs is still available as a manual command for
-# bare-metal installs that would rather cron it themselves.
+# Runs on whichever process runs `celery -A app beat` (the "beat" service in
+# docker-compose.yml). Without a beat process these schedules simply never
+# fire - both prune_finance_jobs and "run due" scheduled transactions remain
+# available as a manual command / API action for bare-metal installs and
+# beat-less deployments (e.g. the Render one-click deploy) that would rather
+# trigger them another way.
 CELERY_TIMEZONE = "UTC"
 CELERY_BEAT_SCHEDULE = {
     "prune-finance-jobs-daily": {
         "task": "pft.tasks.prune_finance_jobs_task",
         "schedule": crontab(hour=3, minute=0),
+    },
+    # Hourly rather than daily so a schedule due "today" posts within the
+    # hour instead of waiting for a once-a-day sweep - see ROADMAP.md's
+    # Phase 1 "Celery beat scheduler" item.
+    "materialize-due-scheduled-transactions-hourly": {
+        "task": "pft.tasks.materialize_due_scheduled_transactions_task",
+        "schedule": crontab(minute=0),
     },
 }
 if FINTRACK_DEMO_MODE:

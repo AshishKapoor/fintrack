@@ -10,7 +10,7 @@ import logging
 
 from celery import shared_task
 
-from .models import ExportJob, ImportJob
+from .models import ExportJob, ImportJob, ScheduledTransaction
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +60,33 @@ def prune_finance_jobs_task() -> None:
     from django.core.management import call_command
 
     call_command("prune_finance_jobs")
+
+
+@shared_task
+def materialize_due_scheduled_transactions_task() -> None:
+    """Materialize every active scheduled transaction that has come due.
+
+    Scheduled hourly via CELERY_BEAT_SCHEDULE (see app/settings/base.py) so
+    recurring transactions post themselves - the "Run Due" button in
+    Rules & Recurring becomes a manual override rather than the only way
+    this happens. It stays available for deployments that never run a beat
+    process at all (e.g. the Render one-click deploy, see render.yaml).
+
+    Runs across every tenant's schedules in one pass, so a single budget
+    file with a broken template (on_error="skip") is logged and skipped
+    rather than blocking materialization for everyone else.
+    """
+    from .finance_services import materialize_due_scheduled_transactions
+
+    created_ids, errors = materialize_due_scheduled_transactions(
+        ScheduledTransaction.objects.all(), on_error="skip"
+    )
+    if created_ids:
+        logger.info("materialized %d due scheduled transaction(s)", len(created_ids))
+    if errors:
+        logger.warning(
+            "%d scheduled transaction(s) failed to materialize this run", len(errors)
+        )
 
 
 @shared_task

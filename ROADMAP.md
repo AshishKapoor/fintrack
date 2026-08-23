@@ -38,7 +38,7 @@ Status legend: `[ ]` planned · `[~]` in progress · `[x]` shipped
 - [ ] **PWA + mobile quick-add** — installable app with an offline-tolerant quick-capture screen: amount → payee (autocomplete that learns payee → category) → done
 - [ ] **Keyboard-first desktop entry** — inline add/edit in the transaction register, split transactions, extend the existing command palette
 - [ ] **Notifications engine** — budget threshold alerts, bill/scheduled-transaction reminders, weekly digest. Channels: email, [ntfy](https://ntfy.sh), and generic webhook. (The Notifications settings tab is already scaffolded and commented out — this un-comments it.)
-- [ ] **Celery beat scheduler** — scheduled transactions materialize automatically instead of requiring a manual "run due" trigger
+- [x] **Celery beat scheduler** — a new hourly `materialize_due_scheduled_transactions_task` (`pft/tasks.py`) posts every due recurring transaction automatically across all tenants, sharing its due-schedule logic with the manual `run-due` API action via `materialize_due_scheduled_transactions` (`pft/finance_services.py`). The manual trigger stays as a fallback for deployments that never run a beat process at all (e.g. the Render one-click deploy)
 - [ ] **i18n infrastructure** — string extraction with react-i18next (web) and Django gettext (API), wired to Weblate for community translation. Landing *before* the string count doubles with new features.
 
 ## Phase 2 — Reasons to switch
@@ -107,3 +107,7 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   audit log UI, daily job pruning via Celery beat, demo-mode infrastructure,
   a working Render one-click deploy, and the README/feature-matrix overhaul.
   Only actually hosting the public demo instance remains open.
+- **2026-08-23** — Phase 1 underway: scheduled transactions now materialize
+  automatically via an hourly Celery beat task instead of requiring the
+  manual "Run Due" trigger, which remains available for deployments that
+  don't run a beat process (e.g. Render).

@@ -38,7 +38,7 @@ from .finance_services import (
     compute_net_worth,
     copy_budget_month_from_previous,
     decode_export_job_content,
-    materialize_scheduled_transaction,
+    materialize_due_scheduled_transactions,
     preview_import_job,
     run_report,
     zero_budget_month,
@@ -443,19 +443,12 @@ class ScheduledTransactionViewSet(UserScopedModelViewSet):
             parse_iso_date(request.data.get("run_date"), "run_date")
             or timezone.now().date()
         )
-        due_items = self.get_queryset().filter(
-            is_active=True, next_run_date__lte=run_date
-        )
-
-        created_ids = []
-        for schedule in due_items:
-            try:
-                ledger_tx = materialize_scheduled_transaction(schedule)
-            except ValueError as exc:
-                raise ValidationError(
-                    {"detail": f"Scheduled transaction {schedule.id}: {exc}"}
-                ) from exc
-            created_ids.append(ledger_tx.id)
+        try:
+            created_ids, _errors = materialize_due_scheduled_transactions(
+                self.get_queryset(), run_date=run_date
+            )
+        except ValueError as exc:
+            raise ValidationError({"detail": str(exc)}) from exc
 
         return Response({"created_transaction_ids": created_ids})
 

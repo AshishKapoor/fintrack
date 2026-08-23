@@ -2,6 +2,7 @@ import base64
 import csv
 import io
 import json
+import logging
 import uuid
 import xml.etree.ElementTree as ET
 import zipfile
@@ -32,6 +33,8 @@ from .models import (
     TransactionEvent,
     TransactionRule,
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -813,6 +816,49 @@ def materialize_scheduled_transaction(schedule: ScheduledTransaction):
         schedule.save(update_fields=["last_run_at", "next_run_date", "updated_at"])
 
     return ledger_tx
+
+
+def materialize_due_scheduled_transactions(queryset, *, run_date=None, on_error="raise"):
+    """Materialize every active schedule in `queryset` whose next_run_date is due.
+
+    Shared by the on-demand `run-due` API action and the unattended Celery
+    beat task (`materialize_due_scheduled_transactions_task`, scheduled via
+    CELERY_BEAT_SCHEDULE in app/settings/base.py) - both need the exact same
+    "find what's due, materialize it, advance next_run_date" logic, just with
+    different error handling:
+
+    - on_error="raise" (the API action): stop at the first schedule that
+      fails to materialize and raise ValueError naming it, so a user editing
+      a malformed template finds out immediately. Schedules materialized
+      earlier in the same call stay committed - materialize_scheduled_transaction
+      is atomic per-schedule, so a later failure never rolls an earlier
+      success back.
+    - on_error="skip" (the beat task): log the failure and keep going. This
+      task runs across every tenant in one pass; one budget file's broken
+      template must never stop everyone else's rent from posting.
+
+    Returns (created_transaction_ids, errors), where errors is a list of
+    (schedule_id, message) tuples - always empty when on_error="raise", since
+    an error there is raised instead of collected.
+    """
+    run_date = run_date or timezone.now().date()
+    due_items = queryset.filter(is_active=True, next_run_date__lte=run_date)
+
+    created_ids = []
+    errors = []
+    for schedule in due_items:
+        try:
+            ledger_tx = materialize_scheduled_transaction(schedule)
+        except ValueError as exc:
+            message = f"Scheduled transaction {schedule.id}: {exc}"
+            if on_error == "raise":
+                raise ValueError(message) from exc
+            logger.warning(message)
+            errors.append((schedule.id, message))
+            continue
+        created_ids.append(ledger_tx.id)
+
+    return created_ids, errors
 
 
 def create_backup_bundle(

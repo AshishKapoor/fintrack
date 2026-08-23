@@ -104,6 +104,109 @@ class TokenRevocationTests(APITestCase):
         )
 
 
+class RefreshCookieTests(APITestCase):
+    """The browser flow: X-Use-Refresh-Cookie moves the refresh token into an
+    HttpOnly cookie instead of the JSON body, so page JavaScript never has a
+    copy of it. Everything in TokenRevocationTests above proves the default,
+    unflagged behaviour is untouched - these prove the opt-in transport.
+    """
+
+    COOKIE_HEADER = {"HTTP_X_USE_REFRESH_COOKIE": "1"}
+
+    def setUp(self):
+        self.email = "cookie@example.com"
+        self.user = User.objects.create_user(
+            email=self.email, username=self.email, password=PASSWORD
+        )
+        cache.clear()
+
+    def test_login_with_the_header_omits_refresh_from_the_body(self):
+        response = self.client.post(
+            "/api/token/",
+            {"email": self.email, "password": PASSWORD},
+            format="json",
+            **self.COOKIE_HEADER,
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        self.assertIn("pft_refresh", response.cookies)
+        cookie = response.cookies["pft_refresh"]
+        self.assertTrue(cookie["httponly"])
+        self.assertEqual(cookie["samesite"], "Strict")
+        self.assertEqual(cookie["path"], "/api/token/")
+
+    def test_login_without_the_header_is_unchanged(self):
+        response = self.client.post(
+            "/api/token/", {"email": self.email, "password": PASSWORD}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("refresh", response.data)
+        self.assertNotIn("pft_refresh", response.cookies)
+
+    def test_refresh_via_cookie_alone_works_with_no_body(self):
+        login = self.client.post(
+            "/api/token/",
+            {"email": self.email, "password": PASSWORD},
+            format="json",
+            **self.COOKIE_HEADER,
+        )
+        # The test client persists cookies across requests on the same
+        # instance, exactly like a browser would.
+        response = self.client.post("/api/token/refresh/", {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("access", response.data)
+        self.assertNotIn("refresh", response.data)
+        # Rotation keeps re-cookying the new refresh token without needing the
+        # header again - cookie-in implies cookie-out.
+        self.assertIn("pft_refresh", response.cookies)
+        self.assertNotEqual(
+            response.cookies["pft_refresh"].value,
+            login.cookies["pft_refresh"].value,
+        )
+
+    def test_refresh_with_no_cookie_and_no_body_is_401_not_403(self):
+        # Regression: TokenViewBase overrides get_authenticate_header so DRF
+        # does not coerce this into a 403 when authentication_classes is empty.
+        response = self.client.post("/api/token/refresh/", {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_logout_via_cookie_clears_it(self):
+        login = self.client.post(
+            "/api/token/",
+            {"email": self.email, "password": PASSWORD},
+            format="json",
+            **self.COOKIE_HEADER,
+        )
+        access = login.data["access"]
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {access}")
+
+        logout = self.client.post("/api/token/logout/", {}, format="json")
+        self.assertEqual(logout.status_code, status.HTTP_200_OK)
+        self.assertEqual(logout.cookies["pft_refresh"].value, "")
+
+        # The now-blacklisted, cookie-carried refresh token cannot be reused.
+        refreshed = self.client.post("/api/token/refresh/", {}, format="json")
+        self.assertEqual(refreshed.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_cookie_refresh_token_is_never_exposed_in_a_response_body(self):
+        # Belt and suspenders on the core security property: grep every
+        # response body in the whole flow for the raw refresh token value.
+        login = self.client.post(
+            "/api/token/",
+            {"email": self.email, "password": PASSWORD},
+            format="json",
+            **self.COOKIE_HEADER,
+        )
+        refresh_value = login.cookies["pft_refresh"].value
+        self.assertNotIn(refresh_value, login.content.decode())
+
+        refreshed = self.client.post("/api/token/refresh/", {}, format="json")
+        self.assertNotIn(refresh_value, refreshed.content.decode())
+        new_refresh_value = refreshed.cookies["pft_refresh"].value
+        self.assertNotIn(new_refresh_value, refreshed.content.decode())
+
+
 class ThrottleTests(APITestCase):
     """Rate limits on the endpoints worth guessing against.
 
@@ -116,7 +219,12 @@ class ThrottleTests(APITestCase):
         cache.clear()
         self.rates = mock.patch.dict(
             SimpleRateThrottle.THROTTLE_RATES,
-            {"register": "2/hour", "login": "2/min", "password_change": "2/min"},
+            {
+                "register": "2/hour",
+                "login": "2/min",
+                "password_change": "2/min",
+                "admin_login": "2/min",
+            },
         )
         self.rates.start()
         self.addCleanup(self.rates.stop)
@@ -161,3 +269,45 @@ class ThrottleTests(APITestCase):
             statuses,
             msg=f"login was never throttled: {statuses}",
         )
+
+    def test_admin_login_is_throttled(self):
+        # django.contrib.admin is a plain Django view, not a DRF one, so this
+        # exercises pft/admin_throttle.py rather than REST_FRAMEWORK's
+        # throttle_classes - see SECURITY.md's former "not rate limited" note.
+        statuses = [
+            self.client.post(
+                "/admin/login/",
+                {"username": "nobody@example.com", "password": "wrong-password"},
+            ).status_code
+            for _ in range(4)
+        ]
+
+        self.assertIn(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            statuses,
+            msg=f"admin login was never throttled: {statuses}",
+        )
+
+    def test_admin_login_get_is_never_throttled(self):
+        # Only credential submissions count - merely viewing the form must
+        # not burn through a visitor's attempt budget.
+        statuses = [self.client.get("/admin/login/").status_code for _ in range(10)]
+        self.assertNotIn(status.HTTP_429_TOO_MANY_REQUESTS, statuses)
+
+    def test_admin_login_throttle_is_scoped_by_ip(self):
+        credentials = {"username": "nobody@example.com", "password": "wrong-password"}
+
+        # Exhaust the budget for one IP...
+        for _ in range(2):
+            self.client.post("/admin/login/", credentials, REMOTE_ADDR="203.0.113.5")
+        exhausted = self.client.post(
+            "/admin/login/", credentials, REMOTE_ADDR="203.0.113.5"
+        )
+        self.assertEqual(exhausted.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # ...a different IP is unaffected, proving these are separate counters
+        # rather than one global one.
+        other_ip = self.client.post(
+            "/admin/login/", credentials, REMOTE_ADDR="198.51.100.7"
+        )
+        self.assertEqual(other_ip.status_code, status.HTTP_200_OK)

@@ -55,6 +55,10 @@ type NonReadonly<T> = [T] extends [UnionToIntersection<T>] ? {
   
 /**
  * Login, rate limited per IP so the password field cannot be brute forced.
+
+Browser clients that send `X-Use-Refresh-Cookie` get the refresh token
+back as an HttpOnly cookie instead of in the response body - see
+pft/auth_cookies.py. Everyone else keeps the plain {access, refresh} body.
  */
 export const tokenCreate = (
     tokenObtainPair: NonReadonly<TokenObtainPair>,
@@ -98,8 +102,9 @@ export const useTokenCreate = <TError = unknown>(
 /**
  * Revoke a refresh token.
 
-POST {"refresh": "<token>"} revokes that token. POST {"all": true} revokes
-every session for the current user.
+POST {"refresh": "<token>"} revokes that token; the `pft_refresh` HttpOnly
+cookie is used instead when present. POST {"all": true} revokes every
+session for the current user. Either way, any refresh cookie is cleared.
  */
 export const tokenLogoutCreate = (
     
@@ -139,8 +144,18 @@ export const useTokenLogoutCreate = <TError = unknown>(
   }
 }
 /**
- * Takes a refresh type JSON web token and returns an access type JSON web
-token if the refresh token is valid.
+ * Refresh an access token.
+
+Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+present (the browser flow), falling back to a `refresh` field in the body
+for the SDKs and anything else that does not carry cookies. Once a refresh
+token arrives via the cookie, the rotated replacement goes back into a
+cookie too, even if the caller forgets to resend the opt-in header -
+cookie-in implies cookie-out.
+
+Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+inherit its `get_authenticate_header` override - without it, DRF coerces
+an invalid-token 401 into a 403 whenever authentication_classes is empty.
  */
 export const tokenRefreshCreate = (
     tokenRefresh: NonReadonly<TokenRefresh>,

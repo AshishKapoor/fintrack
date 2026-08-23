@@ -6,30 +6,42 @@ import { SWRConfig } from 'swr'
 import { CurrencyProvider } from './context/currency-context'
 import { OrganizationProvider } from './context/organization-context'
 import { initAnalytics } from './lib/analytics'
+import { initAuth } from './lib/auth'
 
 initAnalytics()
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <BrowserRouter>
-      <SWRConfig
-        value={{
-          revalidateOnFocus: false,
-          refreshInterval: 0,
-          revalidateIfStale: false,
-          revalidateOnReconnect: false,
-          revalidateOnMount: undefined,
-        }}
-      >
-        <OrganizationProvider>
-          <CurrencyProvider>
-            <App />
-          </CurrencyProvider>
-        </OrganizationProvider>
-      </SWRConfig>
-    </BrowserRouter>
-  </StrictMode>,
-)
+// The access token lives in memory only (see lib/auth.ts), so every hard
+// reload starts with none - initAuth() spends one silent request against the
+// HttpOnly refresh cookie to find out whether there is actually a session
+// before anything in the tree (including the route guard in App and the
+// providers below, both of which read isLoggedIn() synchronously) renders.
+async function bootstrap() {
+  await initAuth()
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <BrowserRouter>
+        <SWRConfig
+          value={{
+            revalidateOnFocus: false,
+            refreshInterval: 0,
+            revalidateIfStale: false,
+            revalidateOnReconnect: false,
+            revalidateOnMount: undefined,
+          }}
+        >
+          <OrganizationProvider>
+            <CurrencyProvider>
+              <App />
+            </CurrencyProvider>
+          </OrganizationProvider>
+        </SWRConfig>
+      </BrowserRouter>
+    </StrictMode>,
+  )
+}
+
+void bootstrap()
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

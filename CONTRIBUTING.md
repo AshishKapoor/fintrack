@@ -160,11 +160,7 @@ start, these are all real and self-contained:
 
 - Audit `apps/web/app/components/ui/` for shadcn components nothing imports and
   remove them.
-- Build an audit-log viewer UI for `/api/v1/audit-log/` (the API is done,
-  including CSV export; managers currently have no screen for it).
 - Rename `CategoryV2`/`CategoryGroupV2` (schema + models + regenerated
   clients) before `v1.0.0` bakes the names in.
 - Merge `apps/web/app/lib/finance-client.ts`'s remaining helpers into the
   generated client + `lib/ledger.ts` and delete it.
-- Move the access token out of JavaScript-readable cookies (HttpOnly refresh
-  cookie + in-memory access token) - see SECURITY.md's known limitations.

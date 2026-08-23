@@ -5,16 +5,23 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> dict[str, Any]:
+def _get_kwargs(
+    *,
+    x_use_refresh_cookie: str | Unset = UNSET,
+) -> dict[str, Any]:
+    headers: dict[str, Any] = {}
+    if not isinstance(x_use_refresh_cookie, Unset):
+        headers["X-Use-Refresh-Cookie"] = x_use_refresh_cookie
 
     _kwargs: dict[str, Any] = {
         "method": "post",
         "url": "/api/token/logout/",
     }
 
+    _kwargs["headers"] = headers
     return _kwargs
 
 
@@ -44,11 +51,16 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> Response[Any]:
     r"""Revoke a refresh token.
 
-    POST {\"refresh\": \"<token>\"} revokes that token. POST {\"all\": true} revokes
-    every session for the current user.
+    POST {\"refresh\": \"<token>\"} revokes that token; the `pft_refresh` HttpOnly
+    cookie is used instead when present. POST {\"all\": true} revokes every
+    session for the current user. Either way, any refresh cookie is cleared.
+
+    Args:
+        x_use_refresh_cookie (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -58,7 +70,9 @@ def sync_detailed(
         Response[Any]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        x_use_refresh_cookie=x_use_refresh_cookie,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -70,11 +84,16 @@ def sync_detailed(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> Response[Any]:
     r"""Revoke a refresh token.
 
-    POST {\"refresh\": \"<token>\"} revokes that token. POST {\"all\": true} revokes
-    every session for the current user.
+    POST {\"refresh\": \"<token>\"} revokes that token; the `pft_refresh` HttpOnly
+    cookie is used instead when present. POST {\"all\": true} revokes every
+    session for the current user. Either way, any refresh cookie is cleared.
+
+    Args:
+        x_use_refresh_cookie (str | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
@@ -84,7 +103,9 @@ async def asyncio_detailed(
         Response[Any]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        x_use_refresh_cookie=x_use_refresh_cookie,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 

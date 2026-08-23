@@ -3,7 +3,9 @@ import os
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
+from celery.schedules import crontab
 from django.core.management.utils import get_random_secret_key
 from dotenv import load_dotenv
 
@@ -96,6 +98,27 @@ SIMPLE_JWT = {
     "UPDATE_LAST_LOGIN": True,
 }
 
+# --- Demo mode -----------------------------------------------------------
+# Powers a public, read-only "try before you self-host" instance (see
+# docker-compose.demo.yml and pft/demo_mode.py). Off by default: turning it on
+# rejects every mutating request instance-wide except signing in, so it is
+# never something a real deployment could enable by accident.
+FINTRACK_DEMO_MODE = env_bool("FINTRACK_DEMO_MODE", False)
+FINTRACK_DEMO_EMAIL = os.getenv("FINTRACK_DEMO_EMAIL", "demo@fintrack.local")
+FINTRACK_DEMO_PASSWORD = os.getenv("FINTRACK_DEMO_PASSWORD", "demo-password-123")
+
+# --- Refresh-token cookie -----------------------------------------------------
+# See pft/auth_cookies.py: browser clients opt in to an HttpOnly refresh-token
+# cookie instead of a JSON body field, so page JavaScript never has a copy of
+# it. SECURE mirrors SECURE_SSL (default True) rather than DEBUG, because what
+# matters is whether the connection is HTTPS, not which settings module is
+# active. SameSite=Strict is enough on its own to stop the cookie being sent
+# cross-site at all (so CSRF is not a concern for these endpoints), as long as
+# the frontend and API are served from the same site - the supported topology
+# described in ARCHITECTURE.md.
+REFRESH_COOKIE_SECURE = env_bool("SECURE_SSL", True)
+REFRESH_COOKIE_SAMESITE = os.getenv("REFRESH_COOKIE_SAMESITE", "Strict")
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -140,6 +163,9 @@ REST_FRAMEWORK = {
         "login": os.getenv("THROTTLE_LOGIN", "10/min"),
         "register": os.getenv("THROTTLE_REGISTER", "5/hour"),
         "password_change": os.getenv("THROTTLE_PASSWORD_CHANGE", "5/min"),
+        # Not a DRF endpoint - see pft/admin_throttle.py for how this scope
+        # reaches the plain-Django admin login.
+        "admin_login": os.getenv("THROTTLE_ADMIN_LOGIN", "10/min"),
     },
 }
 
@@ -155,6 +181,11 @@ SPECTACULAR_SETTINGS = {
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
+    # Both of these reject a request before any other middleware does work
+    # for one that is about to be refused anyway. DemoModeMiddleware is a
+    # no-op unless FINTRACK_DEMO_MODE is on.
+    "pft.demo_mode.DemoModeMiddleware",
+    "pft.admin_throttle.AdminLoginThrottleMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -209,10 +240,31 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "app.wsgi.application"
 
+
 # DATABASE_* is the documented naming; POSTGRES_* is accepted as a fallback so the
 # same env file can drive both Django and the postgres container.
-DATABASES = {
-    "default": {
+def database_config_from_env():
+    """Build the `default` DATABASES entry from the environment.
+
+    Most platforms this project is deployed to hand over discrete
+    DATABASE_NAME/USER/PASSWORD/HOST/PORT (or POSTGRES_* - docker-compose.yml
+    sets both from the same values so either naming works). Others - Render,
+    Railway, Heroku-style PaaS in general - hand over one DATABASE_URL
+    instead. Support both rather than requiring self-hosters on those
+    platforms to split a URL Render already gave them back into five vars.
+    """
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        parsed = urlsplit(database_url)
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": parsed.path.lstrip("/"),
+            "USER": parsed.username,
+            "PASSWORD": parsed.password,
+            "HOST": parsed.hostname,
+            "PORT": str(parsed.port or 5432),
+        }
+    return {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": os.getenv("DATABASE_NAME") or os.getenv("POSTGRES_DB"),
         "USER": os.getenv("DATABASE_USER") or os.getenv("POSTGRES_USER"),
@@ -220,7 +272,9 @@ DATABASES = {
         "HOST": os.getenv("DATABASE_HOST") or os.getenv("POSTGRES_HOST", "localhost"),
         "PORT": os.getenv("DATABASE_PORT") or os.getenv("POSTGRES_PORT", "5432"),
     }
-}
+
+
+DATABASES = {"default": database_config_from_env()}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -275,3 +329,38 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_RESULT_BACKEND = None
 CELERY_TASK_TIME_LIMIT = int(os.getenv("CELERY_TASK_TIME_LIMIT", 600))
 CELERY_WORKER_MAX_TASKS_PER_CHILD = 100
+
+# Runs once a day on whichever process runs `celery -A app beat` (the "beat"
+# service in docker-compose.yml). Without a beat process this schedule simply
+# never fires - prune_finance_jobs is still available as a manual command for
+# bare-metal installs that would rather cron it themselves.
+CELERY_TIMEZONE = "UTC"
+CELERY_BEAT_SCHEDULE = {
+    "prune-finance-jobs-daily": {
+        "task": "pft.tasks.prune_finance_jobs_task",
+        "schedule": crontab(hour=3, minute=0),
+    },
+}
+if FINTRACK_DEMO_MODE:
+    CELERY_BEAT_SCHEDULE["reset-demo-data-hourly"] = {
+        "task": "pft.tasks.reset_demo_data_task",
+        "schedule": crontab(minute=0),
+    }
+
+# --- Cache ---------------------------------------------------------------
+# DRF's throttle classes (and pft/admin_throttle.py) count requests through
+# django.core.cache. The default LocMemCache is per-process: with multiple
+# gunicorn workers (the shipped default is 3, see entrypoint.sh), each one
+# enforces its own separate counter, so a "10/min" limit is really closer to
+# "10 * workers /min" against the deployment as a whole - the rate limit
+# silently gets weaker exactly where it matters most. With REDIS_URL set,
+# every worker (API and Celery alike) shares one real counter instead. No
+# extra dependency: Django's redis cache backend just needs the `redis`
+# package, already pulled in by celery[redis].
+if os.getenv("REDIS_URL"):
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": os.getenv("REDIS_URL"),
+        }
+    }

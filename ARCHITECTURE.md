@@ -27,6 +27,12 @@ explained in full below.
   and exports run there; job state lives on the `ImportJob`/`ExportJob` rows,
   which clients poll. With no `REDIS_URL`, tasks run eagerly inline — the test
   suite and bare-metal trials need no broker.
+- `beat/` is again the same image, running `celery -A app beat`. It only ever
+  submits the periodic tasks in `CELERY_BEAT_SCHEDULE` (currently just the
+  daily `prune_finance_jobs_task`) for `worker` to actually run - see
+  `pft/tasks.py`. Its schedule state lives on the same `api_run` volume as
+  the generated `SECRET_KEY`, so a restart does not lose track of when a task
+  last fired.
 - `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 
@@ -225,10 +231,18 @@ on focus or reconnect.
   token.
 - `POST /api/token/logout/` blacklists one token, or every session with
   `{"all": true}`. Changing a password blacklists everything.
-- The browser stores tokens in cookies written by JavaScript, with
-  `SameSite=Strict` and `Secure` on HTTPS. They are **not** HttpOnly, so an XSS
-  is an account takeover. Moving the access token into memory with an
-  HttpOnly refresh cookie is a known improvement.
+- **Transport differs by caller.** The web app sends `X-Use-Refresh-Cookie: 1`
+  on all three endpoints above, which does two things: the response omits
+  `refresh` from the body, and the refresh token instead arrives as an
+  `HttpOnly` cookie (`pft_refresh`, `SameSite=Strict`, `Secure` on HTTPS,
+  scoped to `/api/token/`). The access token still comes back in the body as
+  always, and the frontend keeps it in memory only - never a cookie or
+  localStorage. Page JavaScript therefore never has a persistent copy of
+  either token, so an XSS payload cannot exfiltrate one. Once a refresh token
+  has arrived via cookie, rotation keeps re-cookying it even without the
+  header. Callers that omit the header (the official SDKs, scripts, curl)
+  keep getting the plain `{access, refresh}` body - this is purely additive.
+  See `pft/auth_cookies.py` and `apps/web/app/lib/auth.ts`.
 
 ## Settings
 
@@ -239,6 +253,12 @@ comes from the environment — see `.env.example` and `SECURITY.md`.
 `SECRET_KEY` is required in production. If unset, one is generated and persisted
 to `SECRET_KEY_FILE` on first boot so sessions survive a restart; the settings
 module refuses to fall back to any known placeholder.
+
+The database connects via discrete `DATABASE_NAME`/`USER`/`PASSWORD`/`HOST`/`PORT`
+vars by default (`docker-compose.yml`'s path), or a single `DATABASE_URL` if
+that's set instead - the shape Render, Railway and Heroku-style platforms hand
+out (`database_config_from_env()`, `app/settings/base.py`). See
+[docs/one-click-deploy.md](docs/one-click-deploy.md).
 
 ## Migrations
 

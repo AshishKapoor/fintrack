@@ -5,10 +5,9 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework_simplejwt.views import TokenRefreshView
 
 from app.health import healthz
-from pft.views import LogoutView, ThrottledTokenObtainPairView
+from pft.views import CookieTokenRefreshView, LogoutView, ThrottledTokenObtainPairView
 
 urlpatterns = [
     path("healthz/", healthz, name="healthz"),
@@ -29,6 +28,6 @@ urlpatterns = [
     path(
         "api/token/", ThrottledTokenObtainPairView.as_view(), name="token_obtain_pair"
     ),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
     path("api/token/logout/", LogoutView.as_view(), name="token_logout"),
 ]

@@ -294,7 +294,16 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Start the stack
-        run: make bootstrap && docker compose up -d --build
+        # The Playwright suite registers a fresh user per spec (several
+        # register two - see workspace.spec.ts and audit-log.spec.ts), which
+        # comfortably clears the production THROTTLE_REGISTER default of
+        # 5/hour once THROTTLE_* is actually enforced correctly across all
+        # gunicorn workers (see the Redis CACHES change in app/settings/base.py)
+        # instead of being split - and silently loosened - per worker.
+        run: |
+          export THROTTLE_REGISTER=1000/hour
+          export THROTTLE_LOGIN=1000/min
+          make bootstrap && docker compose up -d --build
 
       - name: Wait for the API
         run: |

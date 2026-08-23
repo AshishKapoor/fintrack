@@ -1,5 +1,5 @@
 {
-  "audit_date": "2026-03-10",
+  "audit_date": "2026-08-23",
   "audience": "solo_users",
   "strategy": "self_hosted_oss_web_first",
   "prioritization_model": "value_effort_risk",
@@ -232,18 +232,20 @@
       "feature_id": "data_import_csv_bank",
       "module": "Data Portability",
       "user_job": "Import existing transaction history from external files/providers",
-      "status": "Missing",
+      "status": "Implemented",
       "tier": "AddNext",
       "value_score": 4,
       "effort_score": 4,
       "risk_score": 3,
       "priority_score": 3.3,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
-        "landing/components/faq-accordion.tsx:14",
-        "api/pft/urls.py:9"
+        "api/pft/finance_views.py:607",
+        "api/pft/finance_routers.py:44",
+        "web/app/components/import-transactions-dialog.tsx:1",
+        "web/e2e/import.spec.ts:1"
       ],
-      "notes": "No import endpoints or UI workflows exist yet."
+      "notes": "CSV, OFX, QFX, QIF, CAMT.053, YNAB4 and nYNAB import via an upload -> preview -> execute ImportJob flow, covered end to end by import.spec.ts. This row was stale: its old evidence pointed at the unrelated landing-page FAQ and the deprecated legacy urls.py, from before the finance-domain import feature shipped."
     },
     {
       "feature_id": "account_delete_flow",
@@ -301,18 +303,20 @@
       "feature_id": "recurring_transactions",
       "module": "Transactions",
       "user_job": "Automate repeated monthly/weekly entries",
-      "status": "Missing",
+      "status": "Implemented",
       "tier": "AddNext",
       "value_score": 3,
       "effort_score": 4,
       "risk_score": 3,
       "priority_score": 2.8,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
-        "api/pft/models.py:68",
-        "web/app/components/add-transaction-dialog.tsx:86"
+        "api/pft/models.py:642",
+        "api/pft/finance_views.py:427",
+        "api/pft/finance_views.py:440",
+        "web/app/pages/rules/index.tsx:147"
       ],
-      "notes": "No recurrence fields, scheduler, or UI support exists."
+      "notes": "ScheduledTransaction model (daily through yearly plus a custom interval) with a run-due action that materializes due occurrences into real transactions, and a Recurring tab in the Rules & Recurring page. This row was stale: it predated the feature shipping."
     },
     {
       "feature_id": "pwa_offline_support",

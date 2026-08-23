@@ -6,14 +6,17 @@ import httpx
 from ... import errors
 from ...client import AuthenticatedClient, Client
 from ...models.token_refresh import TokenRefresh
-from ...types import Response
+from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     *,
     body: TokenRefresh,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
+    if not isinstance(x_use_refresh_cookie, Unset):
+        headers["X-Use-Refresh-Cookie"] = x_use_refresh_cookie
 
     _kwargs: dict[str, Any] = {
         "method": "post",
@@ -57,11 +60,23 @@ def sync_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TokenRefresh,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> Response[TokenRefresh]:
-    """Takes a refresh type JSON web token and returns an access type JSON web
-    token if the refresh token is valid.
+    """Refresh an access token.
+
+    Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+    present (the browser flow), falling back to a `refresh` field in the body
+    for the SDKs and anything else that does not carry cookies. Once a refresh
+    token arrives via the cookie, the rotated replacement goes back into a
+    cookie too, even if the caller forgets to resend the opt-in header -
+    cookie-in implies cookie-out.
+
+    Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+    inherit its `get_authenticate_header` override - without it, DRF coerces
+    an invalid-token 401 into a 403 whenever authentication_classes is empty.
 
     Args:
+        x_use_refresh_cookie (str | Unset):
         body (TokenRefresh):
 
     Raises:
@@ -74,6 +89,7 @@ def sync_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        x_use_refresh_cookie=x_use_refresh_cookie,
     )
 
     response = client.get_httpx_client().request(
@@ -87,11 +103,23 @@ def sync(
     *,
     client: AuthenticatedClient | Client,
     body: TokenRefresh,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> TokenRefresh | None:
-    """Takes a refresh type JSON web token and returns an access type JSON web
-    token if the refresh token is valid.
+    """Refresh an access token.
+
+    Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+    present (the browser flow), falling back to a `refresh` field in the body
+    for the SDKs and anything else that does not carry cookies. Once a refresh
+    token arrives via the cookie, the rotated replacement goes back into a
+    cookie too, even if the caller forgets to resend the opt-in header -
+    cookie-in implies cookie-out.
+
+    Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+    inherit its `get_authenticate_header` override - without it, DRF coerces
+    an invalid-token 401 into a 403 whenever authentication_classes is empty.
 
     Args:
+        x_use_refresh_cookie (str | Unset):
         body (TokenRefresh):
 
     Raises:
@@ -105,6 +133,7 @@ def sync(
     return sync_detailed(
         client=client,
         body=body,
+        x_use_refresh_cookie=x_use_refresh_cookie,
     ).parsed
 
 
@@ -112,11 +141,23 @@ async def asyncio_detailed(
     *,
     client: AuthenticatedClient | Client,
     body: TokenRefresh,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> Response[TokenRefresh]:
-    """Takes a refresh type JSON web token and returns an access type JSON web
-    token if the refresh token is valid.
+    """Refresh an access token.
+
+    Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+    present (the browser flow), falling back to a `refresh` field in the body
+    for the SDKs and anything else that does not carry cookies. Once a refresh
+    token arrives via the cookie, the rotated replacement goes back into a
+    cookie too, even if the caller forgets to resend the opt-in header -
+    cookie-in implies cookie-out.
+
+    Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+    inherit its `get_authenticate_header` override - without it, DRF coerces
+    an invalid-token 401 into a 403 whenever authentication_classes is empty.
 
     Args:
+        x_use_refresh_cookie (str | Unset):
         body (TokenRefresh):
 
     Raises:
@@ -129,6 +170,7 @@ async def asyncio_detailed(
 
     kwargs = _get_kwargs(
         body=body,
+        x_use_refresh_cookie=x_use_refresh_cookie,
     )
 
     response = await client.get_async_httpx_client().request(**kwargs)
@@ -140,11 +182,23 @@ async def asyncio(
     *,
     client: AuthenticatedClient | Client,
     body: TokenRefresh,
+    x_use_refresh_cookie: str | Unset = UNSET,
 ) -> TokenRefresh | None:
-    """Takes a refresh type JSON web token and returns an access type JSON web
-    token if the refresh token is valid.
+    """Refresh an access token.
+
+    Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+    present (the browser flow), falling back to a `refresh` field in the body
+    for the SDKs and anything else that does not carry cookies. Once a refresh
+    token arrives via the cookie, the rotated replacement goes back into a
+    cookie too, even if the caller forgets to resend the opt-in header -
+    cookie-in implies cookie-out.
+
+    Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+    inherit its `get_authenticate_header` override - without it, DRF coerces
+    an invalid-token 401 into a 403 whenever authentication_classes is empty.
 
     Args:
+        x_use_refresh_cookie (str | Unset):
         body (TokenRefresh):
 
     Raises:
@@ -159,5 +213,6 @@ async def asyncio(
         await asyncio_detailed(
             client=client,
             body=body,
+            x_use_refresh_cookie=x_use_refresh_cookie,
         )
     ).parsed

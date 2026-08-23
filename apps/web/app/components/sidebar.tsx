@@ -2,10 +2,12 @@
 
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { useOrganization } from '@/context/organization-context'
 import {
   ChevronLeft,
   ChevronRight,
   CreditCard,
+  History,
   Home,
   PieChart,
   Repeat,
@@ -25,6 +27,12 @@ interface SidebarProps {
 
 export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChange }: SidebarProps) {
   const location = useLocation()
+  const { activeOrg } = useOrganization()
+  // Same gate as the audit log page itself (see pages/audit-log/index.tsx) -
+  // hiding the link for everyone else avoids a "why is this empty" surprise,
+  // since the API silently returns nothing to a non-manager rather than 403.
+  const canManageAuditLog =
+    activeOrg && !activeOrg.personal && (activeOrg.my_role === 'owner' || activeOrg.my_role === 'admin')
 
   const sidebarContent = (
     <>
@@ -137,6 +145,20 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
             <Settings className='h-4 w-4' />
             {(expanded || isMobile) && <span>General</span>}
           </Link>
+          {canManageAuditLog && (
+            <Link
+              to='/audit-log'
+              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+                location.pathname === '/audit-log'
+                  ? 'bg-muted text-primary-background'
+                  : 'hover:bg-muted'
+              } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
+              onClick={() => isMobile && onOpenChange(false)}
+            >
+              <History className='h-4 w-4' />
+              {(expanded || isMobile) && <span>Audit Log</span>}
+            </Link>
+          )}
         </nav>
       </div>
 

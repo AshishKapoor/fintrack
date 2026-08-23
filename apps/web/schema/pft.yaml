@@ -7,8 +7,22 @@ paths:
   /api/token/:
     post:
       operationId: token_create
-      description: Login, rate limited per IP so the password field cannot be brute
-        forced.
+      description: |-
+        Login, rate limited per IP so the password field cannot be brute forced.
+
+        Browser clients that send `X-Use-Refresh-Cookie` get the refresh token
+        back as an HttpOnly cookie instead of in the response body - see
+        pft/auth_cookies.py. Everyone else keeps the plain {access, refresh} body.
+      parameters:
+      - in: header
+        name: X-Use-Refresh-Cookie
+        schema:
+          type: string
+        description: Send '1' to receive the refresh token as an HttpOnly cookie instead
+          of in the response body, so page JavaScript never has a copy of it. Omit
+          this header to get the plain {access, refresh} body (used by the official
+          SDKs and scripts). Once a refresh token has arrived via the cookie, subsequent
+          calls keep rotating it back into a cookie even without this header.
       tags:
       - token
       requestBody:
@@ -30,8 +44,19 @@ paths:
       description: |-
         Revoke a refresh token.
 
-        POST {"refresh": "<token>"} revokes that token. POST {"all": true} revokes
-        every session for the current user.
+        POST {"refresh": "<token>"} revokes that token; the `pft_refresh` HttpOnly
+        cookie is used instead when present. POST {"all": true} revokes every
+        session for the current user. Either way, any refresh cookie is cleared.
+      parameters:
+      - in: header
+        name: X-Use-Refresh-Cookie
+        schema:
+          type: string
+        description: Send '1' to receive the refresh token as an HttpOnly cookie instead
+          of in the response body, so page JavaScript never has a copy of it. Omit
+          this header to get the plain {access, refresh} body (used by the official
+          SDKs and scripts). Once a refresh token has arrived via the cookie, subsequent
+          calls keep rotating it back into a cookie even without this header.
       tags:
       - token
       security:
@@ -43,8 +68,28 @@ paths:
     post:
       operationId: token_refresh_create
       description: |-
-        Takes a refresh type JSON web token and returns an access type JSON web
-        token if the refresh token is valid.
+        Refresh an access token.
+
+        Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+        present (the browser flow), falling back to a `refresh` field in the body
+        for the SDKs and anything else that does not carry cookies. Once a refresh
+        token arrives via the cookie, the rotated replacement goes back into a
+        cookie too, even if the caller forgets to resend the opt-in header -
+        cookie-in implies cookie-out.
+
+        Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+        inherit its `get_authenticate_header` override - without it, DRF coerces
+        an invalid-token 401 into a 403 whenever authentication_classes is empty.
+      parameters:
+      - in: header
+        name: X-Use-Refresh-Cookie
+        schema:
+          type: string
+        description: Send '1' to receive the refresh token as an HttpOnly cookie instead
+          of in the response body, so page JavaScript never has a copy of it. Omit
+          this header to get the plain {access, refresh} body (used by the official
+          SDKs and scripts). Once a refresh token has arrived via the cookie, subsequent
+          calls keep rotating it back into a cookie even without this header.
       tags:
       - token
       requestBody:

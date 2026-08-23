@@ -45,21 +45,36 @@ deployment. At minimum:
 
 These are real and tracked, not hidden:
 
-- **`/admin/login/` is not rate limited.** The API throttles `/api/token/`,
-  `/api/v1/register/` and password changes, but the Django admin login is
-  served by Django itself. Limit it at your reverse proxy, or do not expose it.
-- **Tokens are stored in JavaScript-readable cookies**, so any XSS is an account
-  takeover. They carry `SameSite=Strict`, and `Secure` over HTTPS, but not
-  `HttpOnly`. Moving the access token into memory with an HttpOnly refresh
-  cookie is planned.
+- ~~`/admin/login/` is not rate limited~~ **Fixed:** `AdminLoginThrottleMiddleware`
+  (`pft/admin_throttle.py`) applies the same cache-based throttle DRF uses for
+  `/api/token/` and `/api/v1/register/` to admin login POSTs, scoped per IP
+  (`THROTTLE_ADMIN_LOGIN`, default `10/min`). Still limit it at your reverse
+  proxy too if you can - defense in depth costs you nothing here.
+- ~~Every rate limit is enforced per gunicorn worker, not per deployment~~
+  **Fixed:** all throttling counts through `django.core.cache`, which defaults
+  to a per-process `LocMemCache` - with the shipped 3 gunicorn workers, a
+  "10/min" limit was really closer to "up to 30/min" against the instance as a
+  whole. `CACHES` now points at Redis whenever `REDIS_URL` is set (the default
+  Docker stack), so every worker shares one real counter. Bare-metal installs
+  without Redis keep the old per-process behavior.
+- ~~Tokens are stored in JavaScript-readable cookies~~ **Fixed:** the access
+  token now lives in memory only (never a cookie or localStorage) and the
+  refresh token is an `HttpOnly` cookie the browser opts into via the
+  `X-Use-Refresh-Cookie` header - page JavaScript can no longer read either
+  one, so an XSS payload cannot exfiltrate a long-lived credential. The
+  cookie carries `SameSite=Strict` and `Secure` over HTTPS, scoped to
+  `/api/token/`. Callers that do not send the header (the official SDKs,
+  scripts) keep getting `{access, refresh}` in the body exactly as before.
+  See `pft/auth_cookies.py`.
 - **Import execution and exports run on a background worker** (Celery + Redis
   in the Docker stack). Payloads are capped (`FINTRACK_MAX_IMPORT_BYTES`,
   `FINTRACK_MAX_BACKUP_BYTES`). Without `REDIS_URL` set (bare-metal trials),
   tasks fall back to running inline in the request. Import *preview* is a
   parse-only pass and stays synchronous by design.
 - **`ImportJob.source_payload` retains the raw uploaded bank file** in the
-  database as plaintext, as do completed exports. Run
-  `manage.py prune_finance_jobs` periodically; see
+  database as plaintext, as do completed exports. The `beat` service prunes
+  these automatically once a day (`CELERY_BEAT_SCHEDULE`); bare-metal installs
+  without it should cron `manage.py prune_finance_jobs` themselves - see
   [docs/self-hosting.md](docs/self-hosting.md).
 - **Most finance list endpoints are unpaginated** (transactions are the
   exception), so a large ledger's accounts, categories, or payees return in one

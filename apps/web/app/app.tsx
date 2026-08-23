@@ -1,5 +1,6 @@
 import '@/assets/styles/globals.css'
 import DashboardLayout from '@/components/dashboard-layout'
+import { DemoBanner } from '@/components/demo-banner'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster as SonnerToaster } from '@/components/ui/sonner'
 import { Toaster } from '@/components/ui/toaster'
@@ -15,6 +16,7 @@ const BudgetsPage = lazy(() => import('@/pages/budget'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
 const ReportsPage = lazy(() => import('@/pages/reports'))
 const RulesAndRecurringPage = lazy(() => import('@/pages/rules'))
+const AuditLogPage = lazy(() => import('@/pages/audit-log'))
 const UserSettingsPage = lazy(() => import('@/pages/settings'))
 const NotFound = lazy(() => import('@/pages/not-found'))
 const AuthenticationPage = lazy(() => import('@/pages/authentication'))
@@ -42,37 +44,47 @@ function App() {
 
   return (
     <ThemeProvider defaultTheme='light' storageKey='vite-ui-theme'>
-      {location.pathname !== '/register' && location.pathname !== '/login' && (
-        <DashboardLayout>
-          <Suspense fallback={<AnimateSpinner size={64} />}>
-            <Routes>
-            <Route path='/' element={<DashboardPage />} />
-            <Route path='/categories' element={<CategoriesPage />} />
-            <Route path='/budgets' element={<BudgetsPage />} />
-            <Route path='/transactions' element={<TransactionsPage />} />
-            <Route path='/reports' element={<ReportsPage />} />
-            <Route path='/rules' element={<RulesAndRecurringPage />} />
-            <Route path='/home' element={<DashboardPage />} />
-            <Route path='/settings' element={<UserSettingsPage />} />
-            <Route path='*' element={<NotFound />} />
-            </Routes>
-          </Suspense>
-        </DashboardLayout>
-      )}
-      {location.pathname === '/register' && (
-        <div className='flex items-center justify-center h-screen bg-background'>
-          <Suspense fallback={<AnimateSpinner size={64} />}>
-            <AuthenticationPage />
-          </Suspense>
+      {/* flex-col + h-full below (rather than each branch owning its own
+          h-screen) is what lets DemoBanner take real space at the top -
+          demo instances only - without any of these three layouts
+          overflowing the viewport by however tall the banner is. */}
+      <div className='flex h-screen flex-col'>
+        <DemoBanner />
+        <div className='min-h-0 flex-1'>
+          {location.pathname !== '/register' && location.pathname !== '/login' && (
+            <DashboardLayout>
+              <Suspense fallback={<AnimateSpinner size={64} />}>
+                <Routes>
+                <Route path='/' element={<DashboardPage />} />
+                <Route path='/categories' element={<CategoriesPage />} />
+                <Route path='/budgets' element={<BudgetsPage />} />
+                <Route path='/transactions' element={<TransactionsPage />} />
+                <Route path='/reports' element={<ReportsPage />} />
+                <Route path='/rules' element={<RulesAndRecurringPage />} />
+                <Route path='/audit-log' element={<AuditLogPage />} />
+                <Route path='/home' element={<DashboardPage />} />
+                <Route path='/settings' element={<UserSettingsPage />} />
+                <Route path='*' element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </DashboardLayout>
+          )}
+          {location.pathname === '/register' && (
+            <div className='flex h-full items-center justify-center bg-background'>
+              <Suspense fallback={<AnimateSpinner size={64} />}>
+                <AuthenticationPage />
+              </Suspense>
+            </div>
+          )}
+          {location.pathname === '/login' && (
+            <div className='flex h-full items-center justify-center bg-background'>
+              <Suspense fallback={<AnimateSpinner size={64} />}>
+                <LoginPage />
+              </Suspense>
+            </div>
+          )}
         </div>
-      )}
-      {location.pathname === '/login' && (
-        <div className='flex items-center justify-center h-screen bg-background'>
-          <Suspense fallback={<AnimateSpinner size={64} />}>
-            <LoginPage />
-          </Suspense>
-        </div>
-      )}
+      </div>
       <Toaster />
       {/* Most of the app notifies through sonner; without this mount those
           toasts - including every API error - render nothing. */}

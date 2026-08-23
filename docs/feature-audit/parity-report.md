@@ -1,14 +1,14 @@
 # API/UI Parity Report
 
-Generated on `2026-08-12` by `scripts/feature_audit.py`.
+Generated on `2026-08-23` by `scripts/feature_audit.py`.
 
 ## Matrix Validation
 
 - Required features tracked: **12**
 - Required features currently Broken: **0**
-- Status counts: `{'Implemented': 13, 'Missing': 11, 'Partial': 1}`
+- Status counts: `{'Implemented': 15, 'Partial': 1, 'Missing': 9}`
 - Tier counts: `{'Required': 12, 'AddNext': 5, 'Optional': 8}`
-- Acceptance counts: `{'Accepted': 13, 'AtRisk': 12}`
+- Acceptance counts: `{'Accepted': 15, 'AtRisk': 10}`
 
 Matrix validation errors:
 - None

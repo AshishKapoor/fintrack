@@ -81,9 +81,10 @@ HTTPS.
 
 ### Rate limiting at the edge
 
-The API throttles login, registration and password changes, but there is no
-protection on `/admin/`. If you expose the Django admin at all, rate limit it
-in your proxy — or better, do not expose it:
+The API throttles login, registration, password changes, and admin login
+attempts (`THROTTLE_ADMIN_LOGIN`, default `10/min` per IP). If you expose the
+Django admin at all, restricting it in your proxy is still good practice on
+top of that — or better, do not expose it:
 
 ```nginx
 location /admin/ {
@@ -202,13 +203,23 @@ docker compose logs -f migrate api
 ## Housekeeping
 
 Import and export jobs retain their payloads in the database, and those
-payloads are plaintext financial data. Clear old ones periodically:
+payloads are plaintext financial data. The `beat` service in the Docker
+Compose stack already runs this once a day (see `CELERY_BEAT_SCHEDULE` in
+`app/settings/base.py`), so there is nothing to do here for the default
+deployment. To run it by hand - a different retention window, or right after
+turning up an instance with old data already in it:
 
 ```bash
 docker compose exec api uv run manage.py prune_finance_jobs --days 30
 ```
 
 Add `--dry-run` to see what it would clear.
+
+Running bare-metal without the `beat` process? Cron it yourself:
+
+```
+0 3 * * * cd /path/to/fintrack/apps/api && uv run manage.py prune_finance_jobs
+```
 
 ## Monitoring
 

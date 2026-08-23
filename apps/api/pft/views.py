@@ -2,21 +2,28 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
-from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.token_blacklist.models import (
     BlacklistedToken,
     OutstandingToken,
 )
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenViewBase
 
+from .auth_cookies import (
+    REFRESH_COOKIE_NAME,
+    clear_refresh_cookie,
+    set_refresh_cookie,
+    wants_refresh_cookie,
+)
 from .models import (
     Budget,
     Category,
@@ -28,6 +35,21 @@ from .serializers import (
     TransactionSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
+)
+
+REFRESH_COOKIE_HEADER_PARAMETER = OpenApiParameter(
+    name="X-Use-Refresh-Cookie",
+    type=str,
+    location=OpenApiParameter.HEADER,
+    required=False,
+    description=(
+        "Send '1' to receive the refresh token as an HttpOnly cookie instead "
+        "of in the response body, so page JavaScript never has a copy of it. "
+        "Omit this header to get the plain {access, refresh} body (used by "
+        "the official SDKs and scripts). Once a refresh token has arrived via "
+        "the cookie, subsequent calls keep rotating it back into a cookie "
+        "even without this header."
+    ),
 )
 
 
@@ -76,18 +98,83 @@ def blacklist_all_refresh_tokens(user):
     return revoked
 
 
+@extend_schema(parameters=[REFRESH_COOKIE_HEADER_PARAMETER])
 class ThrottledTokenObtainPairView(TokenObtainPairView):
-    """Login, rate limited per IP so the password field cannot be brute forced."""
+    """Login, rate limited per IP so the password field cannot be brute forced.
+
+    Browser clients that send `X-Use-Refresh-Cookie` get the refresh token
+    back as an HttpOnly cookie instead of in the response body - see
+    pft/auth_cookies.py. Everyone else keeps the plain {access, refresh} body.
+    """
 
     throttle_classes = [ScopedRateThrottle]
     throttle_scope = "login"
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200 and wants_refresh_cookie(request):
+            refresh = response.data.pop("refresh", None)
+            if refresh is not None:
+                set_refresh_cookie(response, refresh)
+        return response
 
+
+@extend_schema(parameters=[REFRESH_COOKIE_HEADER_PARAMETER])
+class CookieTokenRefreshView(TokenViewBase):
+    """Refresh an access token.
+
+    Reads the refresh token from the `pft_refresh` HttpOnly cookie when
+    present (the browser flow), falling back to a `refresh` field in the body
+    for the SDKs and anything else that does not carry cookies. Once a refresh
+    token arrives via the cookie, the rotated replacement goes back into a
+    cookie too, even if the caller forgets to resend the opt-in header -
+    cookie-in implies cookie-out.
+
+    Subclasses SimpleJWT's TokenViewBase (rather than a plain APIView) to
+    inherit its `get_authenticate_header` override - without it, DRF coerces
+    an invalid-token 401 into a 403 whenever authentication_classes is empty.
+    """
+
+    serializer_class = TokenRefreshSerializer
+
+    def post(self, request, *args, **kwargs):
+        cookie_refresh = request.COOKIES.get(REFRESH_COOKIE_NAME)
+        refresh = cookie_refresh or request.data.get("refresh")
+        use_cookie = bool(cookie_refresh) or wants_refresh_cookie(request)
+
+        if not refresh:
+            return Response(
+                {"detail": "No refresh token found.", "code": "token_not_found"},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        serializer = self.get_serializer(data={"refresh": refresh})
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as exc:
+            raise InvalidToken(exc.args[0]) from exc
+
+        data = dict(serializer.validated_data)
+        new_refresh = data.pop("refresh", None)
+
+        if use_cookie:
+            response = Response(data, status=status.HTTP_200_OK)
+            if new_refresh is not None:
+                set_refresh_cookie(response, new_refresh)
+            return response
+
+        if new_refresh is not None:
+            data["refresh"] = new_refresh
+        return Response(data, status=status.HTTP_200_OK)
+
+
+@extend_schema(parameters=[REFRESH_COOKIE_HEADER_PARAMETER])
 class LogoutView(APIView):
     """Revoke a refresh token.
 
-    POST {"refresh": "<token>"} revokes that token. POST {"all": true} revokes
-    every session for the current user.
+    POST {"refresh": "<token>"} revokes that token; the `pft_refresh` HttpOnly
+    cookie is used instead when present. POST {"all": true} revokes every
+    session for the current user. Either way, any refresh cookie is cleared.
     """
 
     permission_classes = [IsAuthenticated]
@@ -95,9 +182,15 @@ class LogoutView(APIView):
     def post(self, request):
         if request.data.get("all"):
             revoked = blacklist_all_refresh_tokens(request.user)
-            return Response({"detail": "All sessions signed out.", "revoked": revoked})
+            response = Response(
+                {"detail": "All sessions signed out.", "revoked": revoked}
+            )
+            clear_refresh_cookie(response)
+            return response
 
-        refresh_token = request.data.get("refresh")
+        refresh_token = request.COOKIES.get(REFRESH_COOKIE_NAME) or request.data.get(
+            "refresh"
+        )
         if not refresh_token:
             return Response(
                 {"detail": "refresh is required (or pass all=true)."},
@@ -111,7 +204,9 @@ class LogoutView(APIView):
             # out either way; do not leak which case it was.
             pass
 
-        return Response({"detail": "Signed out."})
+        response = Response({"detail": "Signed out."})
+        clear_refresh_cookie(response)
+        return response
 
 
 # CATEGORY VIEWSET

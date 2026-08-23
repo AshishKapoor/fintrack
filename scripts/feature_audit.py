@@ -22,10 +22,15 @@ VIEWS_PATH = ROOT / "apps/api/pft/views.py"
 FINANCE_VIEWS_PATH = ROOT / "apps/api/pft/finance_views.py"
 PFT_URLS_PATH = ROOT / "apps/api/pft/urls.py"
 APP_URLS_PATH = ROOT / "apps/api/app/urls.py"
+ORG_VIEWS_PATH = ROOT / "apps/api/pft/org_views.py"
+AUDIT_VIEWS_PATH = ROOT / "apps/api/pft/audit_views.py"
 TRANSACTIONS_PAGE_PATH = ROOT / "apps/web/app/pages/transactions/index.tsx"
 RECENT_TRANSACTIONS_PATH = ROOT / "apps/web/app/components/recent-transactions.tsx"
 WEB_APP_PATH = ROOT / "apps/web/app"
-GENERATED_CLIENT_PATH = ROOT / "apps/web/app/client/pft"
+# Orval's output target (orval.config.ts) is app/client/gen/pft, not
+# app/client/pft - this path was wrong for long enough to make every parity
+# report since claim the generated client was missing entirely.
+GENERATED_CLIENT_PATH = ROOT / "apps/web/app/client/gen/pft"
 
 ROW_REQUIRED_FIELDS = {
     "feature_id",
@@ -145,8 +150,29 @@ def extract_schema_endpoints() -> set[str]:
 
 # `router.register(` may wrap across lines, so allow whitespace before the prefix.
 REGISTER_RE = re.compile(r'router\.register\(\s*"([^"]+)"\s*,\s*(\w+)')
-# @action(detail=..., url_path="...") declares an extra route on a viewset.
-ACTION_RE = re.compile(r"@action\((?P<args>[^)]*)\)", re.S)
+
+
+def _iter_action_call_args(source: str) -> Iterable[tuple[int, str]]:
+    """Yield (start_pos, args) for every `@action(...)` call.
+
+    A plain "up to the first )" regex breaks the moment url_path is itself a
+    raw-string regex with a named group, e.g. org_views.py's
+    `url_path=r"members/(?P<membership_id>\\d+)"` - its own closing paren
+    looks like the end of the @action(...) call to a naive pattern, silently
+    truncating (and usually invalidating) everything captured after it.
+    Track paren depth instead so nested parens do not end the call early.
+    """
+    for match in re.finditer(r"@action\(", source):
+        start = match.end()
+        depth = 1
+        i = start
+        while i < len(source) and depth > 0:
+            if source[i] == "(":
+                depth += 1
+            elif source[i] == ")":
+                depth -= 1
+            i += 1
+        yield match.start(), source[start : i - 1]
 
 
 def _actions_for(source: str) -> dict[str, list[tuple[bool, str]]]:
@@ -156,20 +182,27 @@ def _actions_for(source: str) -> dict[str, list[tuple[bool, str]]]:
         (match.start(), match.group(1)) for match in re.finditer(r"^class (\w+)\(", source, re.M)
     ]
 
-    for match in ACTION_RE.finditer(source):
-        args = match.group("args")
-        url_match = re.search(r'url_path="([^"]+)"', args)
+    for start, args in _iter_action_call_args(source):
+        # url_path is sometimes a raw string (r"...") so it can embed a regex
+        # named group for a nested resource id, e.g.
+        # url_path=r"members/(?P<membership_id>\d+)" (org_views.py). Without
+        # the optional `r`, this was silently skipped entirely; without the
+        # named-group substitution below, it would be captured verbatim
+        # instead of as the {membership_id} placeholder drf-spectacular
+        # actually emits into the schema.
+        url_match = re.search(r'url_path=r?"([^"]+)"', args)
         if not url_match:
             continue
         owner = None
         for position, name in class_positions:
-            if position < match.start():
+            if position < start:
                 owner = name
             else:
                 break
         if owner is None:
             continue
-        actions.setdefault(owner, []).append(("detail=True" in args, url_match.group(1)))
+        url_path = re.sub(r"\(\?P<(\w+)>[^)]*\)", r"{\1}", url_match.group(1))
+        actions.setdefault(owner, []).append(("detail=True" in args, url_path))
 
     return actions
 
@@ -217,7 +250,23 @@ def extract_backend_endpoints() -> set[str]:
     )
 
     pft_urls = PFT_URLS_PATH.read_text(encoding="utf-8")
-    for match in re.finditer(r'path\("([^"]+)"', pft_urls):
+
+    # pft/urls.py registers a *second* DefaultRouter (org_router, for
+    # OrganizationViewSet/AuditLogViewSet) rather than adding it to
+    # pft/routers.py's router - REGISTER_RE matches "router.register(" as a
+    # substring, so it already finds "org_router.register(" fine, but nothing
+    # ever called _register_router with this file before now, so
+    # /api/v1/orgs/* and /api/v1/audit-log/* always reported as schema-only.
+    _register_router(
+        endpoints,
+        pft_urls,
+        "/api/v1",
+        ORG_VIEWS_PATH.read_text(encoding="utf-8") + AUDIT_VIEWS_PATH.read_text(encoding="utf-8"),
+    )
+
+    # \s* (not a literal '"') between path( and the string: change-password's
+    # line wraps its arguments, which a same-line-only pattern silently skips.
+    for match in re.finditer(r'path\(\s*"([^"]+)"', pft_urls):
         path_value = match.group(1)
         if path_value and path_value != "":
             endpoints.add(f"/api/v1/{path_value}")

@@ -24,7 +24,10 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    // h-full, not h-screen: the parent in app.tsx owns the viewport height so
+    // DemoBanner (demo instances only) can take real space above this without
+    // pushing the sidebar/main content below the fold.
+    <div className="flex h-full overflow-hidden">
       <Sidebar 
         expanded={sidebarExpanded} 
         toggleSidebar={toggleSidebar}

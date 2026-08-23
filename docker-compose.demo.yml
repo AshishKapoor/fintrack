@@ -1,0 +1,36 @@
+# Public demo overlay: read-only, seeded on boot, reset hourly.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d --build
+#
+# Set your real public hostname in .env first (DJANGO_ALLOWED_HOSTS,
+# CORS_ALLOWED_ORIGINS, CSRF_TRUSTED_ORIGINS) exactly as docs/self-hosting.md
+# already describes for any internet-facing instance - this overlay only adds
+# the demo-specific behaviour on top of a normal production deployment.
+#
+# See docs/demo.md for the full walkthrough (what this protects against, and
+# what it deliberately does not).
+
+services:
+  api:
+    environment:
+      FINTRACK_DEMO_MODE: "true"
+      FINTRACK_DEMO_EMAIL: ${FINTRACK_DEMO_EMAIL:-demo@fintrack.local}
+      FINTRACK_DEMO_PASSWORD: ${FINTRACK_DEMO_PASSWORD:-demo-password-123}
+
+  migrate:
+    environment:
+      FINTRACK_DEMO_MODE: "true"
+      FINTRACK_DEMO_EMAIL: ${FINTRACK_DEMO_EMAIL:-demo@fintrack.local}
+      FINTRACK_DEMO_PASSWORD: ${FINTRACK_DEMO_PASSWORD:-demo-password-123}
+
+  worker:
+    environment:
+      FINTRACK_DEMO_MODE: "true"
+      FINTRACK_DEMO_EMAIL: ${FINTRACK_DEMO_EMAIL:-demo@fintrack.local}
+      FINTRACK_DEMO_PASSWORD: ${FINTRACK_DEMO_PASSWORD:-demo-password-123}
+
+  beat:
+    environment:
+      FINTRACK_DEMO_MODE: "true"
+      FINTRACK_DEMO_EMAIL: ${FINTRACK_DEMO_EMAIL:-demo@fintrack.local}
+      FINTRACK_DEMO_PASSWORD: ${FINTRACK_DEMO_PASSWORD:-demo-password-123}

@@ -57,7 +57,7 @@ Useful management commands:
 
 ```bash
 uv run manage.py seed_demo             # demo user with six months of data
-uv run manage.py prune_finance_jobs    # clear old import/export payloads
+uv run manage.py prune_finance_jobs    # clear old import/export payloads (runs daily on its own via the beat service)
 ```
 
 ## API docs

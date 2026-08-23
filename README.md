@@ -14,6 +14,7 @@ no subscriptions, no third-party services, no vendor lock-in.
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![GitHub stars](https://img.shields.io/github/stars/AshishKapoor/fintrack?style=social)](https://github.com/AshishKapoor/fintrack/stargazers)
 
+[Why FinTrack?](#-why-fintrack) •
 [Features](#-features) •
 [Quick Start](#-quick-start) •
 [Configuration](#%EF%B8%8F-configuration) •
@@ -21,11 +22,50 @@ no subscriptions, no third-party services, no vendor lock-in.
 [Contributing](#-contributing) •
 [License](#-license)
 
-<img src="https://github.com/user-attachments/assets/e66ad9e7-a967-4d5b-9139-9c327b6b466f" alt="FinTrack dashboard screenshot" width="800" />
+<img src="docs/images/dashboard.png" alt="FinTrack dashboard screenshot" width="800" />
 
 </div>
 
 ---
+
+## 🤔 Why FinTrack?
+
+Most self-hosted finance trackers make you pick one: envelope budgeting *or*
+correctness, a nice UI *or* a real API, single-user simplicity *or* sharing
+with your household. FinTrack doesn't:
+
+- **A ledger you can trust.** Every transaction is a set of postings that the
+  database itself refuses to save unless they sum to zero — not just
+  application-level validation. See [how double-entry works here](docs/blog/double-entry-for-developers.md).
+- **Shared workspaces without duct tape.** Owner/admin/member/viewer roles,
+  invitations, and a manager-visible audit log are built in — no external
+  identity provider to stand up first.
+- **API-first, for real.** The OpenAPI schema is the contract CI enforces, and
+  it drives official [TypeScript](packages/sdk-ts) and [Python](packages/sdk-py)
+  SDKs published from this repo, not community-maintained afterthoughts.
+- **Your data stays yours.** Client-side encrypted backups, no telemetry by
+  default, MIT licensed.
+
+### How it compares
+
+Every open-source finance tracker is trading off *something*. Here's the
+honest comparison, not the flattering one:
+
+| | FinTrack | [Actual Budget](https://actualbudget.org/) | [Firefly III](https://www.firefly-iii.org/) |
+| --- | --- | --- | --- |
+| License | MIT | MIT | AGPL-3.0 |
+| Ledger model | Double-entry, DB-enforced | Envelope budgeting (not double-entry) | Double-entry |
+| Shared budgets | Owner/admin/member/viewer roles, built in | Basic/Admin roles, but needs an external OIDC provider configured first | Multiple isolated single-user accounts per server — not a shared budget |
+| Bank sync | Not yet — file import only ([roadmap](ROADMAP.md)) | Built in: GoCardless, SimpleFIN (paid), Akahu, Enable Banking, Pluggy | Via a companion Data Importer: GoCardless, SimpleFIN, Enable Banking |
+| Import formats | CSV, OFX, QFX, QIF, CAMT.053, YNAB4, nYNAB | CSV + bank sync above | CSV, CAMT.052/053 + the Data Importer |
+| REST API | OpenAPI schema + official TS/Python SDKs | None (Node.js-only scripting library, no HTTP API) | OpenAPI schema, community-maintained SDKs |
+| Audit log | Yes, manager-visible per workspace | No | No |
+| Tech stack | Django + React | Node.js/TypeScript + React | PHP/Laravel |
+
+Bank sync is FinTrack's clearest current gap — it's the top item once
+[Phase 0](ROADMAP.md) wraps up. If you need it today, Actual or Firefly are
+the better fit; if you value ledger correctness and real shared workspaces
+more, FinTrack is worth trying.
 
 ## ✨ Features
 
@@ -51,6 +91,19 @@ no subscriptions, no third-party services, no vendor lock-in.
 | Database | [PostgreSQL](https://www.postgresql.org/) |
 | SDKs | [`@fintrack/sdk`](packages/sdk-ts) (TypeScript) and [`fintrack-sdk`](packages/sdk-py) (Python), generated from the OpenAPI schema |
 | Infrastructure | Docker & Docker Compose, hot reload in development |
+
+## 📸 Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src="docs/images/transactions.png" alt="Transactions list" /><p align="center">Transactions</p></td>
+<td width="50%"><img src="docs/images/budgets.png" alt="Envelope budgets" /><p align="center">Envelope budgets</p></td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/images/reports.png" alt="Reports" /><p align="center">Reports</p></td>
+<td width="50%"><img src="docs/images/dashboard.png" alt="Dashboard" /><p align="center">Dashboard</p></td>
+</tr>
+</table>
 
 ## 🚀 Quick Start
 
@@ -94,6 +147,14 @@ are also available.
 
 > ⚠️ The default configuration is tuned for a quick local trial. Before
 > exposing an instance to the internet, read [SECURITY.md](SECURITY.md).
+
+### Prefer not to run your own server?
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/AshishKapoor/fintrack)
+
+Deploys the whole stack — web, API, Postgres, Redis — on Render's free tier.
+See [docs/one-click-deploy.md](docs/one-click-deploy.md) for this and other
+hosting targets (Railway, PikaPods, Unraid, TrueNAS SCALE).
 
 ## 🧑‍💻 Local Development
 
@@ -243,9 +304,12 @@ Contributions, issues, and feature requests are welcome! Please read the
 
 | | |
 |---|---|
+| [ROADMAP.md](ROADMAP.md) | Where FinTrack is headed, phase by phase, and how to help |
 | [How double-entry works, for developers](docs/blog/double-entry-for-developers.md) | The mental model behind the ledger — start here |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why there are two API surfaces |
 | [docs/self-hosting.md](docs/self-hosting.md) | Reverse proxy, TLS, backups, upgrades, monitoring |
+| [docs/one-click-deploy.md](docs/one-click-deploy.md) | Render, Railway, PikaPods, Unraid, TrueNAS SCALE |
+| [docs/demo.md](docs/demo.md) | Running a public, read-only demo instance |
 | [SECURITY.md](SECURITY.md) | Hardening checklist, private reporting, known limitations |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
 | [docs/adr/](docs/adr/) | Architecture decision records, including [licensing](docs/adr/0001-licensing.md) |

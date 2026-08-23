@@ -1,69 +1,59 @@
 import { PFT_BASE_URL } from '@/client/httpPFTClient'
-// JWT auth library using cookies
 
-const ACCESS_TOKEN_KEY = 'access'
-const REFRESH_TOKEN_KEY = 'refresh'
-const TOKEN_EXPIRY_KEY = 'token_expiry'
+// Auth tokens, and the security model behind how they're stored:
+//
+// - The access token lives in memory only (a module-level variable below).
+//   It is never written to a cookie or localStorage, so page JavaScript - and
+//   therefore an XSS payload - never has a persistent copy to steal. A hard
+//   reload always starts with an empty in-memory token; initAuth() below
+//   re-derives one from the refresh cookie before the app renders.
+// - The refresh token is an HttpOnly cookie set by the backend (opted into
+//   via the `X-Use-Refresh-Cookie` header on every call to /api/token/*).
+//   Being HttpOnly, page JavaScript cannot read or write it either - only the
+//   browser attaches it, automatically, to those endpoints.
+//
+// See SECURITY.md and ARCHITECTURE.md for the full threat model.
+
+const REFRESH_COOKIE_HEADER = { 'X-Use-Refresh-Cookie': '1' }
+
 let authToken: string | null = null
+let tokenExpiry: number | null = null
+let authenticated = false
+let authInitialized = false
+
 let isRefreshing = false
-let refreshSubscribers: ((token: string) => void)[] = []
+let refreshSubscribers: ((token: string | null) => void)[] = []
 
-// `Secure` is only set when the page is served over HTTPS, otherwise the cookie
-// would be silently dropped on a plain-HTTP LAN install. `SameSite=Strict`
-// keeps the token off cross-site requests.
-const isSecureContext = typeof window !== 'undefined' && window.location.protocol === 'https:'
-const COOKIE_FLAGS = `path=/; SameSite=Strict${isSecureContext ? '; Secure' : ''}`
-
-function setCookie(name: string, value: string, days = 7) {
-  const expires = new Date(Date.now() + days * 864e5).toUTCString()
-  document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; ${COOKIE_FLAGS}`
+function decodeExpiry(accessToken: string): number {
+  const payload = JSON.parse(atob(accessToken.split('.')[1]))
+  return payload.exp * 1000 // seconds -> milliseconds
 }
 
-function getCookie(name: string): string | null {
-  return (
-    document.cookie
-      .split('; ')
-      .find((row) => row.startsWith(name + '='))
-      ?.split('=')[1] || null
-  )
-}
-
-function removeCookie(name: string) {
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; ${COOKIE_FLAGS}`
-}
-
-export function setTokens(access: string, refresh: string) {
-  const tokenData = JSON.parse(atob(access.split('.')[1]))
-  const expiryTime = tokenData.exp * 1000 // Convert to milliseconds
-  setCookie(ACCESS_TOKEN_KEY, access)
-  setCookie(REFRESH_TOKEN_KEY, refresh)
-  setCookie(TOKEN_EXPIRY_KEY, expiryTime.toString())
+/** Store a freshly issued access token in memory. Never touches a cookie. */
+export function setTokens(access: string) {
+  authToken = access
+  tokenExpiry = decodeExpiry(access)
+  authenticated = true
 }
 
 export function getAccessToken(): string | null {
-  return getCookie(ACCESS_TOKEN_KEY)
-}
-
-export function getRefreshToken(): string | null {
-  return getCookie(REFRESH_TOKEN_KEY)
+  return authToken
 }
 
 export function getTokenExpiry(): number | null {
-  const expiry = getCookie(TOKEN_EXPIRY_KEY)
-  return expiry ? parseInt(expiry) : null
+  return tokenExpiry
 }
 
 export function isTokenExpired(): boolean {
-  const expiry = getTokenExpiry()
-  if (!expiry) return true
-  // Consider token expired 1 minute before actual expiration
-  return Date.now() >= expiry - 60000
+  if (!tokenExpiry) return true
+  // Consider the token expired 1 minute before actual expiration.
+  return Date.now() >= tokenExpiry - 60000
 }
 
 export function removeTokens() {
-  removeCookie(ACCESS_TOKEN_KEY)
-  removeCookie(REFRESH_TOKEN_KEY)
-  removeCookie(TOKEN_EXPIRY_KEY)
+  authToken = null
+  tokenExpiry = null
+  authenticated = false
 }
 
 export type LoginErrorKind = 'invalid' | 'server' | 'network'
@@ -83,7 +73,8 @@ export async function login(email: string, password: string) {
   try {
     response = await fetch(`${PFT_BASE_URL}/api/token/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...REFRESH_COOKIE_HEADER },
       body: JSON.stringify({ email, password }),
     })
   } catch {
@@ -98,12 +89,15 @@ export async function login(email: string, password: string) {
     throw new LoginError('server', `Server error (${response.status})`)
   }
   const data = await response.json()
-  setTokens(data.access, data.refresh)
+  // The server omits `refresh` from this body when it honors the cookie
+  // header above (it always does, for every supported browser) - only
+  // `access` ever reaches page JavaScript.
+  setTokens(data.access)
   return data
 }
 
-export async function refreshAccessToken() {
-  // Prevent multiple simultaneous refresh requests
+export async function refreshAccessToken(): Promise<string | null> {
+  // Prevent multiple simultaneous refresh requests.
   if (isRefreshing) {
     return new Promise((resolve) => {
       refreshSubscribers.push(resolve)
@@ -111,18 +105,13 @@ export async function refreshAccessToken() {
   }
 
   isRefreshing = true
-  const refreshToken = getRefreshToken()
-
-  if (!refreshToken) {
-    isRefreshing = false
-    throw new Error('No refresh token available')
-  }
 
   try {
     const response = await fetch(`${PFT_BASE_URL}/api/token/refresh/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh: refreshToken }),
+      credentials: 'include', // sends the HttpOnly pft_refresh cookie
+      headers: { 'Content-Type': 'application/json', ...REFRESH_COOKIE_HEADER },
+      body: JSON.stringify({}),
     })
 
     if (!response.ok) {
@@ -130,103 +119,93 @@ export async function refreshAccessToken() {
     }
 
     const data = await response.json()
-    // Update both the cookie and the in-memory token
-    setAuthToken(data.access)
+    setTokens(data.access)
 
-    // Update token expiry
-    const tokenData = JSON.parse(atob(data.access.split('.')[1]))
-    setCookie(TOKEN_EXPIRY_KEY, (tokenData.exp * 1000).toString())
-
-    // Notify all subscribers about the new token
     refreshSubscribers.forEach((callback) => callback(data.access))
     refreshSubscribers = []
 
     return data.access
   } catch (error) {
+    refreshSubscribers.forEach((callback) => callback(null))
     refreshSubscribers = []
-    await logout()
     throw error
   } finally {
     isRefreshing = false
   }
 }
 
-export async function logout() {
-  const accessToken = getAccessToken()
-  const refreshToken = getRefreshToken()
-
-  // Tell the server to blacklist the refresh token. Clearing the cookie alone
-  // only forgets it locally - the token stays valid until it expires.
-  if (accessToken && refreshToken) {
+/**
+ * Try to rehydrate a session from the HttpOnly refresh cookie on page load.
+ *
+ * Quiet by design: an anonymous visitor's very first paint makes this call
+ * and gets a 401, which is expected and not worth a toast or a logout()
+ * round trip - the app's route guard sends them to /login regardless. Call
+ * this once, before the app renders (see main.tsx); isLoggedIn() reports
+ * whatever it resolves to until the next login()/logout()/refresh.
+ */
+export async function initAuth(): Promise<boolean> {
+  if (!authInitialized) {
     try {
-      await fetch(`${PFT_BASE_URL}/api/token/logout/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
-      })
+      await refreshAccessToken()
     } catch {
-      // Signing out locally must succeed even if the server is unreachable.
+      removeTokens()
     }
+    authInitialized = true
+  }
+  return authenticated
+}
+
+export async function logout() {
+  // Tell the server to blacklist the refresh token. Clearing local state
+  // alone only forgets it here - the token stays valid until it expires.
+  try {
+    await fetch(`${PFT_BASE_URL}/api/token/logout/`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...REFRESH_COOKIE_HEADER,
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: JSON.stringify({}),
+    })
+  } catch {
+    // Signing out locally must succeed even if the server is unreachable.
   }
 
   removeTokens()
-  authToken = null
+  authInitialized = true // definitively known: signed out
 
-  // Guard against a reload loop: if a request from the login page itself fails
-  // to refresh, redirecting to /login again would restart the same request.
+  // Guard against a reload loop: if a request from the login page itself
+  // fails to refresh, redirecting to /login again would restart the same
+  // request.
   if (window.location.pathname !== '/login') {
     window.location.href = '/login'
   }
 }
 
 export function isLoggedIn(): boolean {
-  const accessToken = getAccessToken()
-  const refreshToken = getRefreshToken()
-  if (accessToken && !isTokenExpired()) {
-    return true
-  }
-  // If we have a refresh token, consider the user logged in
-  return !!refreshToken
+  return authenticated
 }
 
 export async function getAuthToken(): Promise<string | null> {
-  // First check cached token
   if (authToken && !isTokenExpired()) {
     return authToken
   }
 
-  // Then check cookie token
-  const accessToken = getAccessToken()
-  if (accessToken && !isTokenExpired()) {
-    authToken = accessToken
-    return authToken
+  try {
+    return await refreshAccessToken()
+  } catch {
+    await logout()
+    return null
   }
-
-  // If no valid access token exists, but we have a refresh token, try to refresh
-  const refreshToken = getRefreshToken()
-  if (refreshToken) {
-    try {
-      const newAccessToken = await refreshAccessToken()
-      authToken = newAccessToken
-      return newAccessToken
-    } catch {
-      // Only remove tokens and redirect to login if refresh actually failed
-      await logout()
-      return null
-    }
-  }
-
-  // If we reach here, we have no valid tokens
-  await logout()
-  return null
 }
 
+/** Update the in-memory access token without touching the refresh cookie. */
 export function setAuthToken(token: string) {
   authToken = token
-  setCookie(ACCESS_TOKEN_KEY, token)
+  tokenExpiry = decodeExpiry(token)
+  authenticated = true
 }
 
 export async function getUser() {
@@ -257,7 +236,7 @@ export async function getUser() {
 }
 
 export async function getUserId() {
-  const accessToken = await getAccessToken()
+  const accessToken = await getAuthToken()
   if (accessToken) {
     const payload = JSON.parse(atob(accessToken.split('.')[1]))
     return payload.user_id

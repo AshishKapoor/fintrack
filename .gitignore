@@ -7,6 +7,11 @@
 .DS_Store
 Thumbs.db
 
+# Python bytecode (scripts/ has no per-directory .gitignore of its own -
+# apps/api/ and packages/sdk-py/ each have one already)
+__pycache__/
+*.pyc
+
 # Editors
 .idea/
 .vscode/

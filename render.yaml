@@ -1,0 +1,106 @@
+# Render Blueprint - one-click deploy for FinTrack.
+# https://render.com/docs/blueprint-spec
+#
+# Deploy: https://render.com/deploy?repo=https://github.com/AshishKapoor/fintrack
+#
+# Three free-tier services by default:
+#   web    - nginx + the built SPA; proxies /api/ to the api service
+#   api    - Django/DRF behind gunicorn (named exactly "api" - apps/web's
+#            nginx.conf hardcodes http://api:8000, which Render's private
+#            network resolves by service name, same as docker-compose does)
+#   fintrack-db, fintrack-redis - managed Postgres + Key Value (free tier)
+#
+# No separate Celery worker or beat service: Render's free plan is not
+# available for Background Worker services (paid plans only), so `api` runs
+# with CELERY_TASK_ALWAYS_EAGER=True - imports and exports execute inline
+# within the request instead of on a worker, exactly like a bare-metal
+# install with no REDIS_URL (see app/settings/base.py). Redis is still wired
+# up for the shared cache (accurate rate limiting across every gunicorn
+# worker - see the CACHES setting), it just is not used as a task broker here.
+#
+# Want real background processing and the daily payload-pruning schedule
+# (CELERY_BEAT_SCHEDULE)? Add two Background Worker services manually
+# pointing at the same Dockerfile, with dockerCommand
+# `uv run celery -A app worker --loglevel=info --concurrency=2` and
+# `uv run celery -A app beat --loglevel=info` respectively (Starter plan or
+# higher - Render does not offer a free Background Worker), remove
+# CELERY_TASK_ALWAYS_EAGER from api, and give both new services the same
+# SECRET_KEY/DATABASE_URL/REDIS_URL env vars as api below.
+#
+# After the first deploy, register your first account at the web service's
+# URL - same as any other FinTrack install (docs/self-hosting.md). There is
+# no default admin.
+#
+# Free Render Postgres instances expire after 30 days - fine for a trial,
+# upgrade the `fintrack-db` plan before you rely on this for real data.
+
+databases:
+  - name: fintrack-db
+    plan: free
+    databaseName: fintrack
+    user: fintrack
+
+services:
+  - type: keyvalue
+    name: fintrack-redis
+    plan: free
+    ipAllowList: [] # internal only - nothing outside this Blueprint needs it
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: ./apps/api
+    healthCheckPath: /healthz/
+    # Runs on every deploy, before the new version takes traffic - the
+    # Render-native equivalent of docker-compose.yml's one-shot `migrate`
+    # service.
+    preDeployCommand: uv run manage.py migrate --noinput
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: app.settings.prod
+      - key: DJANGO_ENV
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SECURE_SSL
+        value: "True"
+      - key: CELERY_TASK_ALWAYS_EAGER
+        value: "True" # see the note at the top of this file
+      # Covers both this service's own onrender.com subdomain and web's -
+      # simpler and more robust than naming them individually, since Django's
+      # ALLOWED_HOSTS supports a leading-dot suffix match natively. Add your
+      # custom domain here too if you set one up on the web service.
+      - key: DJANGO_ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        fromService:
+          name: web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: CSRF_TRUSTED_ORIGINS
+        fromService:
+          name: web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fintrack-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: fintrack-redis
+          type: keyvalue
+          property: connectionString
+
+  - type: web
+    name: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: ./apps/web
+    healthCheckPath: /healthz/

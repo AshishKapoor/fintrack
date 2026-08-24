@@ -26,6 +26,16 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 ENV PATH="/app/.venv/bin:$PATH"
 
+# uv run implicitly re-syncs the venv before every invocation, using uv's
+# default groups - which include "dev" (ruff, hypothesis, pre-commit) even
+# though the venv above was built with --no-dev. Left unset, every uv run in
+# entrypoint.sh/entrypoint.migrate.sh/docker-compose's worker&beat commands
+# would redownload and reinstall the dev group from scratch on each container
+# boot. The venv above is already exactly what --frozen --no-dev produces, so
+# skip that resync. docker-compose.dev.yml resets this to 0, since its bind
+# mount shadows this venv and `make dev` needs uv to sync one back into place.
+ENV UV_NO_SYNC=1
+
 EXPOSE 8000
 
 

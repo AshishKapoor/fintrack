@@ -3,6 +3,11 @@
 #   docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 #
 # or simply `make dev`.
+#
+# The bind mounts below shadow the .venv that apps/api/Dockerfile builds into
+# /app, so these services need `uv run` to sync a venv from scratch on first
+# run instead of skipping sync like the prod image does - see UV_NO_SYNC in
+# apps/api/Dockerfile.
 
 services:
   api:
@@ -10,6 +15,7 @@ services:
       DJANGO_SETTINGS_MODULE: app.settings.dev
       DJANGO_ENV: development
       DEBUG: "True"
+      UV_NO_SYNC: "0"
     volumes:
       - ./apps/api:/app
       - api_run:/app/run
@@ -19,6 +25,7 @@ services:
       DJANGO_SETTINGS_MODULE: app.settings.dev
       DJANGO_ENV: development
       DEBUG: "True"
+      UV_NO_SYNC: "0"
     volumes:
       - ./apps/api:/app
       - api_run:/app/run
@@ -28,6 +35,7 @@ services:
       DJANGO_SETTINGS_MODULE: app.settings.dev
       DJANGO_ENV: development
       DEBUG: "True"
+      UV_NO_SYNC: "0"
     volumes:
       - ./apps/api:/app
       - api_run:/app/run
@@ -37,6 +45,7 @@ services:
       DJANGO_SETTINGS_MODULE: app.settings.dev
       DJANGO_ENV: development
       DEBUG: "True"
+      UV_NO_SYNC: "0"
     volumes:
       - ./apps/api:/app
       - api_run:/app/run

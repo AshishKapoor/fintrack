@@ -7,6 +7,7 @@ import {
   HelpCircle,
   History,
   Home,
+  Landmark,
   PieChart,
   Repeat,
   Search,
@@ -91,6 +92,10 @@ export function CommandMenu() {
             <CommandItem onSelect={() => runCommand(() => navigate("/budgets"))}>
               <PieChart className="mr-2 h-4 w-4" />
               <span>{t("nav.budgets")}</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate("/accounts"))}>
+              <Landmark className="mr-2 h-4 w-4" />
+              <span>{t("nav.accounts")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/transactions"))}>
               <CreditCard className="mr-2 h-4 w-4" />

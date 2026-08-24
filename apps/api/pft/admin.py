@@ -13,6 +13,7 @@ from .models import (
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
+    FxRate,
     ImportJob,
     Invitation,
     LedgerPosting,
@@ -22,6 +23,8 @@ from .models import (
     Payee,
     SavedReport,
     ScheduledTransaction,
+    SyncConnection,
+    SyncConnectionAccount,
     Tag,
     Transaction,
     TransactionEvent,
@@ -127,8 +130,15 @@ class BudgetFileAdmin(admin.ModelAdmin):
 
 @admin.register(Account)
 class AccountAdmin(admin.ModelAdmin):
-    list_display = ("name", "budget_file", "type", "opening_balance", "is_archived")
-    list_filter = ("type", "is_archived")
+    list_display = (
+        "name",
+        "budget_file",
+        "type",
+        "currency_code",
+        "opening_balance",
+        "is_archived",
+    )
+    list_filter = ("type", "currency_code", "is_archived")
     search_fields = ("name", "budget_file__name", "budget_file__user__email")
 
 
@@ -259,6 +269,46 @@ class EncryptedBackupBundleAdmin(admin.ModelAdmin):
     list_display = ("created_at", "budget_file", "bundle_id", "encryption_algorithm")
     readonly_fields = ("bundle_id", "created_at")
     exclude = ("ciphertext", "salt", "nonce")
+
+
+class SyncConnectionAccountInline(admin.TabularInline):
+    model = SyncConnectionAccount
+    extra = 0
+    fields = (
+        "external_account_id",
+        "display_name",
+        "currency_code",
+        "account",
+        "last_synced_at",
+    )
+    readonly_fields = ("external_account_id", "display_name", "currency_code")
+
+
+@admin.register(SyncConnection)
+class SyncConnectionAdmin(admin.ModelAdmin):
+    list_display = (
+        "budget_file",
+        "provider",
+        "status",
+        "institution_name",
+        "last_synced_at",
+    )
+    list_filter = ("provider", "status")
+    search_fields = ("institution_name", "budget_file__name", "budget_file__user__email")
+    readonly_fields = ("last_error",)
+    # The live credential (a GoCardless requisition token, a SimpleFIN access
+    # URL) - encrypted at rest (pft/crypto.py), but there is no reason for it
+    # to be readable from the admin either.
+    exclude = ("secret_data",)
+    inlines = [SyncConnectionAccountInline]
+
+
+@admin.register(FxRate)
+class FxRateAdmin(admin.ModelAdmin):
+    list_display = ("rate_date", "currency_code", "rate")
+    list_filter = ("currency_code",)
+    date_hierarchy = "rate_date"
+    ordering = ("-rate_date", "currency_code")
 
 
 @admin.register(Organization)

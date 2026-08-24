@@ -79,6 +79,25 @@ These are real and tracked, not hidden:
 - **Most finance list endpoints are unpaginated** (transactions are the
   exception), so a large ledger's accounts, categories, or payees return in one
   response.
+- **Bank sync credentials are encrypted at rest, not zero-knowledge.**
+  `SyncConnection.secret_data` (a GoCardless requisition reference, a
+  SimpleFIN access URL) is encrypted with a server-held key
+  (`FINTRACK_SYNC_ENCRYPTION_KEY`, `pft/crypto.py`) because an unattended
+  Celery beat sweep has to present it to the provider with nobody around to
+  supply a passphrase - unlike `EncryptedBackupBundle`, which is encrypted in
+  the browser and opaque to the server. This protects a stolen database dump
+  or a misconfigured backup target; it does not protect against a fully
+  compromised server, which can always read the key. Set a dedicated
+  `FINTRACK_SYNC_ENCRYPTION_KEY` in production so rotating `SECRET_KEY` does
+  not also strand every stored connection - see
+  [docs/self-hosting.md#bank-sync](docs/self-hosting.md#bank-sync).
+- **Bank sync and FX rate sync make outbound requests the caller can trigger**
+  (to GoCardless, to a URL derived from a user-supplied SimpleFIN setup token,
+  to frankfurter.app) - the same SSRF-adjacent shape as ntfy/webhook
+  notifications, guarded the same way (`notifications.is_safe_outbound_url`,
+  re-checked immediately before every request) and throttled independently
+  (`THROTTLE_BANK_SYNC`, `THROTTLE_FX_SYNC`) so they can't be used to hammer
+  an internal address at the general "user" rate.
 
 ## Workspaces and roles
 

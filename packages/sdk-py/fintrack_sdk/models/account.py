@@ -31,6 +31,7 @@ class Account:
             * `asset` - Asset
             * `liability` - Liability
         opening_balance (str | Unset):
+        currency_code (str | Unset):
         is_archived (bool | Unset):
     """
 
@@ -42,6 +43,7 @@ class Account:
     updated_at: datetime.datetime
     type_: AccountTypeEnum | Unset = UNSET
     opening_balance: str | Unset = UNSET
+    currency_code: str | Unset = UNSET
     is_archived: bool | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -64,6 +66,8 @@ class Account:
 
         opening_balance = self.opening_balance
 
+        currency_code = self.currency_code
+
         is_archived = self.is_archived
 
         field_dict: dict[str, Any] = {}
@@ -82,6 +86,8 @@ class Account:
             field_dict["type"] = type_
         if opening_balance is not UNSET:
             field_dict["opening_balance"] = opening_balance
+        if currency_code is not UNSET:
+            field_dict["currency_code"] = currency_code
         if is_archived is not UNSET:
             field_dict["is_archived"] = is_archived
 
@@ -111,6 +117,8 @@ class Account:
 
         opening_balance = d.pop("opening_balance", UNSET)
 
+        currency_code = d.pop("currency_code", UNSET)
+
         is_archived = d.pop("is_archived", UNSET)
 
         account = cls(
@@ -122,6 +130,7 @@ class Account:
             updated_at=updated_at,
             type_=type_,
             opening_balance=opening_balance,
+            currency_code=currency_code,
             is_archived=is_archived,
         )
 

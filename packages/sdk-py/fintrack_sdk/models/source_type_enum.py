@@ -6,6 +6,7 @@ class SourceTypeEnum(str, Enum):
     MANUAL = "manual"
     RULE = "rule"
     SCHEDULED = "scheduled"
+    SYNC = "sync"
     TRANSFER = "transfer"
 
     def __str__(self) -> str:

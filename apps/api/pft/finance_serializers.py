@@ -14,12 +14,15 @@ from .models import (
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
+    FxRate,
     ImportJob,
     LedgerPosting,
     LedgerTransaction,
     Payee,
     SavedReport,
     ScheduledTransaction,
+    SyncConnection,
+    SyncConnectionAccount,
     Tag,
     TransactionEvent,
     TransactionRule,
@@ -81,6 +84,7 @@ class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
             "name",
             "type",
             "opening_balance",
+            "currency_code",
             "current_balance",
             "is_archived",
             "created_at",
@@ -91,6 +95,19 @@ class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     def validate_budget_file(self, value):
         self._validate_budget_file_owner(value)
         return value
+
+    def validate(self, attrs):
+        # Every account has an explicit currency (see Account.currency_code's
+        # docstring) - default a blank one to the budget file's currency
+        # rather than leaving it blank, the same "resolve once, at write
+        # time" approach BudgetFileViewSet.perform_create uses for is_default.
+        if not attrs.get("currency_code"):
+            budget_file = attrs.get("budget_file") or getattr(
+                self.instance, "budget_file", None
+            )
+            if budget_file is not None:
+                attrs["currency_code"] = budget_file.currency_code
+        return attrs
 
 
 class CategoryGroupV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
@@ -574,3 +591,106 @@ class ImportJobSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin)
                 f"Import payload exceeds the {max_bytes // 1024}KB limit."
             )
         return value
+
+
+class SyncConnectionAccountSerializer(serializers.ModelSerializer):
+    account_name = serializers.CharField(source="account.name", read_only=True)
+
+    class Meta:
+        model = SyncConnectionAccount
+        fields = [
+            "id",
+            "connection",
+            "account",
+            "account_name",
+            "external_account_id",
+            "display_name",
+            "currency_code",
+            "iban",
+            "last_synced_at",
+            "created_at",
+            "updated_at",
+        ]
+        # Every field is read-only here - mapping to a local account only
+        # happens through SyncConnectionAccountViewSet.map (which writes the
+        # model directly), never through a generic PATCH. Rows themselves are
+        # only ever created by the linking flow (bank_sync.list_accounts),
+        # never posted by a client - see the viewset's create() override.
+        read_only_fields = fields
+
+
+class SyncConnectionSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+    linked_accounts = SyncConnectionAccountSerializer(many=True, read_only=True)
+    provider_label = serializers.CharField(source="get_provider_display", read_only=True)
+
+    class Meta:
+        model = SyncConnection
+        fields = [
+            "id",
+            "budget_file",
+            "provider",
+            "provider_label",
+            "status",
+            "institution_name",
+            "last_synced_at",
+            "last_error",
+            "linked_accounts",
+            "created_at",
+            "updated_at",
+        ]
+        # secret_data/external_reference/settings never leave the server -
+        # they are the credential itself (see pft/crypto.py), not display data.
+        read_only_fields = [
+            "status",
+            "institution_name",
+            "last_synced_at",
+            "last_error",
+            "linked_accounts",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate_budget_file(self, value):
+        self._validate_budget_file_owner(value)
+        return value
+
+
+class FxRateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FxRate
+        fields = ["id", "rate_date", "currency_code", "rate"]
+
+
+# --- Schema-only serializers for custom action responses --------------------
+# Same reasoning as SuggestedCategorySerializer above: without one of these on
+# @extend_schema, drf-spectacular falls back to the viewset's main serializer
+# for the action's response, which doesn't match and would generate a wrong
+# client type.
+
+
+class BankSyncProviderSerializer(serializers.Serializer):
+    key = serializers.CharField()
+    label = serializers.CharField()
+    configured = serializers.BooleanField()
+
+
+class BankSyncInstitutionSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    name = serializers.CharField()
+    logo = serializers.CharField(allow_blank=True)
+
+
+class BankSyncLinkResultSerializer(serializers.Serializer):
+    redirect_url = serializers.CharField(required=False, allow_null=True)
+    status = serializers.CharField(required=False, allow_null=True)
+
+
+class BankSyncResultSerializer(serializers.Serializer):
+    accounts_synced = serializers.IntegerField()
+    created = serializers.IntegerField()
+    skipped = serializers.IntegerField()
+    errors = serializers.ListField(child=serializers.CharField())
+
+
+class FxSyncResultSerializer(serializers.Serializer):
+    stored = serializers.IntegerField()

@@ -328,6 +328,12 @@ class Account(models.Model):
     opening_balance = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal("0.00")
     )
+    # Blank means "inherits budget_file.currency_code" - see effective_currency_code.
+    # New accounts always get one explicitly from AccountSerializer.validate();
+    # blank only occurs for rows that predate this field (backfilled by
+    # migration 0011 at add-time, so in practice this is a defensive fallback,
+    # not a state new code needs to handle).
+    currency_code = models.CharField(max_length=3, blank=True)
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -350,6 +356,10 @@ class Account(models.Model):
             "total"
         )
         return (postings_total or Decimal("0.00")) + self.opening_balance
+
+    @property
+    def effective_currency_code(self):
+        return self.currency_code or self.budget_file.currency_code
 
 
 class CategoryGroupV2(models.Model):
@@ -459,6 +469,7 @@ class LedgerTransaction(models.Model):
     SOURCE_RULE = "rule"
     SOURCE_SCHEDULED = "scheduled"
     SOURCE_TRANSFER = "transfer"
+    SOURCE_SYNC = "sync"
 
     SOURCE_CHOICES = (
         (SOURCE_MANUAL, "Manual"),
@@ -466,6 +477,7 @@ class LedgerTransaction(models.Model):
         (SOURCE_RULE, "Rule"),
         (SOURCE_SCHEDULED, "Scheduled"),
         (SOURCE_TRANSFER, "Transfer"),
+        (SOURCE_SYNC, "Bank Sync"),
     )
 
     budget_file = models.ForeignKey(
@@ -930,6 +942,8 @@ class ImportJob(models.Model):
     FORMAT_CAMT053 = "camt053"
     FORMAT_YNAB4 = "ynab4"
     FORMAT_NYNAB = "nynab"
+    FORMAT_FIREFLY3 = "firefly3"
+    FORMAT_ACTUAL = "actual"
 
     FORMAT_CHOICES = (
         (FORMAT_CSV, "CSV"),
@@ -939,6 +953,13 @@ class ImportJob(models.Model):
         (FORMAT_CAMT053, "CAMT.053"),
         (FORMAT_YNAB4, "YNAB4"),
         (FORMAT_NYNAB, "nYNAB"),
+        # See docs/migrating.md - both parse each tool's own CSV export
+        # (Firefly III: Settings -> Export data; Actual: an account
+        # register's Export toolbar action), not FinTrack's generic CSV
+        # shape, so they get their own format rather than asking users to
+        # rename columns by hand.
+        (FORMAT_FIREFLY3, "Firefly III"),
+        (FORMAT_ACTUAL, "Actual Budget"),
     )
 
     STATUS_UPLOADED = "uploaded"
@@ -979,3 +1000,132 @@ class ImportJob(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+
+
+class SyncConnection(models.Model):
+    """A link to one institution at one bank-sync provider - see pft/bank_sync.py.
+
+    One connection can cover several of the institution's accounts
+    (SyncConnectionAccount, one row per external account, mapped to a local
+    Account once the user picks or creates one). `secret_data` is whatever
+    the provider needs to act on our behalf later without the user present -
+    a GoCardless requisition/agreement id, a SimpleFIN access URL - and is
+    encrypted at rest (pft/crypto.py) because, unlike a webhook URL or an
+    ntfy topic, it is a live credential onto a real bank account.
+    """
+
+    PROVIDER_GOCARDLESS = "gocardless"
+    PROVIDER_SIMPLEFIN = "simplefin"
+    PROVIDER_CHOICES = (
+        (PROVIDER_GOCARDLESS, "GoCardless Bank Account Data"),
+        (PROVIDER_SIMPLEFIN, "SimpleFIN Bridge"),
+    )
+
+    STATUS_PENDING = "pending"
+    STATUS_ACTIVE = "active"
+    STATUS_ERROR = "error"
+    STATUS_REVOKED = "revoked"
+    STATUS_CHOICES = (
+        (STATUS_PENDING, "Pending"),
+        (STATUS_ACTIVE, "Active"),
+        (STATUS_ERROR, "Error"),
+        (STATUS_REVOKED, "Revoked"),
+    )
+
+    budget_file = models.ForeignKey(
+        BudgetFile, on_delete=models.CASCADE, related_name="sync_connections"
+    )
+    provider = models.CharField(max_length=16, choices=PROVIDER_CHOICES)
+    status = models.CharField(
+        max_length=12, choices=STATUS_CHOICES, default=STATUS_PENDING
+    )
+    institution_name = models.CharField(max_length=160, blank=True)
+    # The provider's own id for this link - a GoCardless requisition id, or
+    # blank for SimpleFIN (which has no separate connection-level id beyond
+    # the access URL already inside secret_data).
+    external_reference = models.CharField(max_length=255, blank=True)
+    secret_data = models.TextField(blank=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(blank=True)
+    settings = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+
+    def __str__(self):
+        return f"{self.get_provider_display()} ({self.budget_file.name})"
+
+
+class SyncConnectionAccount(models.Model):
+    """One external account discovered on a SyncConnection.
+
+    Created unmapped (account=NULL) as soon as the provider reports it
+    exists; the user then maps it to a local Account (existing or
+    newly-created) before it participates in a sync - see
+    bank_sync.ingest_transactions, which refuses to ingest into an unmapped
+    row rather than guessing.
+    """
+
+    connection = models.ForeignKey(
+        SyncConnection, on_delete=models.CASCADE, related_name="linked_accounts"
+    )
+    account = models.ForeignKey(
+        Account,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="sync_links",
+    )
+    external_account_id = models.CharField(max_length=255)
+    display_name = models.CharField(max_length=160, blank=True)
+    currency_code = models.CharField(max_length=3, blank=True)
+    iban = models.CharField(max_length=64, blank=True)
+    raw_metadata = models.JSONField(default=dict, blank=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["connection", "external_account_id"],
+                name="unique_external_account_per_connection",
+            )
+        ]
+
+    def __str__(self):
+        return self.display_name or self.external_account_id
+
+
+class FxRate(models.Model):
+    """A daily ECB reference rate from frankfurter.app - see pft/fx_rates.py.
+
+    Stored EUR-based only (mirroring how the ECB actually publishes them):
+    one row per (date, quote currency), `rate` being how much of that
+    currency one EUR buys. Converting between two non-EUR currencies
+    triangulates through EUR at read time instead of storing every cross
+    pair, which would be O(currencies^2) for no real benefit. Not scoped to
+    a budget file - exchange rates are reference data shared by everyone on
+    the instance, the same way the legacy Category rows with user=NULL are.
+    """
+
+    rate_date = models.DateField(db_index=True)
+    currency_code = models.CharField(max_length=3)
+    rate = models.DecimalField(max_digits=20, decimal_places=8)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-rate_date"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rate_date", "currency_code"],
+                name="unique_fx_rate_per_day_currency",
+            )
+        ]
+        indexes = [models.Index(fields=["currency_code", "-rate_date"])]
+
+    def __str__(self):
+        return f"{self.rate_date} EUR->{self.currency_code} {self.rate}"

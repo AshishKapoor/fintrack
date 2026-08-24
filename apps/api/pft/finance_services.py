@@ -16,6 +16,7 @@ from django.db.models import Sum
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.utils import timezone
 
+from .fx_rates import convert_amount
 from .models import (
     Account,
     BudgetFile,
@@ -55,6 +56,14 @@ def month_bounds(year: int, month: int):
 
 
 def account_balances(budget_file: BudgetFile, as_of: date | None = None):
+    """Per-account balances, each in its own currency plus converted into the
+    budget file's currency (account_balances(...)[i]["converted_balance"]) -
+    ROADMAP.md Phase 2's "Real multi-currency": today currency was
+    display-only, this is what makes it real. `converted_balance` is None
+    when no FX rate is available yet for that pair/date (see
+    fx_rates.convert_amount) - callers show the native balance only rather
+    than a number that looks converted but isn't.
+    """
     postings = LedgerPosting.objects.filter(account__budget_file=budget_file)
     if as_of is not None:
         postings = postings.filter(transaction__transaction_date__lte=as_of)
@@ -64,18 +73,27 @@ def account_balances(budget_file: BudgetFile, as_of: date | None = None):
         for row in postings.values("account_id").annotate(total=Sum("amount"))
     }
 
+    home_currency = budget_file.currency_code
+    convert_as_of = as_of or timezone.now().date()
     result = []
     for account in budget_file.accounts.all().order_by("id"):
         delta = totals_by_account.get(account.id, Decimal("0.00"))
         balance = account.opening_balance + delta
+        currency_code = account.effective_currency_code
+        converted = convert_amount(
+            balance, currency_code, home_currency, as_of=convert_as_of
+        )
         result.append(
             {
                 "account_id": account.id,
                 "name": account.name,
                 "type": account.type,
+                "currency_code": currency_code,
                 "opening_balance": str(account.opening_balance),
                 "delta": str(delta),
                 "balance": str(balance),
+                "converted_balance": str(converted) if converted is not None else None,
+                "converted_currency_code": home_currency,
             }
         )
     return result
@@ -84,8 +102,12 @@ def account_balances(budget_file: BudgetFile, as_of: date | None = None):
 def compute_net_worth(budget_file: BudgetFile, as_of: date | None = None):
     balances = account_balances(budget_file, as_of)
     total = Decimal("0.00")
+    missing_rate = False
     for row in balances:
-        value = Decimal(row["balance"])
+        if row["converted_balance"] is None:
+            missing_rate = True
+            continue
+        value = Decimal(row["converted_balance"])
         if row["type"] in {Account.TYPE_CREDIT, Account.TYPE_LIABILITY}:
             total -= abs(value)
         else:
@@ -93,7 +115,13 @@ def compute_net_worth(budget_file: BudgetFile, as_of: date | None = None):
     return {
         "type": "net_worth",
         "as_of": as_of.isoformat() if as_of else None,
+        "currency_code": budget_file.currency_code,
         "total": str(total),
+        # True when at least one account's balance could not be converted
+        # (missing FX rate) and so is excluded from `total` - the UI should
+        # say the figure is a partial total rather than presenting it as
+        # complete.
+        "missing_rate": missing_rate,
         "accounts": balances,
     }
 
@@ -962,6 +990,69 @@ def _parse_ynab_rows(payload: str):
     return rows
 
 
+def _parse_firefly3_rows(payload: str):
+    """Firefly III's own CSV export (Settings -> Export data -> CSV, one file
+    per account or all accounts together). See docs/migrating.md - column
+    names are matched case-insensitively so a re-ordered or partially-trimmed
+    export still parses. `type` (withdrawal/deposit/transfer) decides sign
+    and which side of the transaction is the payee; anything else falls back
+    to whichever of source/destination is present.
+    """
+    reader = csv.DictReader(io.StringIO(payload))
+    rows = []
+    for raw_row in reader:
+        row = {(k or "").strip().lower(): (v or "") for k, v in raw_row.items()}
+        dt = _normalize_date(row.get("date", ""))
+        if not dt:
+            continue
+
+        amount = _normalize_amount(row.get("amount", "0"))
+        tx_type = row.get("type", "").strip().lower()
+        source = row.get("source_name", "").strip()
+        destination = row.get("destination_name", "").strip()
+        if tx_type == "withdrawal":
+            amount = -abs(amount)
+            payee = destination
+        elif tx_type == "deposit":
+            amount = abs(amount)
+            payee = source
+        else:
+            payee = destination or source
+
+        memo = " - ".join(
+            part.strip()
+            for part in (row.get("description", ""), row.get("notes", ""))
+            if part.strip()
+        )
+        rows.append(
+            ImportedRow(transaction_date=dt, payee=payee, memo=memo, amount=amount)
+        )
+    return rows
+
+
+def _parse_actual_rows(payload: str):
+    """Actual Budget's per-account register export (open the account, the
+    toolbar's Export action). See docs/migrating.md. Columns are matched
+    case-insensitively (Date/Payee/Notes/Category/Amount); `notes` falls back
+    to `memo` for exports from older Actual versions that used that header.
+    """
+    reader = csv.DictReader(io.StringIO(payload))
+    rows = []
+    for raw_row in reader:
+        row = {(k or "").strip().lower(): (v or "") for k, v in raw_row.items()}
+        dt = _normalize_date(row.get("date", ""))
+        if not dt:
+            continue
+
+        amount = _normalize_amount(row.get("amount", "0"))
+        payee = row.get("payee", "").strip()
+        memo = (row.get("notes") or row.get("memo") or "").strip()
+        rows.append(
+            ImportedRow(transaction_date=dt, payee=payee, memo=memo, amount=amount)
+        )
+    return rows
+
+
 def _parse_qif_rows(payload: str):
     rows = []
     current = {}
@@ -1092,6 +1183,10 @@ def parse_import_rows(import_job: ImportJob):
         return _parse_camt053_rows(payload)
     if fmt in {ImportJob.FORMAT_YNAB4, ImportJob.FORMAT_NYNAB}:
         return _parse_ynab_rows(payload)
+    if fmt == ImportJob.FORMAT_FIREFLY3:
+        return _parse_firefly3_rows(payload)
+    if fmt == ImportJob.FORMAT_ACTUAL:
+        return _parse_actual_rows(payload)
     return []
 
 
@@ -1124,6 +1219,7 @@ def _default_import_account(budget_file: BudgetFile):
     return Account.objects.create(
         budget_file=budget_file,
         name="Imported Cash",
+        currency_code=budget_file.currency_code,
         type=Account.TYPE_CHECKING,
         opening_balance=Decimal("0.00"),
     )

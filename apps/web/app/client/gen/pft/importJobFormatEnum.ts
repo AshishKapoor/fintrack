@@ -14,6 +14,8 @@
 * `camt053` - CAMT.053
 * `ynab4` - YNAB4
 * `nynab` - nYNAB
+* `firefly3` - Firefly III
+* `actual` - Actual Budget
  */
 export type ImportJobFormatEnum = typeof ImportJobFormatEnum[keyof typeof ImportJobFormatEnum];
 
@@ -27,4 +29,6 @@ export const ImportJobFormatEnum = {
   camt053: 'camt053',
   ynab4: 'ynab4',
   nynab: 'nynab',
+  firefly3: 'firefly3',
+  actual: 'actual',
 } as const;

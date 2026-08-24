@@ -171,6 +171,12 @@ REST_FRAMEWORK = {
         # behalf - worth its own modest cap independent of the general "user"
         # rate, same reasoning as login/register.
         "notification_test": os.getenv("THROTTLE_NOTIFICATION_TEST", "10/hour"),
+        # Bank sync actions (link/callback/sync/institutions) call out to
+        # GoCardless or a user-supplied SimpleFIN URL on the caller's behalf -
+        # same reasoning as notification_test, and GoCardless's own free tier
+        # separately caps daily calls per account regardless of this.
+        "bank_sync": os.getenv("THROTTLE_BANK_SYNC", "30/hour"),
+        "fx_sync": os.getenv("THROTTLE_FX_SYNC", "10/hour"),
     },
 }
 
@@ -388,6 +394,18 @@ CELERY_BEAT_SCHEDULE = {
         "task": "pft.tasks.send_weekly_digest_task",
         "schedule": crontab(hour=8, minute=30, day_of_week=1),
     },
+    # Every 6 hours, not hourly - see sync_bank_connections_task's docstring
+    # for why (provider rate limits, and neither bank's data changes fast
+    # enough for hourly to matter).
+    "sync-bank-connections-every-6-hours": {
+        "task": "pft.tasks.sync_bank_connections_task",
+        "schedule": crontab(minute=0, hour="*/6"),
+    },
+    # After the ECB's ~16:00 CET publish time.
+    "sync-fx-rates-daily": {
+        "task": "pft.tasks.sync_fx_rates_task",
+        "schedule": crontab(hour=15, minute=30),
+    },
 }
 if FINTRACK_DEMO_MODE:
     CELERY_BEAT_SCHEDULE["reset-demo-data-hourly"] = {
@@ -415,6 +433,36 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "FinTrack <notifications@fintrack.local>")
+
+# --- Bank sync (ROADMAP.md Phase 2) ---------------------------------------
+# SyncConnection credentials (GoCardless requisition/agreement ids, SimpleFIN
+# access URLs) are encrypted at rest with this key - see pft/crypto.py.
+# Falls back to deriving one from SECRET_KEY so bank sync works with zero
+# extra configuration; set a dedicated key in production so rotating
+# SECRET_KEY (which signs everyone out) does not also strand every stored
+# bank connection - see docs/self-hosting.md#bank-sync.
+FINTRACK_SYNC_ENCRYPTION_KEY = os.getenv("FINTRACK_SYNC_ENCRYPTION_KEY") or SECRET_KEY
+
+# GoCardless Bank Account Data (https://developer.gocardless.com/bank-account-data/overview):
+# instance-wide API credentials from a free GoCardless developer account, not
+# per-user - the same shape as EMAIL_HOST for outbound mail. Bank sync via
+# GoCardless is unavailable (SyncConnectionViewSet.providers reports
+# configured: false) until both are set.
+GOCARDLESS_SECRET_ID = os.getenv("GOCARDLESS_SECRET_ID", "")
+GOCARDLESS_SECRET_KEY = os.getenv("GOCARDLESS_SECRET_KEY", "")
+GOCARDLESS_API_BASE_URL = os.getenv(
+    "GOCARDLESS_API_BASE_URL", "https://bankaccountdata.gocardless.com/api/v2"
+)
+
+# Where FinTrack's own web app is served, so a redirect-based provider
+# (GoCardless) can send the user back after they finish authenticating at
+# their bank. Defaults to CORS_ALLOWED_ORIGINS' own default, i.e. `pnpm dev`.
+FINTRACK_FRONTEND_URL = os.getenv("FINTRACK_FRONTEND_URL", "http://localhost:5173")
+
+# --- Multi-currency (ROADMAP.md Phase 2) -----------------------------------
+# frankfurter.app (ECB reference rates) needs no API key. Overridable mostly
+# for tests and self-hosters running their own mirror.
+FRANKFURTER_BASE_URL = os.getenv("FRANKFURTER_BASE_URL", "https://api.frankfurter.app")
 
 # --- Cache ---------------------------------------------------------------
 # DRF's throttle classes (and pft/admin_throttle.py) count requests through

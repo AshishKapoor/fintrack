@@ -25,6 +25,8 @@ from pft.models import (
     NotificationPreference,
     Payee,
     ScheduledTransaction,
+    SyncConnection,
+    SyncConnectionAccount,
     Transaction,
 )
 from pft.views import LEGACY_DEPRECATED_AT
@@ -571,3 +573,71 @@ class NotificationPreferenceIsolationTests(TenantIsolationTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         alice_preference.refresh_from_db()
         self.assertFalse(alice_preference.webhook_enabled)
+
+
+class BankSyncIsolationTests(TenantIsolationTestCase):
+    """SyncConnection/SyncConnectionAccount - ROADMAP.md Phase 2. Does not
+    extend TenantFixture (every other test in this module would then also
+    create these rows) - built directly from self.alice/self.bob instead.
+    """
+
+    def setUp(self):
+        super().setUp()
+        self.alice_connection = SyncConnection.objects.create(
+            budget_file=self.alice.budget_file,
+            provider=SyncConnection.PROVIDER_SIMPLEFIN,
+            status=SyncConnection.STATUS_ACTIVE,
+        )
+        self.alice_linked = SyncConnectionAccount.objects.create(
+            connection=self.alice_connection,
+            account=self.alice.account,
+            external_account_id="alice-ext-1",
+        )
+
+    def test_detail_and_actions_hide_other_tenants_connection(self):
+        detail_url = f"/api/v1/finance/sync-connections/{self.alice_connection.id}/"
+        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            self.client.post(f"{detail_url}sync/").status_code, status.HTTP_404_NOT_FOUND
+        )
+        self.assertEqual(
+            self.client.post(f"{detail_url}disconnect/").status_code,
+            status.HTTP_404_NOT_FOUND,
+        )
+        self.assertEqual(self.client.delete(detail_url).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_list_only_returns_own_connections(self):
+        SyncConnection.objects.create(
+            budget_file=self.bob.budget_file, provider=SyncConnection.PROVIDER_SIMPLEFIN
+        )
+        response = self.client.get("/api/v1/finance/sync-connections/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        returned_ids = {row["id"] for row in response.data}
+        self.assertNotIn(self.alice_connection.id, returned_ids)
+
+    def test_cannot_map_another_tenants_linked_account(self):
+        response = self.client.post(
+            f"/api/v1/finance/sync-connection-accounts/{self.alice_linked.id}/map/",
+            {"account_id": self.bob.account.id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.alice_linked.refresh_from_db()
+        self.assertEqual(self.alice_linked.account_id, self.alice.account.id)
+
+    def test_cannot_map_own_linked_account_to_another_tenants_local_account(self):
+        """Even a connection Bob owns must not let him point it at Alice's account."""
+        bob_connection = SyncConnection.objects.create(
+            budget_file=self.bob.budget_file, provider=SyncConnection.PROVIDER_SIMPLEFIN
+        )
+        bob_linked = SyncConnectionAccount.objects.create(
+            connection=bob_connection, external_account_id="bob-ext-1"
+        )
+        response = self.client.post(
+            f"/api/v1/finance/sync-connection-accounts/{bob_linked.id}/map/",
+            {"account_id": self.alice.account.id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        bob_linked.refresh_from_db()
+        self.assertIsNone(bob_linked.account)

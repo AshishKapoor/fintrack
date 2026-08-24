@@ -45,11 +45,11 @@ Status legend: `[ ]` planned · `[~]` in progress · `[x]` shipped
 
 *Goal: a YNAB, Actual, or Firefly user has a concrete, defensible reason to migrate.*
 
-- [ ] **Bank sync: provider adapter interface** — a documented `SyncConnection` + provider plugin contract that reuses the existing import dedup (`match_key`) and rules pipeline, so synced transactions flow through the same battle-tested path as file imports
-- [ ] **Bank sync: GoCardless Bank Account Data** (EU/UK, free tier) — the reference provider implementation
-- [ ] **Bank sync: SimpleFIN Bridge** (US/CA) — designed as a community-contribution target against the adapter interface
-- [ ] **Real multi-currency** — per-account currency, daily FX rates (ECB via frankfurter.app), converted balances and net worth. Today currency is display-only; this makes it real.
-- [ ] **Migration guides** — documented, tested import paths from YNAB (already supported), Actual Budget, and Firefly III
+- [x] **Bank sync: provider adapter interface** — a documented `SyncConnection` + provider plugin contract (`pft/bank_sync.py`'s `BankSyncProvider`) that reuses the existing import dedup (`match_key`) and rules pipeline, so synced transactions flow through the same battle-tested path as file imports
+- [x] **Bank sync: GoCardless Bank Account Data** (EU/UK, free tier) — the reference provider implementation
+- [x] **Bank sync: SimpleFIN Bridge** (US/CA) — implemented alongside GoCardless as the second reference provider against the adapter interface, rather than left purely as a community target
+- [x] **Real multi-currency** — per-account currency, daily FX rates (ECB via frankfurter.app), converted balances and net worth. Today currency is display-only; this makes it real.
+- [x] **Migration guides** — documented, tested import paths from YNAB (already supported), Actual Budget, and Firefly III
 
 Explicitly *not* first: Plaid. If it ever lands, it lands as another adapter, behind the privacy-friendly options.
 
@@ -93,8 +93,8 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
 | If you are a… | High-impact places to start |
 |---|---|
 | Translator | The i18n pipeline is live (see [docs/i18n.md](docs/i18n.md)) — once Weblate is connected, translating is the fastest path to contributor status; until then, PRs extending `t()`/`gettext_lazy` coverage to a page not yet listed there are just as welcome |
-| Frontend dev | Extend i18n coverage page by page, insights charts (Phase 3), Phase 2's bank-sync and multi-currency UI |
-| Backend dev | A bank sync provider against the Phase 2 adapter interface (SimpleFIN wanted!), subscription detection heuristics (Phase 3) |
+| Frontend dev | Extend i18n coverage page by page, insights charts (Phase 3) |
+| Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`), subscription detection heuristics (Phase 3) |
 | Self-hosting enthusiast | Get FinTrack listed on [PikaPods](https://feedback.pikapods.com/) (upvote or help submit), stand up the actual public demo host, docs for reverse-proxy setups |
 | Designer | A demo GIF for the README, insights dashboard concepts |
 | Anyone | Try the demo, file honest bug reports, tell us where week-three fatigue sets in |
@@ -130,3 +130,31 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   included) plus an in-table empty message — a brand-new account is exactly
   when the fast entry point matters most, so it cannot hide behind an empty
   state.
+- **2026-08-24** — Phase 2 shipped in full. Bank sync: a provider adapter
+  interface (`pft/bank_sync.py`) that reuses the existing import dedup
+  (`match_key`, keyed off each provider's own transaction id rather than a
+  content hash - two genuinely separate same-day, same-amount transactions
+  must both survive) and rules pipeline, with GoCardless Bank Account Data
+  (EU/UK) and SimpleFIN Bridge (US/CA) both shipped as reference providers
+  rather than leaving the second as a pure community target. Real
+  multi-currency: every account now has its own currency, daily ECB rates via
+  frankfurter.app, and `account_balances`/`compute_net_worth` actually
+  convert instead of silently summing mismatched currencies as if they were
+  the same - a missing rate shows as unavailable, never a wrong number.
+  Migration guides: `docs/migrating.md`, plus real Firefly III and Actual
+  Budget importers (not just generic-CSV advice) tested against fixtures
+  matching each tool's actual export shape. New on the frontend: an Accounts
+  page (list/create/edit/archive/delete, per-account currency, native +
+  converted balances) and a bank sync connect flow (provider picker,
+  GoCardless's bank-redirect handoff via a new `/bank-sync/callback` route,
+  SimpleFIN's setup-token paste, mapping discovered accounts to new-or-existing
+  local ones) — accounts had no dedicated management UI at all before this.
+  Security: bank sync credentials are encrypted at rest
+  (`FINTRACK_SYNC_ENCRYPTION_KEY`, `pft/crypto.py`), every outbound call
+  (GoCardless, a SimpleFIN URL derived from user input, frankfurter.app) goes
+  through the same SSRF guard notifications already used for ntfy/webhooks,
+  and both get their own throttle scope. Fixed along the way: a real bug in
+  `httpPFTClient`'s 400-error toast that assumed every DRF error body was
+  `{field: [messages]}` and silently showed just the first character of any
+  `{"detail": "a string"}` response, which several of this phase's own new
+  actions return.

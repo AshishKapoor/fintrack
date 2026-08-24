@@ -21,8 +21,36 @@ export interface FinanceAccount {
   name: string
   type: string
   opening_balance: string
+  currency_code: string
   current_balance?: string
   is_archived: boolean
+}
+
+export interface AccountBalanceRow {
+  account_id: number
+  name: string
+  type: string
+  currency_code: string
+  opening_balance: string
+  delta: string
+  balance: string
+  converted_balance: string | null
+  converted_currency_code: string
+}
+
+export interface NetWorth {
+  type: 'net_worth'
+  as_of: string | null
+  currency_code: string
+  total: string
+  missing_rate: boolean
+  accounts: AccountBalanceRow[]
+}
+
+export interface BudgetFileBalances {
+  as_of: string | null
+  accounts: AccountBalanceRow[]
+  net_worth: NetWorth
 }
 
 export interface FinanceCategory {
@@ -226,6 +254,43 @@ export const listAccounts = async (budgetFileId?: number) => {
   )
   return asPaginated<FinanceAccount>(response).results
 }
+
+export const createAccount = async (payload: {
+  name: string
+  type: string
+  opening_balance: string
+  currency_code?: string
+}) => {
+  const budgetFileId = await getDefaultBudgetFileId()
+  return post<FinanceAccount>('/api/v1/finance/accounts/', {
+    budget_file: budgetFileId,
+    ...payload,
+  })
+}
+
+export const updateAccount = async (
+  id: number,
+  payload: Partial<Pick<FinanceAccount, 'name' | 'type' | 'opening_balance' | 'currency_code' | 'is_archived'>>,
+) => {
+  return patch<FinanceAccount>(`/api/v1/finance/accounts/${id}/`, payload)
+}
+
+export const deleteAccount = async (id: number) => {
+  return del(`/api/v1/finance/accounts/${id}/`)
+}
+
+/** Native + home-currency-converted balances for every account - powers the
+ * Accounts page. See finance_services.account_balances/compute_net_worth. */
+export const getBudgetFileBalances = async (asOf?: string) => {
+  const budgetFileId = await getDefaultBudgetFileId()
+  return get<BudgetFileBalances>(
+    `/api/v1/finance/budget-files/${budgetFileId}/balances/${toQueryString({ as_of: asOf })}`,
+  )
+}
+
+/** Fetch today's ECB reference rates now, rather than waiting for tomorrow's
+ * beat tick - surfaced wherever a converted balance is missing a rate. */
+export const syncFxRatesNow = async () => post<{ stored: number }>('/api/v1/finance/fx-rates/sync/', {})
 
 export const listCategories = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())

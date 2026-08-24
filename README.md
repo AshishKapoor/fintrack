@@ -56,16 +56,18 @@ honest comparison, not the flattering one:
 | License | MIT | MIT | AGPL-3.0 |
 | Ledger model | Double-entry, DB-enforced | Envelope budgeting (not double-entry) | Double-entry |
 | Shared budgets | Owner/admin/member/viewer roles, built in | Basic/Admin roles, but needs an external OIDC provider configured first | Multiple isolated single-user accounts per server — not a shared budget |
-| Bank sync | Not yet — file import only ([roadmap](ROADMAP.md)) | Built in: GoCardless, SimpleFIN (paid), Akahu, Enable Banking, Pluggy | Via a companion Data Importer: GoCardless, SimpleFIN, Enable Banking |
-| Import formats | CSV, OFX, QFX, QIF, CAMT.053, YNAB4, nYNAB | CSV + bank sync above | CSV, CAMT.052/053 + the Data Importer |
+| Bank sync | Built in: GoCardless (EU/UK, free tier), SimpleFIN (US/CA) | Built in: GoCardless, SimpleFIN (paid), Akahu, Enable Banking, Pluggy | Via a companion Data Importer: GoCardless, SimpleFIN, Enable Banking |
+| Import formats | CSV, OFX, QFX, QIF, CAMT.053, YNAB4, nYNAB, Firefly III, Actual Budget ([migration guides](docs/migrating.md)) | CSV + bank sync above | CSV, CAMT.052/053 + the Data Importer |
+| Multi-currency | Per-account currency, daily ECB reference rates fetched automatically, converted balances and net worth | Per-account currency | Per-account currency |
 | REST API | OpenAPI schema + official TS/Python SDKs | None (Node.js-only scripting library, no HTTP API) | OpenAPI schema, community-maintained SDKs |
 | Audit log | Yes, manager-visible per workspace | No | No |
 | Tech stack | Django + React | Node.js/TypeScript + React | PHP/Laravel |
 
-Bank sync is FinTrack's clearest current gap — it's the top item once
-[Phase 0](ROADMAP.md) wraps up. If you need it today, Actual or Firefly are
-the better fit; if you value ledger correctness and real shared workspaces
-more, FinTrack is worth trying.
+Bank sync used to be FinTrack's clearest gap; as of [Phase 2](ROADMAP.md) it
+isn't anymore, and it's built the way the rest of FinTrack is — privacy-aligned
+providers first, no Plaid. If you value ledger correctness, real shared
+workspaces, and an automatic exchange rate that actually updates, FinTrack is
+worth trying.
 
 ## ✨ Features
 
@@ -78,7 +80,9 @@ more, FinTrack is worth trying.
 - 🔔 **Notifications** — budget threshold alerts, bill/scheduled-transaction reminders, and a weekly digest over email, [ntfy](https://ntfy.sh), or a generic webhook
 - 🔁 **Scheduled transactions and rules** for recurring activity
 - 📈 **Reports** on spending, budgets, and trends
-- 📦 **Import / export** your data (CSV, OFX, QIF, YNAB and more in; CSV, JSON, XLSX out) plus encrypted backup & restore from the UI
+- 📦 **Import / export** your data (CSV, OFX, QIF, YNAB, Firefly III, Actual Budget and more in — see [migration guides](docs/migrating.md); CSV, JSON, XLSX out) plus encrypted backup & restore from the UI
+- 🏦 **Bank sync** — GoCardless (EU/UK, free tier) and SimpleFIN (US/CA), synced transactions flowing through the same dedup and rules as file imports
+- 💱 **Real multi-currency** — per-account currency, daily ECB reference rates, balances and net worth converted automatically
 - 🔒 **100% self-hosted** — your data never leaves your server
 - 👥 **Shared workspaces** — organizations with owner / admin / member / viewer roles, invitations, and a manager-visible audit log
 - 🌗 **Light / dark mode** with a responsive UI for mobile and desktop

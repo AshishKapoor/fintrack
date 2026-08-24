@@ -22,6 +22,8 @@ x-django-env: &django-env
   THROTTLE_PASSWORD_CHANGE: ${THROTTLE_PASSWORD_CHANGE:-5/min}
   THROTTLE_ADMIN_LOGIN: ${THROTTLE_ADMIN_LOGIN:-10/min}
   THROTTLE_NOTIFICATION_TEST: ${THROTTLE_NOTIFICATION_TEST:-10/hour}
+  THROTTLE_BANK_SYNC: ${THROTTLE_BANK_SYNC:-30/hour}
+  THROTTLE_FX_SYNC: ${THROTTLE_FX_SYNC:-10/hour}
   # Notifications engine (see docs/self-hosting.md#email). Empty EMAIL_HOST
   # means base.py's console backend - notifications still "work", they just
   # print to the api/worker container logs instead of sending real mail.
@@ -32,6 +34,14 @@ x-django-env: &django-env
   EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
   EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
   DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-FinTrack <notifications@fintrack.local>}
+  # Bank sync (see docs/self-hosting.md#bank-sync). Empty GOCARDLESS_SECRET_ID/
+  # KEY just means that provider reports itself unavailable; SimpleFIN needs
+  # no instance-wide config. FINTRACK_FRONTEND_URL is where GoCardless sends
+  # the user back after they finish authenticating at their bank.
+  FINTRACK_SYNC_ENCRYPTION_KEY: ${FINTRACK_SYNC_ENCRYPTION_KEY:-}
+  GOCARDLESS_SECRET_ID: ${GOCARDLESS_SECRET_ID:-}
+  GOCARDLESS_SECRET_KEY: ${GOCARDLESS_SECRET_KEY:-}
+  FINTRACK_FRONTEND_URL: ${FINTRACK_FRONTEND_URL:-http://localhost:5173}
 
 services:
   api:

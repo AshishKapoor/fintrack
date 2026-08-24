@@ -57,6 +57,7 @@
     "label": "Idioma"
   },
   "nav": {
+    "accounts": "Cuentas",
     "auditLog": "Registro de auditoría",
     "budgets": "Presupuestos",
     "categories": "Categorías",

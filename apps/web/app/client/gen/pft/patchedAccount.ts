@@ -15,6 +15,8 @@ export interface PatchedAccount {
   type?: AccountTypeEnum;
   /** @pattern ^-?\d{0,12}(?:\.\d{0,2})?$ */
   opening_balance?: string;
+  /** @maxLength 3 */
+  currency_code?: string;
   /** @pattern ^-?\d{0,12}(?:\.\d{0,2})?$ */
   readonly current_balance?: string;
   is_archived?: boolean;

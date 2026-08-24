@@ -137,6 +137,7 @@ class Command(BaseCommand):
             name="Savings",
             type=Account.TYPE_SAVINGS,
             opening_balance=Decimal("5200.00"),
+            currency_code=budget_file.currency_code,
         )
         return budget_file, checking, savings
 

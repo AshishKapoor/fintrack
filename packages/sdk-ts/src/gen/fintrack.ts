@@ -8,6 +8,10 @@
 import type {
   Account,
   AuditLog,
+  BankSyncInstitution,
+  BankSyncLinkResult,
+  BankSyncProvider,
+  BankSyncResult,
   Budget,
   BudgetFile,
   BudgetMonth,
@@ -17,6 +21,8 @@ import type {
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
+  FxRate,
+  FxSyncResult,
   ImportJob,
   LedgerPostingRead,
   LedgerTransaction,
@@ -44,6 +50,7 @@ import type {
   PatchedPayee,
   PatchedSavedReport,
   PatchedScheduledTransaction,
+  PatchedSyncConnection,
   PatchedTag,
   PatchedTransaction,
   PatchedTransactionRule,
@@ -52,6 +59,8 @@ import type {
   SavedReport,
   ScheduledTransaction,
   SuggestedCategory,
+  SyncConnection,
+  SyncConnectionAccount,
   Tag,
   TokenObtainPair,
   TokenRefresh,
@@ -3142,6 +3151,118 @@ export const v1FinanceExportsDownloadRetrieve = async (id: string, options?: Req
 
 
 /**
+ * Daily ECB reference rates (frankfurter.app) - shared reference data,
+not scoped to any one budget file. See pft/fx_rates.py.
+ */
+export type v1FinanceFxRatesListResponse200 = {
+  data: FxRate[]
+  status: 200
+}
+    
+export type v1FinanceFxRatesListResponseSuccess = (v1FinanceFxRatesListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceFxRatesListResponse = (v1FinanceFxRatesListResponseSuccess)
+
+export const getV1FinanceFxRatesListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/fx-rates/`
+}
+
+export const v1FinanceFxRatesList = async ( options?: RequestInit): Promise<v1FinanceFxRatesListResponse> => {
+  
+  return fintrackFetch<v1FinanceFxRatesListResponse>(getV1FinanceFxRatesListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Daily ECB reference rates (frankfurter.app) - shared reference data,
+not scoped to any one budget file. See pft/fx_rates.py.
+ */
+export type v1FinanceFxRatesRetrieveResponse200 = {
+  data: FxRate
+  status: 200
+}
+    
+export type v1FinanceFxRatesRetrieveResponseSuccess = (v1FinanceFxRatesRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceFxRatesRetrieveResponse = (v1FinanceFxRatesRetrieveResponseSuccess)
+
+export const getV1FinanceFxRatesRetrieveUrl = (id: number,) => {
+
+
+  
+
+  return `/api/v1/finance/fx-rates/${id}/`
+}
+
+export const v1FinanceFxRatesRetrieve = async (id: number, options?: RequestInit): Promise<v1FinanceFxRatesRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinanceFxRatesRetrieveResponse>(getV1FinanceFxRatesRetrieveUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Fetch today's rates now, so a fresh instance has conversion data
+immediately instead of waiting for tomorrow's beat tick - the same
+"send test notification now" pattern as NotificationTestView.
+ */
+export type v1FinanceFxRatesSyncCreateResponse200 = {
+  data: FxSyncResult
+  status: 200
+}
+    
+export type v1FinanceFxRatesSyncCreateResponseSuccess = (v1FinanceFxRatesSyncCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceFxRatesSyncCreateResponse = (v1FinanceFxRatesSyncCreateResponseSuccess)
+
+export const getV1FinanceFxRatesSyncCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/fx-rates/sync/`
+}
+
+export const v1FinanceFxRatesSyncCreate = async ( options?: RequestInit): Promise<v1FinanceFxRatesSyncCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceFxRatesSyncCreateResponse>(getV1FinanceFxRatesSyncCreateUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -4768,6 +4889,739 @@ export const v1FinanceScheduledTransactionsRunDueCreate = async (scheduledTransa
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       scheduledTransaction,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSyncConnectionAccountsListResponse200 = {
+  data: SyncConnectionAccount[]
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionAccountsListResponseSuccess = (v1FinanceSyncConnectionAccountsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionAccountsListResponse = (v1FinanceSyncConnectionAccountsListResponseSuccess)
+
+export const getV1FinanceSyncConnectionAccountsListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connection-accounts/`
+}
+
+export const v1FinanceSyncConnectionAccountsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsListResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionAccountsListResponse>(getV1FinanceSyncConnectionAccountsListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSyncConnectionAccountsCreateResponse201 = {
+  data: SyncConnectionAccount
+  status: 201
+}
+    
+export type v1FinanceSyncConnectionAccountsCreateResponseSuccess = (v1FinanceSyncConnectionAccountsCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionAccountsCreateResponse = (v1FinanceSyncConnectionAccountsCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionAccountsCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connection-accounts/`
+}
+
+export const v1FinanceSyncConnectionAccountsCreate = async (syncConnectionAccount: NonReadonly<SyncConnectionAccount>, options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionAccountsCreateResponse>(getV1FinanceSyncConnectionAccountsCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      syncConnectionAccount,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSyncConnectionAccountsRetrieveResponse200 = {
+  data: SyncConnectionAccount
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionAccountsRetrieveResponseSuccess = (v1FinanceSyncConnectionAccountsRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionAccountsRetrieveResponse = (v1FinanceSyncConnectionAccountsRetrieveResponseSuccess)
+
+export const getV1FinanceSyncConnectionAccountsRetrieveUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connection-accounts/${id}/`
+}
+
+export const v1FinanceSyncConnectionAccountsRetrieve = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionAccountsRetrieveResponse>(getV1FinanceSyncConnectionAccountsRetrieveUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSyncConnectionAccountsDestroyResponse204 = {
+  data: void
+  status: 204
+}
+    
+export type v1FinanceSyncConnectionAccountsDestroyResponseSuccess = (v1FinanceSyncConnectionAccountsDestroyResponse204) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionAccountsDestroyResponse = (v1FinanceSyncConnectionAccountsDestroyResponseSuccess)
+
+export const getV1FinanceSyncConnectionAccountsDestroyUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connection-accounts/${id}/`
+}
+
+export const v1FinanceSyncConnectionAccountsDestroy = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsDestroyResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionAccountsDestroyResponse>(getV1FinanceSyncConnectionAccountsDestroyUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Point this discovered provider account at a FinTrack Account -
+either an existing one (`account_id`) or a new one created on the
+spot (`create_account: {name?, type?}`, currency defaulting to
+whatever the provider reported for this account).
+ */
+export type v1FinanceSyncConnectionAccountsMapCreateResponse200 = {
+  data: SyncConnectionAccount
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionAccountsMapCreateResponseSuccess = (v1FinanceSyncConnectionAccountsMapCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionAccountsMapCreateResponse = (v1FinanceSyncConnectionAccountsMapCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionAccountsMapCreateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connection-accounts/${id}/map/`
+}
+
+export const v1FinanceSyncConnectionAccountsMapCreate = async (id: string,
+    syncConnectionAccount: NonReadonly<SyncConnectionAccount>, options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsMapCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionAccountsMapCreateResponse>(getV1FinanceSyncConnectionAccountsMapCreateUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      syncConnectionAccount,)
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsListResponse200 = {
+  data: SyncConnection[]
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsListResponseSuccess = (v1FinanceSyncConnectionsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsListResponse = (v1FinanceSyncConnectionsListResponseSuccess)
+
+export const getV1FinanceSyncConnectionsListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/`
+}
+
+export const v1FinanceSyncConnectionsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsListResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsListResponse>(getV1FinanceSyncConnectionsListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsCreateResponse201 = {
+  data: SyncConnection
+  status: 201
+}
+    
+export type v1FinanceSyncConnectionsCreateResponseSuccess = (v1FinanceSyncConnectionsCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsCreateResponse = (v1FinanceSyncConnectionsCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/`
+}
+
+export const v1FinanceSyncConnectionsCreate = async (syncConnection: NonReadonly<SyncConnection>, options?: RequestInit): Promise<v1FinanceSyncConnectionsCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsCreateResponse>(getV1FinanceSyncConnectionsCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      syncConnection,)
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsRetrieveResponse200 = {
+  data: SyncConnection
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsRetrieveResponseSuccess = (v1FinanceSyncConnectionsRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsRetrieveResponse = (v1FinanceSyncConnectionsRetrieveResponseSuccess)
+
+export const getV1FinanceSyncConnectionsRetrieveUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/`
+}
+
+export const v1FinanceSyncConnectionsRetrieve = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionsRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsRetrieveResponse>(getV1FinanceSyncConnectionsRetrieveUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsUpdateResponse200 = {
+  data: SyncConnection
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsUpdateResponseSuccess = (v1FinanceSyncConnectionsUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsUpdateResponse = (v1FinanceSyncConnectionsUpdateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/`
+}
+
+export const v1FinanceSyncConnectionsUpdate = async (id: string,
+    syncConnection: NonReadonly<SyncConnection>, options?: RequestInit): Promise<v1FinanceSyncConnectionsUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsUpdateResponse>(getV1FinanceSyncConnectionsUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      syncConnection,)
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsPartialUpdateResponse200 = {
+  data: SyncConnection
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsPartialUpdateResponseSuccess = (v1FinanceSyncConnectionsPartialUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsPartialUpdateResponse = (v1FinanceSyncConnectionsPartialUpdateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsPartialUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/`
+}
+
+export const v1FinanceSyncConnectionsPartialUpdate = async (id: string,
+    patchedSyncConnection: NonReadonly<PatchedSyncConnection>, options?: RequestInit): Promise<v1FinanceSyncConnectionsPartialUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsPartialUpdateResponse>(getV1FinanceSyncConnectionsPartialUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      patchedSyncConnection,)
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsDestroyResponse204 = {
+  data: void
+  status: 204
+}
+    
+export type v1FinanceSyncConnectionsDestroyResponseSuccess = (v1FinanceSyncConnectionsDestroyResponse204) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsDestroyResponse = (v1FinanceSyncConnectionsDestroyResponseSuccess)
+
+export const getV1FinanceSyncConnectionsDestroyUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/`
+}
+
+export const v1FinanceSyncConnectionsDestroy = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionsDestroyResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsDestroyResponse>(getV1FinanceSyncConnectionsDestroyUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Finish linking after the user returns from the provider's own
+auth page (GoCardless), then discover the institution's accounts as
+unmapped SyncConnectionAccount rows for the user to map. A no-op
+first step for providers whose start_link already finishes (SimpleFIN)
+- the frontend calls this unconditionally after any link attempt.
+ */
+export type v1FinanceSyncConnectionsCallbackCreateResponse200 = {
+  data: SyncConnection
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsCallbackCreateResponseSuccess = (v1FinanceSyncConnectionsCallbackCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsCallbackCreateResponse = (v1FinanceSyncConnectionsCallbackCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsCallbackCreateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/callback/`
+}
+
+export const v1FinanceSyncConnectionsCallbackCreate = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionsCallbackCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsCallbackCreateResponse>(getV1FinanceSyncConnectionsCallbackCreateUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Revoke access and stop syncing, but keep the connection (and every
+transaction it already created) as history - the same soft-state
+preference as Account.is_archived rather than a hard delete. A plain
+DELETE on this connection is still available for anyone who wants it
+gone entirely.
+ */
+export type v1FinanceSyncConnectionsDisconnectCreateResponse200 = {
+  data: SyncConnection
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsDisconnectCreateResponseSuccess = (v1FinanceSyncConnectionsDisconnectCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsDisconnectCreateResponse = (v1FinanceSyncConnectionsDisconnectCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsDisconnectCreateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/disconnect/`
+}
+
+export const v1FinanceSyncConnectionsDisconnectCreate = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionsDisconnectCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsDisconnectCreateResponse>(getV1FinanceSyncConnectionsDisconnectCreateUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsLinkCreateResponse200 = {
+  data: BankSyncLinkResult
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsLinkCreateResponseSuccess = (v1FinanceSyncConnectionsLinkCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsLinkCreateResponse = (v1FinanceSyncConnectionsLinkCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsLinkCreateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/link/`
+}
+
+export const v1FinanceSyncConnectionsLinkCreate = async (id: string,
+    syncConnection: NonReadonly<SyncConnection>, options?: RequestInit): Promise<v1FinanceSyncConnectionsLinkCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsLinkCreateResponse>(getV1FinanceSyncConnectionsLinkCreateUrl(id),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      syncConnection,)
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsSyncCreateResponse200 = {
+  data: BankSyncResult
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsSyncCreateResponseSuccess = (v1FinanceSyncConnectionsSyncCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsSyncCreateResponse = (v1FinanceSyncConnectionsSyncCreateResponseSuccess)
+
+export const getV1FinanceSyncConnectionsSyncCreateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/${id}/sync/`
+}
+
+export const v1FinanceSyncConnectionsSyncCreate = async (id: string, options?: RequestInit): Promise<v1FinanceSyncConnectionsSyncCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsSyncCreateResponse>(getV1FinanceSyncConnectionsSyncCreateUrl(id),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsInstitutionsListResponse200 = {
+  data: BankSyncInstitution[]
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsInstitutionsListResponseSuccess = (v1FinanceSyncConnectionsInstitutionsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsInstitutionsListResponse = (v1FinanceSyncConnectionsInstitutionsListResponseSuccess)
+
+export const getV1FinanceSyncConnectionsInstitutionsListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/institutions/`
+}
+
+export const v1FinanceSyncConnectionsInstitutionsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsInstitutionsListResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsInstitutionsListResponse>(getV1FinanceSyncConnectionsInstitutionsListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export type v1FinanceSyncConnectionsProvidersListResponse200 = {
+  data: BankSyncProvider[]
+  status: 200
+}
+    
+export type v1FinanceSyncConnectionsProvidersListResponseSuccess = (v1FinanceSyncConnectionsProvidersListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSyncConnectionsProvidersListResponse = (v1FinanceSyncConnectionsProvidersListResponseSuccess)
+
+export const getV1FinanceSyncConnectionsProvidersListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/sync-connections/providers/`
+}
+
+export const v1FinanceSyncConnectionsProvidersList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsProvidersListResponse> => {
+  
+  return fintrackFetch<v1FinanceSyncConnectionsProvidersListResponse>(getV1FinanceSyncConnectionsProvidersListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
   }
 );}
 

@@ -28,6 +28,8 @@ class PatchedImportJob:
             * `camt053` - CAMT.053
             * `ynab4` - YNAB4
             * `nynab` - nYNAB
+            * `firefly3` - Firefly III
+            * `actual` - Actual Budget
         status (ImportJobStatusEnum | Unset): * `uploaded` - Uploaded
             * `previewed` - Previewed
             * `importing` - Importing

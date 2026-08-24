@@ -1960,6 +1960,67 @@ paths:
               schema:
                 $ref: '#/components/schemas/ExportJob'
           description: ''
+  /api/v1/finance/fx-rates/:
+    get:
+      operationId: v1_finance_fx_rates_list
+      description: |-
+        Daily ECB reference rates (frankfurter.app) - shared reference data,
+        not scoped to any one budget file. See pft/fx_rates.py.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FxRate'
+          description: ''
+  /api/v1/finance/fx-rates/{id}/:
+    get:
+      operationId: v1_finance_fx_rates_retrieve
+      description: |-
+        Daily ECB reference rates (frankfurter.app) - shared reference data,
+        not scoped to any one budget file. See pft/fx_rates.py.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this fx rate.
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FxRate'
+          description: ''
+  /api/v1/finance/fx-rates/sync/:
+    post:
+      operationId: v1_finance_fx_rates_sync_create
+      description: |-
+        Fetch today's rates now, so a fresh instance has conversion data
+        immediately instead of waiting for tomorrow's beat tick - the same
+        "send test notification now" pattern as NotificationTestView.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FxSyncResult'
+          description: ''
   /api/v1/finance/imports/:
     get:
       operationId: v1_finance_imports_list
@@ -3021,6 +3082,482 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScheduledTransaction'
           description: ''
+  /api/v1/finance/sync-connection-accounts/:
+    get:
+      operationId: v1_finance_sync_connection_accounts_list
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncConnectionAccount'
+          description: ''
+    post:
+      operationId: v1_finance_sync_connection_accounts_create
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConnectionAccount'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnectionAccount'
+          description: ''
+  /api/v1/finance/sync-connection-accounts/{id}/:
+    get:
+      operationId: v1_finance_sync_connection_accounts_retrieve
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnectionAccount'
+          description: ''
+    delete:
+      operationId: v1_finance_sync_connection_accounts_destroy
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/finance/sync-connection-accounts/{id}/map/:
+    post:
+      operationId: v1_finance_sync_connection_accounts_map_create
+      description: |-
+        Point this discovered provider account at a FinTrack Account -
+        either an existing one (`account_id`) or a new one created on the
+        spot (`create_account: {name?, type?}`, currency defaulting to
+        whatever the provider reported for this account).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConnectionAccount'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnectionAccount'
+          description: ''
+  /api/v1/finance/sync-connections/:
+    get:
+      operationId: v1_finance_sync_connections_list
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncConnection'
+          description: ''
+    post:
+      operationId: v1_finance_sync_connections_create
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConnection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+  /api/v1/finance/sync-connections/{id}/:
+    get:
+      operationId: v1_finance_sync_connections_retrieve
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+    put:
+      operationId: v1_finance_sync_connections_update
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConnection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+    patch:
+      operationId: v1_finance_sync_connections_partial_update
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSyncConnection'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+    delete:
+      operationId: v1_finance_sync_connections_destroy
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/finance/sync-connections/{id}/callback/:
+    post:
+      operationId: v1_finance_sync_connections_callback_create
+      description: |-
+        Finish linking after the user returns from the provider's own
+        auth page (GoCardless), then discover the institution's accounts as
+        unmapped SyncConnectionAccount rows for the user to map. A no-op
+        first step for providers whose start_link already finishes (SimpleFIN)
+        - the frontend calls this unconditionally after any link attempt.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+  /api/v1/finance/sync-connections/{id}/disconnect/:
+    post:
+      operationId: v1_finance_sync_connections_disconnect_create
+      description: |-
+        Revoke access and stop syncing, but keep the connection (and every
+        transaction it already created) as history - the same soft-state
+        preference as Account.is_archived rather than a hard delete. A plain
+        DELETE on this connection is still available for anyone who wants it
+        gone entirely.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncConnection'
+          description: ''
+  /api/v1/finance/sync-connections/{id}/link/:
+    post:
+      operationId: v1_finance_sync_connections_link_create
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncConnection'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncLinkResult'
+          description: ''
+  /api/v1/finance/sync-connections/{id}/sync/:
+    post:
+      operationId: v1_finance_sync_connections_sync_create
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankSyncResult'
+          description: ''
+  /api/v1/finance/sync-connections/institutions/:
+    get:
+      operationId: v1_finance_sync_connections_institutions_list
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankSyncInstitution'
+          description: ''
+  /api/v1/finance/sync-connections/providers/:
+    get:
+      operationId: v1_finance_sync_connections_providers_list
+      description: |-
+        Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+        the provider-agnostic contract and pft/bank_sync_gocardless.py /
+        bank_sync_simplefin.py for the two shipped providers.
+
+        Every mutating action here is already unreachable on a demo instance:
+        DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+        that does not include any of these, so bank sync needs no separate demo
+        guard - the same "guarded by construction" property notifications and
+        imports already get for free.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BankSyncProvider'
+          description: ''
   /api/v1/finance/tags/:
     get:
       operationId: v1_finance_tags_list
@@ -4024,6 +4561,9 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        currency_code:
+          type: string
+          maxLength: 3
         current_balance:
           type: string
           format: decimal
@@ -4106,6 +4646,59 @@ components:
       - id
       - organization
       - summary
+    BankSyncInstitution:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        logo:
+          type: string
+      required:
+      - id
+      - logo
+      - name
+    BankSyncLinkResult:
+      type: object
+      properties:
+        redirect_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+    BankSyncProvider:
+      type: object
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+        configured:
+          type: boolean
+      required:
+      - configured
+      - key
+      - label
+    BankSyncResult:
+      type: object
+      properties:
+        accounts_synced:
+          type: integer
+        created:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+      - accounts_synced
+      - created
+      - errors
+      - skipped
     Budget:
       type: object
       properties:
@@ -4469,6 +5062,34 @@ components:
         * `monthly` - Monthly
         * `yearly` - Yearly
         * `custom` - Custom
+    FxRate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rate_date:
+          type: string
+          format: date
+        currency_code:
+          type: string
+          maxLength: 3
+        rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,8})?$
+      required:
+      - currency_code
+      - id
+      - rate
+      - rate_date
+    FxSyncResult:
+      type: object
+      properties:
+        stored:
+          type: integer
+      required:
+      - stored
     GoalTypeEnum:
       enum:
       - none
@@ -4538,6 +5159,8 @@ components:
       - camt053
       - ynab4
       - nynab
+      - firefly3
+      - actual
       type: string
       description: |-
         * `csv` - CSV
@@ -4547,6 +5170,8 @@ components:
         * `camt053` - CAMT.053
         * `ynab4` - YNAB4
         * `nynab` - nYNAB
+        * `firefly3` - Firefly III
+        * `actual` - Actual Budget
     ImportJobStatusEnum:
       enum:
       - uploaded
@@ -4906,6 +5531,9 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        currency_code:
+          type: string
+          maxLength: 3
         current_balance:
           type: string
           format: decimal
@@ -5405,6 +6033,47 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedSyncConnection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        provider_label:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SyncConnectionStatusEnum'
+          readOnly: true
+        institution_name:
+          type: string
+          readOnly: true
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_error:
+          type: string
+          readOnly: true
+        linked_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncConnectionAccount'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedTag:
       type: object
       properties:
@@ -5538,6 +6207,14 @@ components:
       - id
       - name
       - updated_at
+    ProviderEnum:
+      enum:
+      - gocardless
+      - simplefin
+      type: string
+      description: |-
+        * `gocardless` - GoCardless Bank Account Data
+        * `simplefin` - SimpleFIN Bridge
     ReportTypeEnum:
       enum:
       - net_worth
@@ -5646,6 +6323,7 @@ components:
       - rule
       - scheduled
       - transfer
+      - sync
       type: string
       description: |-
         * `manual` - Manual
@@ -5653,6 +6331,7 @@ components:
         * `rule` - Rule
         * `scheduled` - Scheduled
         * `transfer` - Transfer
+        * `sync` - Bank Sync
     SuggestedCategory:
       type: object
       description: |-
@@ -5669,6 +6348,124 @@ components:
       required:
       - category
       - category_name
+    SyncConnection:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        provider:
+          $ref: '#/components/schemas/ProviderEnum'
+        provider_label:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/SyncConnectionStatusEnum'
+          readOnly: true
+        institution_name:
+          type: string
+          readOnly: true
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        last_error:
+          type: string
+          readOnly: true
+        linked_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncConnectionAccount'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - budget_file
+      - created_at
+      - id
+      - institution_name
+      - last_error
+      - last_synced_at
+      - linked_accounts
+      - provider
+      - provider_label
+      - status
+      - updated_at
+    SyncConnectionAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        connection:
+          type: integer
+          readOnly: true
+        account:
+          type: integer
+          readOnly: true
+          nullable: true
+        account_name:
+          type: string
+          readOnly: true
+        external_account_id:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+        currency_code:
+          type: string
+          readOnly: true
+        iban:
+          type: string
+          readOnly: true
+        last_synced_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - account
+      - account_name
+      - connection
+      - created_at
+      - currency_code
+      - display_name
+      - external_account_id
+      - iban
+      - id
+      - last_synced_at
+      - updated_at
+    SyncConnectionStatusEnum:
+      enum:
+      - pending
+      - active
+      - error
+      - revoked
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `active` - Active
+        * `error` - Error
+        * `revoked` - Revoked
     Tag:
       type: object
       properties:

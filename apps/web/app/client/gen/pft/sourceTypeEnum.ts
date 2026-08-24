@@ -12,6 +12,7 @@
 * `rule` - Rule
 * `scheduled` - Scheduled
 * `transfer` - Transfer
+* `sync` - Bank Sync
  */
 export type SourceTypeEnum = typeof SourceTypeEnum[keyof typeof SourceTypeEnum];
 
@@ -23,4 +24,5 @@ export const SourceTypeEnum = {
   rule: 'rule',
   scheduled: 'scheduled',
   transfer: 'transfer',
+  sync: 'sync',
 } as const;

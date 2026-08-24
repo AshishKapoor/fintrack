@@ -35,6 +35,7 @@ class PatchedLedgerTransaction:
             * `rule` - Rule
             * `scheduled` - Scheduled
             * `transfer` - Transfer
+            * `sync` - Bank Sync
         cleared (bool | Unset):
         imported (bool | Unset):
         match_key (str | Unset):

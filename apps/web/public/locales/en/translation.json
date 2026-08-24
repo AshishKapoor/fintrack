@@ -57,6 +57,7 @@
     "label": "Language"
   },
   "nav": {
+    "accounts": "Accounts",
     "auditLog": "Audit Log",
     "budgets": "Budgets",
     "categories": "Categories",

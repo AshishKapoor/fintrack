@@ -194,15 +194,19 @@ AXIOS_INSTANCE.interceptors.response.use(
 
     // Handle other errors
     if (error.response?.status === 400) {
-      const data = error.response.data as Record<string, string[]>
-      const firstKey = Object.keys(data)[0]
-      if (firstKey) {
-        const message = data[firstKey][0]
-        toast.error(message)
-      } else {
-        toast.error('Bad Request')
-      }
-      throw { errorMessage: 'Bad Request' }
+      // DRF's default validation errors come back as {field: [messages]};
+      // a plain action response (e.g. bank sync's {"detail": "..."}) comes
+      // back as {detail: "a string"} instead - handle both shapes rather
+      // than assuming a list and silently showing just its first character.
+      const data = error.response.data as Record<string, unknown>
+      const firstValue = data ? data[Object.keys(data)[0]] : undefined
+      const message = Array.isArray(firstValue)
+        ? String(firstValue[0])
+        : typeof firstValue === 'string'
+          ? firstValue
+          : undefined
+      toast.error(message || 'Bad Request')
+      throw { errorMessage: message || 'Bad Request' }
     }
 
     if (error.response?.status === 404 || error.response?.status === 405) {

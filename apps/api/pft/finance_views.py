@@ -11,10 +11,16 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 
 from .audit import record
+from .bank_sync import BankSyncError, get_provider, list_providers
 from .finance_serializers import (
     AccountSerializer,
+    BankSyncInstitutionSerializer,
+    BankSyncLinkResultSerializer,
+    BankSyncProviderSerializer,
+    BankSyncResultSerializer,
     BudgetFileSerializer,
     BudgetMonthSerializer,
     CategoryGroupV2Serializer,
@@ -22,6 +28,8 @@ from .finance_serializers import (
     EncryptedBackupBundleSerializer,
     EnvelopeAssignmentSerializer,
     ExportJobSerializer,
+    FxRateSerializer,
+    FxSyncResultSerializer,
     ImportJobSerializer,
     LedgerPostingReadSerializer,
     LedgerTransactionSerializer,
@@ -29,6 +37,8 @@ from .finance_serializers import (
     SavedReportSerializer,
     ScheduledTransactionSerializer,
     SuggestedCategorySerializer,
+    SyncConnectionAccountSerializer,
+    SyncConnectionSerializer,
     TagSerializer,
     TransactionRuleSerializer,
 )
@@ -45,6 +55,7 @@ from .finance_services import (
     run_report,
     zero_budget_month,
 )
+from .fx_rates import FxRateError, fetch_and_store_rates
 from .models import (
     Account,
     AuditLog,
@@ -55,17 +66,24 @@ from .models import (
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
+    FxRate,
     ImportJob,
     LedgerPosting,
     LedgerTransaction,
     Payee,
     SavedReport,
     ScheduledTransaction,
+    SyncConnection,
+    SyncConnectionAccount,
     Tag,
     TransactionEvent,
     TransactionRule,
 )
-from .tasks import execute_import_job_task, run_export_job_task
+from .tasks import (
+    execute_import_job_task,
+    run_export_job_task,
+    sync_bank_connection_task,
+)
 from .tenancy import budget_file_q, can_access, personal_organization
 
 
@@ -141,6 +159,8 @@ class UserScopedModelViewSet(viewsets.ModelViewSet):
             return instance.budget_month.budget_file
         if getattr(instance, "transaction_id", None) is not None:
             return instance.transaction.budget_file
+        if getattr(instance, "connection_id", None) is not None:
+            return instance.connection.budget_file
         return None
 
 
@@ -666,3 +686,244 @@ class ImportJobViewSet(UserScopedModelViewSet):
         return Response(
             self.get_serializer(import_job).data, status=status.HTTP_202_ACCEPTED
         )
+
+
+class SyncConnectionViewSet(UserScopedModelViewSet):
+    """Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+    the provider-agnostic contract and pft/bank_sync_gocardless.py /
+    bank_sync_simplefin.py for the two shipped providers.
+
+    Every mutating action here is already unreachable on a demo instance:
+    DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+    that does not include any of these, so bank sync needs no separate demo
+    guard - the same "guarded by construction" property notifications and
+    imports already get for free.
+    """
+
+    serializer_class = SyncConnectionSerializer
+
+    def get_queryset(self):
+        queryset = (
+            SyncConnection.objects.filter(budget_file_q(self.request.user))
+            .select_related("budget_file")
+            .prefetch_related("linked_accounts", "linked_accounts__account")
+        )
+        budget_file = self.request.query_params.get("budget_file")
+        if budget_file:
+            queryset = queryset.filter(budget_file_id=budget_file)
+        return queryset
+
+    def get_throttles(self):
+        # Every one of these makes the server issue outbound HTTP requests
+        # (to GoCardless, or to a URL derived from user input for SimpleFIN)
+        # on the caller's behalf - the same reasoning as NotificationTestView,
+        # worth its own modest cap independent of the general "user" rate.
+        if self.action in {"link", "callback", "sync", "institutions"}:
+            self.throttle_scope = "bank_sync"
+            return [ScopedRateThrottle()]
+        return super().get_throttles()
+
+    @extend_schema(responses=BankSyncProviderSerializer(many=True))
+    @action(detail=False, methods=["get"], url_path="providers")
+    def providers(self, request):
+        return Response(
+            [
+                {"key": p.key, "label": p.label, "configured": p.is_configured()}
+                for p in list_providers()
+            ]
+        )
+
+    @extend_schema(responses=BankSyncInstitutionSerializer(many=True))
+    @action(detail=False, methods=["get"], url_path="institutions")
+    def institutions(self, request):
+        provider_key = request.query_params.get("provider")
+        country = request.query_params.get("country", "")
+        if not provider_key:
+            return Response({"detail": "provider is required."}, status=400)
+        try:
+            provider = get_provider(provider_key)
+            institutions = provider.list_institutions(country=country)
+        except BankSyncError as exc:
+            return Response({"detail": str(exc)}, status=400)
+        return Response(
+            [{"id": i.id, "name": i.name, "logo": i.logo} for i in institutions]
+        )
+
+    @extend_schema(responses=BankSyncLinkResultSerializer)
+    @action(detail=True, methods=["post"], url_path="link")
+    def link(self, request, pk=None):
+        connection = self.get_object()
+        self.check_budget_file_writable(connection.budget_file)
+        try:
+            provider = get_provider(connection.provider)
+            result = provider.start_link(connection, request.data)
+        except BankSyncError as exc:
+            return Response({"detail": str(exc)}, status=400)
+        return Response(result)
+
+    @extend_schema(request=None, responses=SyncConnectionSerializer)
+    @action(detail=True, methods=["post"], url_path="callback")
+    def callback(self, request, pk=None):
+        """Finish linking after the user returns from the provider's own
+        auth page (GoCardless), then discover the institution's accounts as
+        unmapped SyncConnectionAccount rows for the user to map. A no-op
+        first step for providers whose start_link already finishes (SimpleFIN)
+        - the frontend calls this unconditionally after any link attempt.
+        """
+        connection = self.get_object()
+        self.check_budget_file_writable(connection.budget_file)
+        try:
+            provider = get_provider(connection.provider)
+            provider.finish_link(connection, request.data)
+            for discovered in provider.list_accounts(connection):
+                SyncConnectionAccount.objects.update_or_create(
+                    connection=connection,
+                    external_account_id=discovered.external_id,
+                    defaults={
+                        "display_name": discovered.name,
+                        "currency_code": discovered.currency_code,
+                        "iban": discovered.iban,
+                        "raw_metadata": discovered.raw,
+                    },
+                )
+        except BankSyncError as exc:
+            connection.status = SyncConnection.STATUS_ERROR
+            connection.last_error = str(exc)[:2000]
+            connection.save(update_fields=["status", "last_error", "updated_at"])
+            return Response({"detail": str(exc)}, status=400)
+
+        connection.refresh_from_db()
+        return Response(self.get_serializer(connection).data)
+
+    @extend_schema(request=None, responses=BankSyncResultSerializer)
+    @action(detail=True, methods=["post"], url_path="sync")
+    def sync(self, request, pk=None):
+        connection = self.get_object()
+        self.check_budget_file_writable(connection.budget_file)
+        if connection.status != SyncConnection.STATUS_ACTIVE:
+            return Response(
+                {"detail": f"Connection is not active (status: {connection.status})."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        # Synchronous like preview_import_job, not polled like import
+        # execute(): a sync touches a handful of accounts against a fast
+        # JSON API, not a user-uploaded statement that can run to thousands
+        # of rows. CELERY_TASK_ALWAYS_EAGER still makes this run inline
+        # under the test suite / bare-metal installs with no Redis.
+        sync_bank_connection_task.delay(connection.id)
+        connection.refresh_from_db()
+        return Response(self.get_serializer(connection).data)
+
+    @extend_schema(request=None, responses=SyncConnectionSerializer)
+    @action(detail=True, methods=["post"], url_path="disconnect")
+    def disconnect(self, request, pk=None):
+        """Revoke access and stop syncing, but keep the connection (and every
+        transaction it already created) as history - the same soft-state
+        preference as Account.is_archived rather than a hard delete. A plain
+        DELETE on this connection is still available for anyone who wants it
+        gone entirely.
+        """
+        connection = self.get_object()
+        self.check_budget_file_writable(connection.budget_file)
+        try:
+            get_provider(connection.provider).disconnect(connection)
+        except BankSyncError:
+            pass  # best-effort - the local connection is revoked regardless
+        connection.status = SyncConnection.STATUS_REVOKED
+        connection.secret_data = ""
+        connection.save(update_fields=["status", "secret_data", "updated_at"])
+        return Response(self.get_serializer(connection).data)
+
+
+class SyncConnectionAccountViewSet(UserScopedModelViewSet):
+    serializer_class = SyncConnectionAccountSerializer
+    http_method_names = ["get", "head", "options", "post", "delete"]
+
+    def get_queryset(self):
+        queryset = SyncConnectionAccount.objects.filter(
+            budget_file_q(self.request.user, prefix="connection__budget_file"),
+        ).select_related("connection", "account")
+        connection_id = self.request.query_params.get("connection")
+        if connection_id:
+            queryset = queryset.filter(connection_id=connection_id)
+        return queryset.order_by("id")
+
+    def create(self, request, *args, **kwargs):
+        # Rows are only ever created by SyncConnectionViewSet.callback
+        # discovering accounts, never posted directly by a client.
+        return Response(
+            {"detail": "Not supported - accounts are discovered via connection callback."},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED,
+        )
+
+    @action(detail=True, methods=["post"], url_path="map")
+    def map_account(self, request, pk=None):
+        """Point this discovered provider account at a FinTrack Account -
+        either an existing one (`account_id`) or a new one created on the
+        spot (`create_account: {name?, type?}`, currency defaulting to
+        whatever the provider reported for this account).
+        """
+        linked = self.get_object()
+        self.check_budget_file_writable(linked.connection.budget_file)
+        budget_file = linked.connection.budget_file
+
+        account_id = request.data.get("account_id")
+        create_account = request.data.get("create_account")
+
+        if account_id:
+            account = Account.objects.filter(
+                budget_file_q(request.user, write=True), pk=account_id
+            ).first()
+            if not account or account.budget_file_id != budget_file.id:
+                return Response({"detail": "Unknown account."}, status=400)
+        elif create_account is not None:
+            account = Account.objects.create(
+                budget_file=budget_file,
+                name=(create_account.get("name") or linked.display_name or linked.external_account_id)[:120],
+                type=create_account.get("type") or Account.TYPE_CHECKING,
+                currency_code=linked.currency_code or budget_file.currency_code,
+            )
+            self._audit(AuditLog.ACTION_CREATED, account, budget_file)
+        else:
+            return Response(
+                {"detail": "account_id or create_account is required."}, status=400
+            )
+
+        linked.account = account
+        linked.save(update_fields=["account", "updated_at"])
+        return Response(self.get_serializer(linked).data)
+
+
+class FxRateViewSet(viewsets.ReadOnlyModelViewSet):
+    """Daily ECB reference rates (frankfurter.app) - shared reference data,
+    not scoped to any one budget file. See pft/fx_rates.py.
+    """
+
+    serializer_class = FxRateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = FxRate.objects.all()
+        currency_code = self.request.query_params.get("currency_code")
+        if currency_code:
+            queryset = queryset.filter(currency_code=currency_code.upper())
+        return queryset.order_by("-rate_date", "currency_code")
+
+    def get_throttles(self):
+        if self.action == "sync":
+            self.throttle_scope = "fx_sync"
+            return [ScopedRateThrottle()]
+        return super().get_throttles()
+
+    @extend_schema(request=None, responses=FxSyncResultSerializer)
+    @action(detail=False, methods=["post"], url_path="sync")
+    def sync(self, request):
+        """Fetch today's rates now, so a fresh instance has conversion data
+        immediately instead of waiting for tomorrow's beat tick - the same
+        "send test notification now" pattern as NotificationTestView.
+        """
+        try:
+            stored = fetch_and_store_rates()
+        except FxRateError as exc:
+            return Response({"detail": str(exc)}, status=502)
+        return Response({"stored": stored})

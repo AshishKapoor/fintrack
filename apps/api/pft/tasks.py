@@ -10,7 +10,7 @@ import logging
 
 from celery import shared_task
 
-from .models import ExportJob, ImportJob, ScheduledTransaction
+from .models import ExportJob, ImportJob, ScheduledTransaction, SyncConnection
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +137,73 @@ def send_weekly_digest_task() -> None:
         logger.info("sent %d weekly digest(s)", sent)
     if errors:
         logger.warning("%d notification preference(s) failed this run", len(errors))
+
+
+@shared_task
+def sync_bank_connection_task(connection_id: int) -> None:
+    """Sync one connection now - the worker side of SyncConnectionViewSet.sync."""
+    from .bank_sync import sync_connection
+
+    try:
+        connection = SyncConnection.objects.get(pk=connection_id)
+    except SyncConnection.DoesNotExist:
+        logger.warning("sync connection %s vanished before the worker saw it", connection_id)
+        return
+
+    result = sync_connection(connection)
+    logger.info(
+        "bank sync connection %s: %d created, %d skipped, %d account(s) failed",
+        connection_id,
+        result["created"],
+        result["skipped"],
+        len(result["errors"]),
+    )
+
+
+@shared_task
+def sync_bank_connections_task() -> None:
+    """Sync every active bank connection on the instance.
+
+    Scheduled via CELERY_BEAT_SCHEDULE at a deliberately modest cadence
+    (every 6 hours, not hourly like scheduled transactions): GoCardless's
+    free tier caps how many times a day each linked account may be polled,
+    and neither provider's data changes fast enough for hourly to matter.
+    One connection's failure (a revoked bank consent, an expired token) is
+    logged and skipped rather than blocking the rest - materialize_due_
+    scheduled_transactions_task's on_error="skip" reasoning, here applied
+    across connections instead of budget files.
+    """
+    from .bank_sync import sync_connection
+
+    connections = SyncConnection.objects.filter(status=SyncConnection.STATUS_ACTIVE)
+    synced = 0
+    failed = 0
+    for connection in connections:
+        try:
+            sync_connection(connection)
+            synced += 1
+        except Exception:
+            failed += 1
+            logger.exception("bank sync failed for connection %s", connection.id)
+    if synced or failed:
+        logger.info("bank sync sweep: %d connection(s) synced, %d failed", synced, failed)
+
+
+@shared_task
+def sync_fx_rates_task() -> None:
+    """Refresh today's ECB reference rates. Scheduled daily via
+    CELERY_BEAT_SCHEDULE, after the ECB's ~16:00 CET publish time. See
+    pft/fx_rates.py - conversion only ever reads what this has already
+    stored, so a failed fetch here just means yesterday's rate keeps being
+    used as the nearest one available until the next successful run.
+    """
+    from .fx_rates import FxRateError, fetch_and_store_rates
+
+    try:
+        stored = fetch_and_store_rates()
+        logger.info("fetched FX rates for %d currencies", stored)
+    except FxRateError as exc:
+        logger.warning("FX rate sync failed: %s", exc)
 
 
 @shared_task

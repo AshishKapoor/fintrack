@@ -9,12 +9,15 @@ from .finance_views import (
     CategoryV2ViewSet,
     EnvelopeAssignmentViewSet,
     ExportJobViewSet,
+    FxRateViewSet,
     ImportJobViewSet,
     LedgerTransactionViewSet,
     PayeeViewSet,
     PostingViewSet,
     ReportViewSet,
     ScheduledTransactionViewSet,
+    SyncConnectionAccountViewSet,
+    SyncConnectionViewSet,
     TagViewSet,
     TransactionRuleViewSet,
 )
@@ -42,5 +45,12 @@ router.register("reports", ReportViewSet, basename="report")
 router.register("exports", ExportJobViewSet, basename="export")
 router.register("backups", BackupBundleViewSet, basename="backup")
 router.register("imports", ImportJobViewSet, basename="import")
+router.register("sync-connections", SyncConnectionViewSet, basename="sync-connection")
+router.register(
+    "sync-connection-accounts",
+    SyncConnectionAccountViewSet,
+    basename="sync-connection-account",
+)
+router.register("fx-rates", FxRateViewSet, basename="fx-rate")
 
 urlpatterns = router.urls

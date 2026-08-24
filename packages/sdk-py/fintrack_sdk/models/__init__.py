@@ -4,6 +4,10 @@ from .account import Account
 from .account_type_enum import AccountTypeEnum
 from .action_enum import ActionEnum
 from .audit_log import AuditLog
+from .bank_sync_institution import BankSyncInstitution
+from .bank_sync_link_result import BankSyncLinkResult
+from .bank_sync_provider import BankSyncProvider
+from .bank_sync_result import BankSyncResult
 from .budget import Budget
 from .budget_file import BudgetFile
 from .budget_month import BudgetMonth
@@ -17,6 +21,8 @@ from .export_job import ExportJob
 from .export_job_format_enum import ExportJobFormatEnum
 from .export_job_status_enum import ExportJobStatusEnum
 from .frequency_enum import FrequencyEnum
+from .fx_rate import FxRate
+from .fx_sync_result import FxSyncResult
 from .goal_type_enum import GoalTypeEnum
 from .import_job import ImportJob
 from .import_job_format_enum import ImportJobFormatEnum
@@ -50,17 +56,22 @@ from .patched_organization import PatchedOrganization
 from .patched_payee import PatchedPayee
 from .patched_saved_report import PatchedSavedReport
 from .patched_scheduled_transaction import PatchedScheduledTransaction
+from .patched_sync_connection import PatchedSyncConnection
 from .patched_tag import PatchedTag
 from .patched_transaction import PatchedTransaction
 from .patched_transaction_rule import PatchedTransactionRule
 from .patched_user_profile import PatchedUserProfile
 from .payee import Payee
+from .provider_enum import ProviderEnum
 from .report_type_enum import ReportTypeEnum
 from .role_enum import RoleEnum
 from .saved_report import SavedReport
 from .scheduled_transaction import ScheduledTransaction
 from .source_type_enum import SourceTypeEnum
 from .suggested_category import SuggestedCategory
+from .sync_connection import SyncConnection
+from .sync_connection_account import SyncConnectionAccount
+from .sync_connection_status_enum import SyncConnectionStatusEnum
 from .tag import Tag
 from .token_obtain_pair import TokenObtainPair
 from .token_refresh import TokenRefresh
@@ -75,6 +86,10 @@ __all__ = (
     "AccountTypeEnum",
     "ActionEnum",
     "AuditLog",
+    "BankSyncInstitution",
+    "BankSyncLinkResult",
+    "BankSyncProvider",
+    "BankSyncResult",
     "Budget",
     "BudgetFile",
     "BudgetMonth",
@@ -88,6 +103,8 @@ __all__ = (
     "ExportJobFormatEnum",
     "ExportJobStatusEnum",
     "FrequencyEnum",
+    "FxRate",
+    "FxSyncResult",
     "GoalTypeEnum",
     "ImportJob",
     "ImportJobFormatEnum",
@@ -121,17 +138,22 @@ __all__ = (
     "PatchedPayee",
     "PatchedSavedReport",
     "PatchedScheduledTransaction",
+    "PatchedSyncConnection",
     "PatchedTag",
     "PatchedTransaction",
     "PatchedTransactionRule",
     "PatchedUserProfile",
     "Payee",
+    "ProviderEnum",
     "ReportTypeEnum",
     "RoleEnum",
     "SavedReport",
     "ScheduledTransaction",
     "SourceTypeEnum",
     "SuggestedCategory",
+    "SyncConnection",
+    "SyncConnectionAccount",
+    "SyncConnectionStatusEnum",
     "Tag",
     "TokenObtainPair",
     "TokenRefresh",

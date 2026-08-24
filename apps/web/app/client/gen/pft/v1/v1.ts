@@ -20,6 +20,10 @@ import type {
 import type {
   Account,
   AuditLog,
+  BankSyncInstitution,
+  BankSyncLinkResult,
+  BankSyncProvider,
+  BankSyncResult,
   Budget,
   BudgetFile,
   BudgetMonth,
@@ -29,6 +33,8 @@ import type {
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
+  FxRate,
+  FxSyncResult,
   ImportJob,
   LedgerPostingRead,
   LedgerTransaction,
@@ -56,6 +62,7 @@ import type {
   PatchedPayee,
   PatchedSavedReport,
   PatchedScheduledTransaction,
+  PatchedSyncConnection,
   PatchedTag,
   PatchedTransaction,
   PatchedTransactionRule,
@@ -64,6 +71,8 @@ import type {
   SavedReport,
   ScheduledTransaction,
   SuggestedCategory,
+  SyncConnection,
+  SyncConnectionAccount,
   Tag,
   Transaction,
   TransactionRule,
@@ -3229,6 +3238,120 @@ export const useV1FinanceExportsDownloadRetrieve = <TError = unknown>(
   }
 }
 /**
+ * Daily ECB reference rates (frankfurter.app) - shared reference data,
+not scoped to any one budget file. See pft/fx_rates.py.
+ */
+export const v1FinanceFxRatesList = (
+    
+ ) => {
+    return httpPFTClient<FxRate[]>(
+    {url: `/api/v1/finance/fx-rates/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceFxRatesListKey = () => [`/api/v1/finance/fx-rates/`] as const;
+
+export type V1FinanceFxRatesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceFxRatesList>>>
+export type V1FinanceFxRatesListQueryError = unknown
+
+export const useV1FinanceFxRatesList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceFxRatesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceFxRatesListKey() : null);
+  const swrFn = () => v1FinanceFxRatesList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Daily ECB reference rates (frankfurter.app) - shared reference data,
+not scoped to any one budget file. See pft/fx_rates.py.
+ */
+export const v1FinanceFxRatesRetrieve = (
+    id: number,
+ ) => {
+    return httpPFTClient<FxRate>(
+    {url: `/api/v1/finance/fx-rates/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceFxRatesRetrieveKey = (id: number,) => [`/api/v1/finance/fx-rates/${id}/`] as const;
+
+export type V1FinanceFxRatesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceFxRatesRetrieve>>>
+export type V1FinanceFxRatesRetrieveQueryError = unknown
+
+export const useV1FinanceFxRatesRetrieve = <TError = unknown>(
+  id: number, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceFxRatesRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceFxRatesRetrieveKey(id) : null);
+  const swrFn = () => v1FinanceFxRatesRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Fetch today's rates now, so a fresh instance has conversion data
+immediately instead of waiting for tomorrow's beat tick - the same
+"send test notification now" pattern as NotificationTestView.
+ */
+export const v1FinanceFxRatesSyncCreate = (
+    
+ ) => {
+    return httpPFTClient<FxSyncResult>(
+    {url: `/api/v1/finance/fx-rates/sync/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceFxRatesSyncCreateMutationFetcher = ( ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceFxRatesSyncCreate();
+  }
+}
+export const getV1FinanceFxRatesSyncCreateMutationKey = () => [`/api/v1/finance/fx-rates/sync/`] as const;
+
+export type V1FinanceFxRatesSyncCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceFxRatesSyncCreate>>>
+export type V1FinanceFxRatesSyncCreateMutationError = unknown
+
+export const useV1FinanceFxRatesSyncCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceFxRatesSyncCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceFxRatesSyncCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceFxRatesSyncCreateMutationKey();
+  const swrFn = getV1FinanceFxRatesSyncCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -4966,6 +5089,783 @@ export const useV1FinanceScheduledTransactionsRunDueCreate = <TError = unknown>(
   const swrFn = getV1FinanceScheduledTransactionsRunDueCreateMutationFetcher();
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSyncConnectionAccountsList = (
+    
+ ) => {
+    return httpPFTClient<SyncConnectionAccount[]>(
+    {url: `/api/v1/finance/sync-connection-accounts/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionAccountsListKey = () => [`/api/v1/finance/sync-connection-accounts/`] as const;
+
+export type V1FinanceSyncConnectionAccountsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsList>>>
+export type V1FinanceSyncConnectionAccountsListQueryError = unknown
+
+export const useV1FinanceSyncConnectionAccountsList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionAccountsListKey() : null);
+  const swrFn = () => v1FinanceSyncConnectionAccountsList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSyncConnectionAccountsCreate = (
+    syncConnectionAccount: NonReadonly<SyncConnectionAccount>,
+ ) => {
+    return httpPFTClient<SyncConnectionAccount>(
+    {url: `/api/v1/finance/sync-connection-accounts/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: syncConnectionAccount
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionAccountsCreateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SyncConnectionAccount> }) => {
+    return v1FinanceSyncConnectionAccountsCreate(arg);
+  }
+}
+export const getV1FinanceSyncConnectionAccountsCreateMutationKey = () => [`/api/v1/finance/sync-connection-accounts/`] as const;
+
+export type V1FinanceSyncConnectionAccountsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsCreate>>>
+export type V1FinanceSyncConnectionAccountsCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionAccountsCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsCreate>>, TError, Key, NonReadonly<SyncConnectionAccount>, Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionAccountsCreateMutationKey();
+  const swrFn = getV1FinanceSyncConnectionAccountsCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSyncConnectionAccountsRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<SyncConnectionAccount>(
+    {url: `/api/v1/finance/sync-connection-accounts/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionAccountsRetrieveKey = (id: string,) => [`/api/v1/finance/sync-connection-accounts/${id}/`] as const;
+
+export type V1FinanceSyncConnectionAccountsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsRetrieve>>>
+export type V1FinanceSyncConnectionAccountsRetrieveQueryError = unknown
+
+export const useV1FinanceSyncConnectionAccountsRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionAccountsRetrieveKey(id) : null);
+  const swrFn = () => v1FinanceSyncConnectionAccountsRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSyncConnectionAccountsDestroy = (
+    id: string,
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/finance/sync-connection-accounts/${id}/`, method: 'DELETE'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionAccountsDestroyMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSyncConnectionAccountsDestroy(id);
+  }
+}
+export const getV1FinanceSyncConnectionAccountsDestroyMutationKey = (id: string,) => [`/api/v1/finance/sync-connection-accounts/${id}/`] as const;
+
+export type V1FinanceSyncConnectionAccountsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsDestroy>>>
+export type V1FinanceSyncConnectionAccountsDestroyMutationError = unknown
+
+export const useV1FinanceSyncConnectionAccountsDestroy = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsDestroy>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionAccountsDestroyMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionAccountsDestroyMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Point this discovered provider account at a FinTrack Account -
+either an existing one (`account_id`) or a new one created on the
+spot (`create_account: {name?, type?}`, currency defaulting to
+whatever the provider reported for this account).
+ */
+export const v1FinanceSyncConnectionAccountsMapCreate = (
+    id: string,
+    syncConnectionAccount: NonReadonly<SyncConnectionAccount>,
+ ) => {
+    return httpPFTClient<SyncConnectionAccount>(
+    {url: `/api/v1/finance/sync-connection-accounts/${id}/map/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: syncConnectionAccount
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionAccountsMapCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SyncConnectionAccount> }) => {
+    return v1FinanceSyncConnectionAccountsMapCreate(id, arg);
+  }
+}
+export const getV1FinanceSyncConnectionAccountsMapCreateMutationKey = (id: string,) => [`/api/v1/finance/sync-connection-accounts/${id}/map/`] as const;
+
+export type V1FinanceSyncConnectionAccountsMapCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsMapCreate>>>
+export type V1FinanceSyncConnectionAccountsMapCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionAccountsMapCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsMapCreate>>, TError, Key, NonReadonly<SyncConnectionAccount>, Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsMapCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionAccountsMapCreateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionAccountsMapCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsList = (
+    
+ ) => {
+    return httpPFTClient<SyncConnection[]>(
+    {url: `/api/v1/finance/sync-connections/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsListKey = () => [`/api/v1/finance/sync-connections/`] as const;
+
+export type V1FinanceSyncConnectionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsList>>>
+export type V1FinanceSyncConnectionsListQueryError = unknown
+
+export const useV1FinanceSyncConnectionsList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsListKey() : null);
+  const swrFn = () => v1FinanceSyncConnectionsList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsCreate = (
+    syncConnection: NonReadonly<SyncConnection>,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: syncConnection
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsCreateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SyncConnection> }) => {
+    return v1FinanceSyncConnectionsCreate(arg);
+  }
+}
+export const getV1FinanceSyncConnectionsCreateMutationKey = () => [`/api/v1/finance/sync-connections/`] as const;
+
+export type V1FinanceSyncConnectionsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsCreate>>>
+export type V1FinanceSyncConnectionsCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsCreate>>, TError, Key, NonReadonly<SyncConnection>, Awaited<ReturnType<typeof v1FinanceSyncConnectionsCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsCreateMutationKey();
+  const swrFn = getV1FinanceSyncConnectionsCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsRetrieveKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/`] as const;
+
+export type V1FinanceSyncConnectionsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsRetrieve>>>
+export type V1FinanceSyncConnectionsRetrieveQueryError = unknown
+
+export const useV1FinanceSyncConnectionsRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsRetrieveKey(id) : null);
+  const swrFn = () => v1FinanceSyncConnectionsRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsUpdate = (
+    id: string,
+    syncConnection: NonReadonly<SyncConnection>,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/${id}/`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: syncConnection
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SyncConnection> }) => {
+    return v1FinanceSyncConnectionsUpdate(id, arg);
+  }
+}
+export const getV1FinanceSyncConnectionsUpdateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/`] as const;
+
+export type V1FinanceSyncConnectionsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsUpdate>>>
+export type V1FinanceSyncConnectionsUpdateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsUpdate>>, TError, Key, NonReadonly<SyncConnection>, Awaited<ReturnType<typeof v1FinanceSyncConnectionsUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsUpdateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsPartialUpdate = (
+    id: string,
+    patchedSyncConnection: NonReadonly<PatchedSyncConnection>,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/${id}/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedSyncConnection
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsPartialUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedSyncConnection> }) => {
+    return v1FinanceSyncConnectionsPartialUpdate(id, arg);
+  }
+}
+export const getV1FinanceSyncConnectionsPartialUpdateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/`] as const;
+
+export type V1FinanceSyncConnectionsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsPartialUpdate>>>
+export type V1FinanceSyncConnectionsPartialUpdateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsPartialUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsPartialUpdate>>, TError, Key, NonReadonly<PatchedSyncConnection>, Awaited<ReturnType<typeof v1FinanceSyncConnectionsPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsPartialUpdateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsPartialUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsDestroy = (
+    id: string,
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/finance/sync-connections/${id}/`, method: 'DELETE'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsDestroyMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSyncConnectionsDestroy(id);
+  }
+}
+export const getV1FinanceSyncConnectionsDestroyMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/`] as const;
+
+export type V1FinanceSyncConnectionsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsDestroy>>>
+export type V1FinanceSyncConnectionsDestroyMutationError = unknown
+
+export const useV1FinanceSyncConnectionsDestroy = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSyncConnectionsDestroy>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsDestroyMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsDestroyMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Finish linking after the user returns from the provider's own
+auth page (GoCardless), then discover the institution's accounts as
+unmapped SyncConnectionAccount rows for the user to map. A no-op
+first step for providers whose start_link already finishes (SimpleFIN)
+- the frontend calls this unconditionally after any link attempt.
+ */
+export const v1FinanceSyncConnectionsCallbackCreate = (
+    id: string,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/${id}/callback/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsCallbackCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSyncConnectionsCallbackCreate(id);
+  }
+}
+export const getV1FinanceSyncConnectionsCallbackCreateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/callback/`] as const;
+
+export type V1FinanceSyncConnectionsCallbackCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsCallbackCreate>>>
+export type V1FinanceSyncConnectionsCallbackCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsCallbackCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsCallbackCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSyncConnectionsCallbackCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsCallbackCreateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsCallbackCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Revoke access and stop syncing, but keep the connection (and every
+transaction it already created) as history - the same soft-state
+preference as Account.is_archived rather than a hard delete. A plain
+DELETE on this connection is still available for anyone who wants it
+gone entirely.
+ */
+export const v1FinanceSyncConnectionsDisconnectCreate = (
+    id: string,
+ ) => {
+    return httpPFTClient<SyncConnection>(
+    {url: `/api/v1/finance/sync-connections/${id}/disconnect/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsDisconnectCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSyncConnectionsDisconnectCreate(id);
+  }
+}
+export const getV1FinanceSyncConnectionsDisconnectCreateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/disconnect/`] as const;
+
+export type V1FinanceSyncConnectionsDisconnectCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsDisconnectCreate>>>
+export type V1FinanceSyncConnectionsDisconnectCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsDisconnectCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsDisconnectCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSyncConnectionsDisconnectCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsDisconnectCreateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsDisconnectCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsLinkCreate = (
+    id: string,
+    syncConnection: NonReadonly<SyncConnection>,
+ ) => {
+    return httpPFTClient<BankSyncLinkResult>(
+    {url: `/api/v1/finance/sync-connections/${id}/link/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: syncConnection
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsLinkCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SyncConnection> }) => {
+    return v1FinanceSyncConnectionsLinkCreate(id, arg);
+  }
+}
+export const getV1FinanceSyncConnectionsLinkCreateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/link/`] as const;
+
+export type V1FinanceSyncConnectionsLinkCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsLinkCreate>>>
+export type V1FinanceSyncConnectionsLinkCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsLinkCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsLinkCreate>>, TError, Key, NonReadonly<SyncConnection>, Awaited<ReturnType<typeof v1FinanceSyncConnectionsLinkCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsLinkCreateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsLinkCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsSyncCreate = (
+    id: string,
+ ) => {
+    return httpPFTClient<BankSyncResult>(
+    {url: `/api/v1/finance/sync-connections/${id}/sync/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsSyncCreateMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSyncConnectionsSyncCreate(id);
+  }
+}
+export const getV1FinanceSyncConnectionsSyncCreateMutationKey = (id: string,) => [`/api/v1/finance/sync-connections/${id}/sync/`] as const;
+
+export type V1FinanceSyncConnectionsSyncCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsSyncCreate>>>
+export type V1FinanceSyncConnectionsSyncCreateMutationError = unknown
+
+export const useV1FinanceSyncConnectionsSyncCreate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsSyncCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSyncConnectionsSyncCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSyncConnectionsSyncCreateMutationKey(id);
+  const swrFn = getV1FinanceSyncConnectionsSyncCreateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsInstitutionsList = (
+    
+ ) => {
+    return httpPFTClient<BankSyncInstitution[]>(
+    {url: `/api/v1/finance/sync-connections/institutions/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsInstitutionsListKey = () => [`/api/v1/finance/sync-connections/institutions/`] as const;
+
+export type V1FinanceSyncConnectionsInstitutionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsInstitutionsList>>>
+export type V1FinanceSyncConnectionsInstitutionsListQueryError = unknown
+
+export const useV1FinanceSyncConnectionsInstitutionsList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsInstitutionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsInstitutionsListKey() : null);
+  const swrFn = () => v1FinanceSyncConnectionsInstitutionsList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
+the provider-agnostic contract and pft/bank_sync_gocardless.py /
+bank_sync_simplefin.py for the two shipped providers.
+
+Every mutating action here is already unreachable on a demo instance:
+DemoModeMiddleware blocks all non-GET requests outside a small allowlist
+that does not include any of these, so bank sync needs no separate demo
+guard - the same "guarded by construction" property notifications and
+imports already get for free.
+ */
+export const v1FinanceSyncConnectionsProvidersList = (
+    
+ ) => {
+    return httpPFTClient<BankSyncProvider[]>(
+    {url: `/api/v1/finance/sync-connections/providers/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSyncConnectionsProvidersListKey = () => [`/api/v1/finance/sync-connections/providers/`] as const;
+
+export type V1FinanceSyncConnectionsProvidersListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsProvidersList>>>
+export type V1FinanceSyncConnectionsProvidersListQueryError = unknown
+
+export const useV1FinanceSyncConnectionsProvidersList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsProvidersList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsProvidersListKey() : null);
+  const swrFn = () => v1FinanceSyncConnectionsProvidersList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,

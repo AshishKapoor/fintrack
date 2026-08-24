@@ -63,7 +63,7 @@ Added later, this is a proper accounting model. The tenant root is
 ```
 User
  └── BudgetFile                    (currency, is_default)
-      ├── Account                  (checking / savings / cash / credit / asset / liability)
+      ├── Account                  (checking / savings / cash / credit / asset / liability, own currency_code)
       ├── CategoryGroupV2
       │    └── CategoryV2          (income / expense)
       ├── Payee, Tag
@@ -75,7 +75,11 @@ User
       ├── TransactionRule          (conditions + actions, JSON)
       ├── SavedReport
       ├── ImportJob, ExportJob, EncryptedBackupBundle
+      ├── SyncConnection           (bank sync - provider, status, encrypted credentials)
+      │    └── SyncConnectionAccount  (one external account, mapped to a local Account)
       └── TransactionEvent         (append-only audit log)
+
+FxRate                             (date, currency, EUR-based rate - not tenant-scoped, shared reference data)
 ```
 
 **The core invariant: the postings of a transaction must sum to zero.** Buying
@@ -98,7 +102,47 @@ This is enforced in three places, which is worth knowing:
 Business logic lives in `apps/api/pft/finance_services.py`: balances and net worth,
 cash flow, spending trends, envelope snapshots, the rules engine, schedule
 materialisation, CSV/XLSX export, and importers for CSV, OFX, QFX, QIF,
-CAMT.053 and YNAB. Views stay thin and delegate to it.
+CAMT.053, YNAB, Firefly III and Actual Budget (see
+[docs/migrating.md](docs/migrating.md)). Views stay thin and delegate to it.
+
+### Bank sync
+
+`pft/bank_sync.py` defines the provider contract (`BankSyncProvider`) and the
+provider-agnostic half of syncing: `ingest_transactions` turns a provider's
+fetched rows into ledger transactions the same way `execute_import_job` does
+for a file - two postings, a `match_key` existence check for dedup (here
+`sync:<provider>:<external_account_id>:<external_id>`, since a provider's own
+transaction id is more reliable than the content hash file imports use), then
+`apply_rules`. `sync_connection` orchestrates one connection's mapped
+accounts; `tasks.sync_bank_connections_task` runs it for every active
+connection on a beat schedule (every 6 hours - GoCardless's free tier caps
+daily polls per account).
+
+Two providers ship: `pft/bank_sync_gocardless.py` (GoCardless Bank Account
+Data, EU/UK, redirect-based linking, instance-wide API credentials) and
+`pft/bank_sync_simplefin.py` (SimpleFIN Bridge, US/CA, a user-supplied setup
+token claimed once for a durable access URL, no instance-wide config). Both
+route every outbound request through `notifications.is_safe_outbound_url` -
+the same SSRF guard ntfy/webhook URLs get, worth it here too since SimpleFIN's
+claim/access URLs are derived from user-supplied input.
+
+A connection's live credentials (`SyncConnection.secret_data`) are encrypted
+at rest with `pft/crypto.py` (Fernet, keyed by `FINTRACK_SYNC_ENCRYPTION_KEY`)
+- unlike `EncryptedBackupBundle`'s zero-knowledge client-side encryption, the
+server has to read these back unattended on the beat schedule, so this only
+protects against a database-only compromise. See
+[docs/self-hosting.md#bank-sync](docs/self-hosting.md#bank-sync).
+
+### Multi-currency
+
+Every `Account` has its own `currency_code` (defaulting to its budget file's
+at creation time - see `AccountSerializer.validate`). `pft/fx_rates.py` stores
+daily ECB reference rates from frankfurter.app, EUR-based only (mirroring how
+the ECB actually publishes them); converting between two non-EUR currencies
+triangulates through EUR at read time. `finance_services.account_balances`/
+`compute_net_worth` convert every account's balance into the budget file's
+currency, returning `None` (never a guessed number) for a pair with no rate
+fetched yet.
 
 ### How the two relate
 
@@ -246,10 +290,16 @@ apps/web/app/
 ├── app.tsx               route table and layout switch
 ├── pages/                one directory per route (quick-add is the PWA
 │                         quick-capture screen; settings/ reads ?tab= to
-│                         land on a specific tab, e.g. from the bell icon)
+│                         land on a specific tab, e.g. from the bell icon;
+│                         accounts/ is currency + bank sync management;
+│                         bank-sync-callback/ is where a redirect-based
+│                         provider like GoCardless lands after the user
+│                         authenticates at their bank)
 ├── components/           feature components (payee-combobox and
 │   │                     split-postings-editor are shared by the desktop
-│   │                     dialogs, the register's inline row, and quick-add)
+│   │                     dialogs, the register's inline row, and quick-add;
+│   │                     connect-bank-dialog + map-discovered-accounts are
+│   │                     shared by the accounts page and bank-sync-callback)
 │   └── ui/               shadcn primitives
 ├── client/
 │   ├── httpPFTClient.ts  axios instance, auth header, 401 refresh-and-retry,
@@ -258,8 +308,10 @@ apps/web/app/
 │                         a CI regen-diff gate
 ├── lib/                  auth (JWT cookies), ledger.ts (posting builders —
 │                         buildSplitPostings handles N category legs, SWR
-│                         invalidation), finance-client (thin helpers), backup,
-│                         import/export, dates, analytics
+│                         invalidation), finance-client (thin helpers, incl.
+│                         account currency + the balances endpoint),
+│                         bank-sync-client, backup, import/export, dates,
+│                         analytics
 ├── e2e/  (../e2e)        Playwright suite — runs against the real stack in CI
 ├── hooks/                Zustand stores
 └── context/              currency + organization providers
@@ -335,14 +387,20 @@ apps/api/pft/tests/
 ├── test_account_deletion.py  account deletion cascades
 ├── test_scheduled_transaction_scheduler.py  beat-driven materialization
 ├── test_notifications.py     channel senders, dedupe, the three triggers, the API
-└── test_payee_suggestions.py payee → suggested-category learning
+├── test_payee_suggestions.py payee → suggested-category learning
+├── test_bank_sync.py         crypto, ingest/dedup, both providers (mocked HTTP), the API
+├── test_fx_rates.py          rate fetch/store, EUR-triangulated conversion, the API
+├── test_multi_currency.py    per-account currency defaulting and the balances endpoint
+└── test_migration_importers.py  Firefly III / Actual Budget parsers, end-to-end import
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright
 end-to-end suite (`apps/web/e2e/`) that drives the real Docker stack through
 nginx — login, transactions, budgets, import, backup/restore, notification
 preferences, keyboard-first register entry (splits, the inline row), quick
-add, and a two-browser shared-workspace scenario. Both run in CI.
+add, accounts (per-currency CRUD), the bank sync connect dialog as far as it
+goes without a live provider, and a two-browser shared-workspace scenario.
+Both run in CI.
 
 ## Monorepo and SDKs
 

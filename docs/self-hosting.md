@@ -162,6 +162,80 @@ The two other notification channels — [ntfy](https://ntfy.sh) and generic
 webhooks — need no server-side configuration at all; each user points them at
 their own ntfy topic or webhook URL directly in the Notifications tab.
 
+## Bank sync
+
+**Accounts → Bank Sync** connects a real bank account so transactions arrive
+automatically instead of via repeated file imports — see
+[ARCHITECTURE.md](../ARCHITECTURE.md) for how synced transactions flow
+through the same dedup (`match_key`) and rules pipeline as everything else.
+Two providers ship today, both privacy-aligned before convenience — see
+ROADMAP.md's "Explicitly not first: Plaid" — and a third is a matter of
+implementing `pft/bank_sync.py`'s `BankSyncProvider` interface.
+
+### GoCardless Bank Account Data (EU/UK)
+
+Needs one piece of instance-wide setup before anyone can use it:
+
+1. Register a free account at
+   [bankaccountdata.gocardless.com](https://bankaccountdata.gocardless.com/).
+2. Create an API key pair (Secret ID + Secret Key) from its developer
+   dashboard.
+3. Set `GOCARDLESS_SECRET_ID` and `GOCARDLESS_SECRET_KEY` in `.env` and
+   restart the stack.
+
+Until both are set, GoCardless simply doesn't appear as a connectable option
+(`GET /api/v1/finance/sync-connections/providers/` reports it as
+`configured: false`) — nothing breaks, it's just unavailable.
+
+Once configured, each user picks their country and bank from **Connect a
+bank**, authenticates directly with their bank (FinTrack never sees banking
+credentials — only the read-only data access GoCardless's consent flow
+grants), and is redirected back to finish linking. That redirect target is
+`FINTRACK_FRONTEND_URL` — set it to your real hostname once you're off
+`localhost`, the same way you'd set `CORS_ALLOWED_ORIGINS`.
+
+The free tier caps how many times a day each linked account can be polled,
+which is why the sync sweep runs every 6 hours rather than hourly (see
+`CELERY_BEAT_SCHEDULE` in `app/settings/base.py`) — a manual **Sync now**
+button is also available per connection.
+
+### SimpleFIN Bridge (US/CA)
+
+Needs no instance-wide configuration — each user connects their own bridge
+(e.g. [beta-bridge.simplefin.org](https://beta-bridge.simplefin.org/), or a
+self-hosted one) directly:
+
+1. Get a setup token from the bridge.
+2. Paste it into **Connect a bank → SimpleFIN Bridge**.
+
+FinTrack exchanges the one-time setup token for a durable access credential
+server-side; the setup token itself is never stored.
+
+### Credentials at rest
+
+Both providers' stored credentials (a GoCardless requisition reference, a
+SimpleFIN access URL) are encrypted at rest with `FINTRACK_SYNC_ENCRYPTION_KEY`
+— see `pft/crypto.py`. Leave it unset and `SECRET_KEY` is reused for this too,
+which is fine locally; set a dedicated value for a real deployment so rotating
+`SECRET_KEY` (which signs everyone out) doesn't also strand every stored bank
+connection. This protects against a database-only compromise (a stolen dump,
+a misconfigured backup target) — anyone with code execution on the server can
+always read the key and decrypt, the same caveat as `SECRET_KEY` itself.
+
+## Real multi-currency
+
+Every account has its own currency (defaulting to its budget file's when
+created), and balances convert into the budget file's currency using daily
+ECB reference rates from [frankfurter.app](https://www.frankfurter.app/) — no
+API key needed. A `beat` service fetches the day's rates automatically
+(`CELERY_BEAT_SCHEDULE`'s `sync-fx-rates-daily`); bare-metal installs without
+one should either cron `manage.py sync_fx_rates` or use the **Sync now**
+action FinTrack surfaces wherever a converted balance is missing a rate.
+
+Until the first sync completes, converted amounts for a foreign-currency
+account show as unavailable rather than a number that looks precise but
+isn't — see `pft/fx_rates.py`'s `convert_amount`.
+
 ## Backups
 
 Your data lives in the `postgres_data` volume. Nothing else in the stack holds

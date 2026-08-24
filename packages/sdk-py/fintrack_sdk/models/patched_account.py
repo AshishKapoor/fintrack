@@ -28,6 +28,7 @@ class PatchedAccount:
             * `asset` - Asset
             * `liability` - Liability
         opening_balance (str | Unset):
+        currency_code (str | Unset):
         current_balance (str | Unset):
         is_archived (bool | Unset):
         created_at (datetime.datetime | Unset):
@@ -39,6 +40,7 @@ class PatchedAccount:
     name: str | Unset = UNSET
     type_: AccountTypeEnum | Unset = UNSET
     opening_balance: str | Unset = UNSET
+    currency_code: str | Unset = UNSET
     current_balance: str | Unset = UNSET
     is_archived: bool | Unset = UNSET
     created_at: datetime.datetime | Unset = UNSET
@@ -57,6 +59,8 @@ class PatchedAccount:
             type_ = self.type_.value
 
         opening_balance = self.opening_balance
+
+        currency_code = self.currency_code
 
         current_balance = self.current_balance
 
@@ -83,6 +87,8 @@ class PatchedAccount:
             field_dict["type"] = type_
         if opening_balance is not UNSET:
             field_dict["opening_balance"] = opening_balance
+        if currency_code is not UNSET:
+            field_dict["currency_code"] = currency_code
         if current_balance is not UNSET:
             field_dict["current_balance"] = current_balance
         if is_archived is not UNSET:
@@ -112,6 +118,8 @@ class PatchedAccount:
 
         opening_balance = d.pop("opening_balance", UNSET)
 
+        currency_code = d.pop("currency_code", UNSET)
+
         current_balance = d.pop("current_balance", UNSET)
 
         is_archived = d.pop("is_archived", UNSET)
@@ -136,6 +144,7 @@ class PatchedAccount:
             name=name,
             type_=type_,
             opening_balance=opening_balance,
+            currency_code=currency_code,
             current_balance=current_balance,
             is_archived=is_archived,
             created_at=created_at,

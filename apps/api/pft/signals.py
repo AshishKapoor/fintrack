@@ -81,6 +81,7 @@ def seed_budget_file_defaults(sender, instance, created, **kwargs):
         budget_file=instance,
         name="Cash",
         type=Account.TYPE_CHECKING,
+        currency_code=instance.currency_code,
     )
     income_group = CategoryGroupV2.objects.create(
         budget_file=instance, name="Income", sort_order=0

@@ -13,11 +13,13 @@ import { Suspense, lazy, useEffect } from 'react'
 const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const CategoriesPage = lazy(() => import('@/pages/category'))
 const BudgetsPage = lazy(() => import('@/pages/budget'))
+const AccountsPage = lazy(() => import('@/pages/accounts'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
 const QuickAddPage = lazy(() => import('@/pages/quick-add'))
 const ReportsPage = lazy(() => import('@/pages/reports'))
 const RulesAndRecurringPage = lazy(() => import('@/pages/rules'))
 const AuditLogPage = lazy(() => import('@/pages/audit-log'))
+const BankSyncCallbackPage = lazy(() => import('@/pages/bank-sync-callback'))
 const UserSettingsPage = lazy(() => import('@/pages/settings'))
 const NotFound = lazy(() => import('@/pages/not-found'))
 const AuthenticationPage = lazy(() => import('@/pages/authentication'))
@@ -59,11 +61,13 @@ function App() {
                 <Route path='/' element={<DashboardPage />} />
                 <Route path='/categories' element={<CategoriesPage />} />
                 <Route path='/budgets' element={<BudgetsPage />} />
+                <Route path='/accounts' element={<AccountsPage />} />
                 <Route path='/transactions' element={<TransactionsPage />} />
                 <Route path='/quick-add' element={<QuickAddPage />} />
                 <Route path='/reports' element={<ReportsPage />} />
                 <Route path='/rules' element={<RulesAndRecurringPage />} />
                 <Route path='/audit-log' element={<AuditLogPage />} />
+                <Route path='/bank-sync/callback' element={<BankSyncCallbackPage />} />
                 <Route path='/home' element={<DashboardPage />} />
                 <Route path='/settings' element={<UserSettingsPage />} />
                 <Route path='*' element={<NotFound />} />

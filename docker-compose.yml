@@ -21,6 +21,17 @@ x-django-env: &django-env
   THROTTLE_REGISTER: ${THROTTLE_REGISTER:-5/hour}
   THROTTLE_PASSWORD_CHANGE: ${THROTTLE_PASSWORD_CHANGE:-5/min}
   THROTTLE_ADMIN_LOGIN: ${THROTTLE_ADMIN_LOGIN:-10/min}
+  THROTTLE_NOTIFICATION_TEST: ${THROTTLE_NOTIFICATION_TEST:-10/hour}
+  # Notifications engine (see docs/self-hosting.md#email). Empty EMAIL_HOST
+  # means base.py's console backend - notifications still "work", they just
+  # print to the api/worker container logs instead of sending real mail.
+  EMAIL_HOST: ${EMAIL_HOST:-}
+  EMAIL_PORT: ${EMAIL_PORT:-587}
+  EMAIL_HOST_USER: ${EMAIL_HOST_USER:-}
+  EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD:-}
+  EMAIL_USE_TLS: ${EMAIL_USE_TLS:-True}
+  EMAIL_USE_SSL: ${EMAIL_USE_SSL:-False}
+  DEFAULT_FROM_EMAIL: ${DEFAULT_FROM_EMAIL:-FinTrack <notifications@fintrack.local>}
 
 services:
   api:
@@ -99,11 +110,14 @@ services:
     image: ghcr.io/ashishkapoor/fintrack-api:latest
     pull_policy: build
     # Same image as the api; only the process differs. Imports and exports run
-    # here so a big statement never ties up a web worker.
+    # here so a big statement never ties up a web worker. compilemessages
+    # recompiles locale/*/LC_MESSAGES/*.po into the .mo files translated
+    # notification text needs (see entrypoint.sh for the full rationale -
+    # `make dev`'s bind mount shadows the ones baked in at image build time).
     entrypoint:
       - sh
       - -c
-      - /usr/local/bin/wait-for-db.sh && exec uv run celery -A app worker --loglevel=info --concurrency=2
+      - /usr/local/bin/wait-for-db.sh && uv run manage.py compilemessages --verbosity 0 && exec uv run celery -A app worker --loglevel=info --concurrency=2
     environment:
       <<: *django-env
     volumes:
@@ -135,7 +149,7 @@ services:
     entrypoint:
       - sh
       - -c
-      - /usr/local/bin/wait-for-db.sh && exec uv run celery -A app beat --loglevel=info --schedule=/app/run/celerybeat-schedule
+      - /usr/local/bin/wait-for-db.sh && uv run manage.py compilemessages --verbosity 0 && exec uv run celery -A app beat --loglevel=info --schedule=/app/run/celerybeat-schedule
     environment:
       <<: *django-env
     volumes:

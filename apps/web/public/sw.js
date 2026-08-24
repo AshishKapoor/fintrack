@@ -1,6 +1,17 @@
-const VERSION = 'fintrack-v1-pwa-20260310'
+const VERSION = 'fintrack-v2-pwa-20260824'
 const APP_SHELL_CACHE = `${VERSION}-app-shell`
-const APP_SHELL_FILES = ['/', '/index.html', '/manifest.webmanifest', '/favicon.ico']
+const APP_SHELL_FILES = [
+  '/',
+  '/index.html',
+  '/manifest.webmanifest',
+  '/favicon.ico',
+  // i18next-http-backend fetches these at runtime (see app/i18n.ts) - without
+  // a precache entry, opening the app offline for the first time on a device
+  // whose language isn't the last one already in the runtime cache falls
+  // back to raw translation keys instead of text.
+  '/locales/en/translation.json',
+  '/locales/es/translation.json',
+]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(APP_SHELL_CACHE).then((cache) => cache.addAll(APP_SHELL_FILES)))

@@ -1,0 +1,97 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: fintrack-api\n"
+"Report-Msgid-Bugs-To: https://github.com/AshishKapoor/fintrack/issues\n"
+"PO-Revision-Date: 2026-08-24 00:00+0000\n"
+"Last-Translator: FinTrack contributors\n"
+"Language-Team: Spanish <https://github.com/AshishKapoor/fintrack>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Budget file not found."
+msgstr "Archivo de presupuesto no encontrado."
+
+msgid "At least two posting lines are required."
+msgstr "Se requieren al menos dos líneas de apunte."
+
+msgid "Each posting must reference exactly one account or one category."
+msgstr "Cada apunte debe referenciar exactamente una cuenta o una categoría."
+
+msgid "Posting account must belong to budget file."
+msgstr "La cuenta del apunte debe pertenecer al archivo de presupuesto."
+
+msgid "Posting category must belong to budget file."
+msgstr "La categoría del apunte debe pertenecer al archivo de presupuesto."
+
+msgid "Double-entry check failed: postings must sum to zero."
+msgstr "Comprobación de partida doble fallida: los apuntes deben sumar cero."
+
+msgid "budget_file is required"
+msgstr "budget_file es obligatorio"
+
+msgid "Payee must belong to same budget file."
+msgstr "El beneficiario debe pertenecer al mismo archivo de presupuesto."
+
+msgid "Tag must belong to same budget file."
+msgstr "La etiqueta debe pertenecer al mismo archivo de presupuesto."
+
+msgid "Email is required."
+msgstr "El correo electrónico es obligatorio."
+
+msgid "Passwords do not match."
+msgstr "Las contraseñas no coinciden."
+
+msgid "Password must be at least 8 characters long."
+msgstr "La contraseña debe tener al menos 8 caracteres."
+
+msgid "A category with this name already exists."
+msgstr "Ya existe una categoría con este nombre."
+
+msgid "Unknown category."
+msgstr "Categoría desconocida."
+
+msgid "No refresh token found."
+msgstr "No se encontró ningún token de actualización."
+
+msgid "All sessions signed out."
+msgstr "Se cerraron todas las sesiones."
+
+msgid "refresh is required (or pass all=true)."
+msgstr "refresh es obligatorio (o envía all=true)."
+
+msgid "Signed out."
+msgstr "Sesión cerrada."
+
+msgid "Enter a valid email address."
+msgstr "Introduce una dirección de correo electrónico válida."
+
+msgid "Something went wrong. Please contact support or try again."
+msgstr "Algo salió mal. Contacta con soporte o inténtalo de nuevo."
+
+msgid "Your password is required to delete your account."
+msgstr "Se requiere tu contraseña para eliminar tu cuenta."
+
+msgid "Password is incorrect"
+msgstr "La contraseña es incorrecta"
+
+#, python-format
+msgid "Type %(confirmation)s to confirm."
+msgstr "Escribe %(confirmation)s para confirmar."
+
+msgid "All password fields are required"
+msgstr "Todos los campos de contraseña son obligatorios"
+
+msgid "Current password is incorrect"
+msgstr "La contraseña actual es incorrecta"
+
+msgid "New passwords do not match"
+msgstr "Las contraseñas nuevas no coinciden"
+
+msgid "Password updated successfully"
+msgstr "Contraseña actualizada correctamente"
+
+msgid "All existing sessions have been signed out."
+msgstr "Se han cerrado todas las sesiones existentes."

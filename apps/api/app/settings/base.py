@@ -166,6 +166,11 @@ REST_FRAMEWORK = {
         # Not a DRF endpoint - see pft/admin_throttle.py for how this scope
         # reaches the plain-Django admin login.
         "admin_login": os.getenv("THROTTLE_ADMIN_LOGIN", "10/min"),
+        # The send-a-test-notification action makes the server issue an
+        # outbound HTTP request (ntfy/webhook) or send mail on the caller's
+        # behalf - worth its own modest cap independent of the general "user"
+        # rate, same reasoning as login/register.
+        "notification_test": os.getenv("THROTTLE_NOTIFICATION_TEST", "10/hour"),
     },
 }
 
@@ -188,6 +193,12 @@ MIDDLEWARE = [
     "pft.admin_throttle.AdminLoginThrottleMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Reads Accept-Language (there's no session/cookie login page to carry a
+    # `django_language` cookie override on this JSON API, so the header is the
+    # only signal) and activates a language from LANGUAGES for the rest of the
+    # request - what makes gettext/gettext_lazy calls in serializers and
+    # emails translate. Must sit between Session and Common per Django's docs.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -291,10 +302,23 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "en"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
+
+# Every language a translation.json/django.po pair exists for - see docs/i18n.md.
+# LocaleMiddleware picks one of these from the Accept-Language header (or the
+# `?lang=` override it also understands) per request, so hand-written strings
+# wrapped in gettext/gettext_lazy translate the same way DRF's own built-in
+# validation messages already do. The frontend's language list in
+# apps/web/app/i18n.ts is the same two codes, kept in sync by hand since the
+# two apps have no shared config.
+LANGUAGES = [
+    ("en", "English"),
+    ("es", "Español"),
+]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -349,12 +373,48 @@ CELERY_BEAT_SCHEDULE = {
         "task": "pft.tasks.materialize_due_scheduled_transactions_task",
         "schedule": crontab(minute=0),
     },
+    # Daily rather than hourly: these are alerts, not time-critical postings,
+    # and NotificationLog's dedupe key already makes re-running safe - once
+    # a day is just enough not to spam a worker that restarts mid-run.
+    "check-budget-threshold-alerts-daily": {
+        "task": "pft.tasks.check_budget_threshold_alerts_task",
+        "schedule": crontab(hour=8, minute=0),
+    },
+    "send-scheduled-transaction-reminders-daily": {
+        "task": "pft.tasks.send_scheduled_transaction_reminders_task",
+        "schedule": crontab(hour=8, minute=15),
+    },
+    "send-weekly-digest-mondays": {
+        "task": "pft.tasks.send_weekly_digest_task",
+        "schedule": crontab(hour=8, minute=30, day_of_week=1),
+    },
 }
 if FINTRACK_DEMO_MODE:
     CELERY_BEAT_SCHEDULE["reset-demo-data-hourly"] = {
         "task": "pft.tasks.reset_demo_data_task",
         "schedule": crontab(minute=0),
     }
+
+# --- Email (notifications) ------------------------------------------------
+# Console backend by default - self-hosters see the message that would have
+# been sent (in the api/worker process's own log) without configuring SMTP
+# first, which is enough to try the feature. Set EMAIL_HOST for real delivery;
+# see docs/self-hosting.md. Explicitly setting EMAIL_BACKEND always wins, for
+# the rare case of wanting a different backend entirely (e.g. a file backend
+# for debugging).
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.smtp.EmailBackend"
+    if os.getenv("EMAIL_HOST")
+    else "django.core.mail.backends.console.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "FinTrack <notifications@fintrack.local>")
 
 # --- Cache ---------------------------------------------------------------
 # DRF's throttle classes (and pft/admin_throttle.py) count requests through

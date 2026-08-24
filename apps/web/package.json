@@ -22,7 +22,8 @@
     "orval": "orval",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "i18n:extract": "i18next-cli extract"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -63,6 +64,9 @@
     "embla-carousel-react": "^8.6.0",
     "flubber": "^0.4.2",
     "framer-motion": "^13.0.0",
+    "i18next": "^25.6.0",
+    "i18next-browser-languagedetector": "^8.2.0",
+    "i18next-http-backend": "^3.0.2",
     "input-otp": "^1.4.2",
     "lucide": "^1.31.0",
     "lucide-react": "^0.487.0",
@@ -71,6 +75,7 @@
     "react-day-picker": "10.0.1",
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
+    "react-i18next": "^16.4.0",
     "react-resizable-panels": "^4.12.2",
     "react-router-dom": "^7.18.2",
     "recharts": "^2.15.2",
@@ -100,6 +105,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.11.0",
+    "i18next-cli": "^1.11.0",
     "jsdom": "^30.0.1",
     "orval": "^7.8.0",
     "typescript": "~5.8.3",

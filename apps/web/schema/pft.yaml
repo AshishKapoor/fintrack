@@ -2348,6 +2348,32 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/finance/payees/{id}/suggested-category/:
+    get:
+      operationId: v1_finance_payees_suggested_category_retrieve
+      description: |-
+        The category most often used with this payee - powers quick-add's
+        amount -> payee -> (suggested) category -> done flow (ROADMAP.md
+        Phase 1). Ties broken by whichever was used most recently, so a
+        payee's habits can drift over time instead of getting stuck on
+        whatever was most common historically.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestedCategory'
+          description: ''
   /api/v1/finance/postings/:
     get:
       operationId: v1_finance_postings_list
@@ -3403,6 +3429,86 @@ paths:
   /api/v1/me/:
     get:
       operationId: v1_me_retrieve
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/notifications/preferences/:
+    get:
+      operationId: v1_notifications_preferences_retrieve
+      description: |-
+        One row per user, created on first access - see the model's docstring.
+
+        A GET before any Save is what powers the settings tab showing sensible
+        defaults (budget alerts on, threshold 90%, everything else off) rather
+        than a 404 for every user who has never touched this tab.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+          description: ''
+    put:
+      operationId: v1_notifications_preferences_update
+      description: |-
+        One row per user, created on first access - see the model's docstring.
+
+        A GET before any Save is what powers the settings tab showing sensible
+        defaults (budget alerts on, threshold 90%, everything else off) rather
+        than a 404 for every user who has never touched this tab.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPreference'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+          description: ''
+    patch:
+      operationId: v1_notifications_preferences_partial_update
+      description: |-
+        One row per user, created on first access - see the model's docstring.
+
+        A GET before any Save is what powers the settings tab showing sensible
+        defaults (budget alerts on, threshold 90%, everything else off) rather
+        than a 404 for every user who has never touched this tab.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationPreference'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPreference'
+          description: ''
+  /api/v1/notifications/test/:
+    post:
+      operationId: v1_notifications_test_create
+      description: Send a real notification now, on every enabled channel, bypassing
+        dedupe.
       tags:
       - v1
       security:
@@ -4537,6 +4643,9 @@ components:
         payee:
           type: integer
           nullable: true
+        payee_name:
+          type: string
+          readOnly: true
         memo:
           type: string
         source_type:
@@ -4578,6 +4687,7 @@ components:
       - budget_file
       - created_at
       - id
+      - payee_name
       - posting_lines
       - postings
       - transaction_date
@@ -4590,6 +4700,55 @@ components:
       description: |-
         * `envelope` - Envelope
         * `traditional` - Traditional
+    NotificationPreference:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email_enabled:
+          type: boolean
+        ntfy_enabled:
+          type: boolean
+        ntfy_server_url:
+          type: string
+          format: uri
+          maxLength: 255
+        ntfy_topic:
+          type: string
+          maxLength: 120
+        webhook_enabled:
+          type: boolean
+        webhook_url:
+          type: string
+          format: uri
+          maxLength: 500
+        budget_alerts_enabled:
+          type: boolean
+        budget_alert_threshold:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        reminders_enabled:
+          type: boolean
+        reminder_days_before:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        weekly_digest_enabled:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - updated_at
     Organization:
       type: object
       properties:
@@ -5060,6 +5219,9 @@ components:
         payee:
           type: integer
           nullable: true
+        payee_name:
+          type: string
+          readOnly: true
         memo:
           type: string
         source_type:
@@ -5089,6 +5251,51 @@ components:
           type: array
           items:
             type: integer
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedNotificationPreference:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email_enabled:
+          type: boolean
+        ntfy_enabled:
+          type: boolean
+        ntfy_server_url:
+          type: string
+          format: uri
+          maxLength: 255
+        ntfy_topic:
+          type: string
+          maxLength: 120
+        webhook_enabled:
+          type: boolean
+        webhook_url:
+          type: string
+          format: uri
+          maxLength: 500
+        budget_alerts_enabled:
+          type: boolean
+        budget_alert_threshold:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        reminders_enabled:
+          type: boolean
+        reminder_days_before:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        weekly_digest_enabled:
+          type: boolean
         created_at:
           type: string
           format: date-time
@@ -5446,6 +5653,22 @@ components:
         * `rule` - Rule
         * `scheduled` - Scheduled
         * `transfer` - Transfer
+    SuggestedCategory:
+      type: object
+      description: |-
+        Response shape for PayeeViewSet.suggested_category - schema-only (see
+        @extend_schema on the view): without it, drf-spectacular falls back to
+        the viewset's own PayeeSerializer for this action's response, which
+        doesn't have these fields and would generate a wrong/unusable client type.
+      properties:
+        category:
+          type: integer
+          nullable: true
+        category_name:
+          type: string
+      required:
+      - category
+      - category_name
     Tag:
       type: object
       properties:

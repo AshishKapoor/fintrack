@@ -3,10 +3,10 @@
 import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
 import { useV1FinanceCategoriesList, v1FinanceTransactionsUpdate } from '@/client/gen/pft/v1/v1'
 import {
-  buildPostings,
-  displayFields,
+  buildSplitPostings,
   resolveDefaultAccountId,
   useInvalidateLedger,
+  type SplitLeg,
   type TransactionKind,
 } from '@/lib/ledger'
 import { getDefaultBudgetFile } from '@/lib/finance-client'
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PayeeCombobox } from '@/components/payee-combobox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -31,10 +32,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { SplitPostingsEditor } from '@/components/split-postings-editor'
+import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 
@@ -47,11 +51,15 @@ export function EditTransactionDialog({
   onOpenChange: (open: boolean) => void
   transaction: LedgerTransaction
 }) {
+  const { t } = useTranslation()
   const [kind, setKind] = useState<TransactionKind>('expense')
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [payeeId, setPayeeId] = useState<number | null>(null)
+  const [splitMode, setSplitMode] = useState(false)
+  const [splits, setSplits] = useState<SplitLeg[]>([{ categoryId: 0, amount: '' }])
 
   const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
@@ -65,11 +73,30 @@ export function EditTransactionDialog({
 
     function initialise() {
       if (!transaction) return
-      const display = displayFields(transaction)
-      setKind(display.kind)
-      setTitle(display.title)
-      setAmount(display.amount.toFixed(2))
-      setSelectedCategory(display.categoryId ? String(display.categoryId) : '')
+      const categoryLegs = transaction.posting_lines.filter((line) => line.category !== null)
+      const raw = categoryLegs.reduce((sum, leg) => sum + Number(leg.amount), 0)
+      const inferredKind: TransactionKind = raw < 0 ? 'income' : 'expense'
+      const total = categoryLegs.reduce((sum, leg) => sum + Math.abs(Number(leg.amount)), 0)
+
+      setKind(inferredKind)
+      setTitle(transaction.memo || `Transaction ${transaction.id}`)
+      setAmount(total.toFixed(2))
+      setPayeeId(transaction.payee ?? null)
+
+      if (categoryLegs.length > 1) {
+        setSplitMode(true)
+        setSplits(
+          categoryLegs.map((leg) => ({
+            categoryId: leg.category as number,
+            amount: Math.abs(Number(leg.amount)).toFixed(2),
+          })),
+        )
+        setSelectedCategory('')
+      } else {
+        setSplitMode(false)
+        setSelectedCategory(categoryLegs[0]?.category ? String(categoryLegs[0].category) : '')
+        setSplits([{ categoryId: categoryLegs[0]?.category ?? 0, amount: total.toFixed(2) }])
+      }
 
       if (transaction.transaction_date) {
         setDate(new Date(transaction.transaction_date))
@@ -77,20 +104,33 @@ export function EditTransactionDialog({
     }
   }, [transaction])
 
+  const toggleSplitMode = (enabled: boolean) => {
+    setSplitMode(enabled)
+    if (enabled) {
+      setSplits([{ categoryId: parseInt(selectedCategory) || 0, amount }])
+    } else if (splits[0]?.categoryId) {
+      setSelectedCategory(String(splits[0].categoryId))
+    }
+  }
+
   const handleUpdateTransaction = async () => {
     if (!date) return
 
     try {
       // A PUT replaces the posting set wholesale: the API deletes the old legs
-      // and writes the new balanced pair, keeping the invariant intact.
+      // and writes the new balanced set, keeping the invariant intact.
       const accountLeg = transaction.posting_lines.find((line) => line.account !== null)
       const accountId = accountLeg?.account ?? (await resolveDefaultAccountId())
+      const effectiveSplits = splitMode
+        ? splits
+        : [{ categoryId: parseInt(selectedCategory), amount }]
       await v1FinanceTransactionsUpdate(String(transaction.id), {
         budget_file: transaction.budget_file,
         transaction_date: format(date, 'yyyy-MM-dd'),
         memo: title,
-        postings: buildPostings(accountId, parseInt(selectedCategory), amount, kind),
-      })
+        payee: payeeId,
+        postings: buildSplitPostings(accountId, effectiveSplits, kind),
+      } as never)
 
       await refreshLedger()
 
@@ -112,6 +152,17 @@ export function EditTransactionDialog({
       !category.is_archived &&
       (activeFile ? category.budget_file === activeFile.id : true),
   )
+
+  const splitTotalValid =
+    !splitMode ||
+    (splits.length > 0 &&
+      splits.every((split) => split.categoryId && Number(split.amount) > 0) &&
+      Math.abs(
+        splits.reduce((sum, split) => sum + Math.abs(Number(split.amount || 0)), 0) -
+          Math.abs(Number(amount || 0)),
+      ) < 0.005)
+
+  const canSave = !!title && !!amount && (splitMode ? splitTotalValid : !!selectedCategory)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,6 +207,14 @@ export function EditTransactionDialog({
             />
           </div>
           <div className='grid gap-2'>
+            <Label>{t('transactions.payee')}</Label>
+            <PayeeCombobox
+              budgetFileId={activeFile?.id ?? transaction.budget_file ?? null}
+              value={payeeId}
+              onChange={setPayeeId}
+            />
+          </div>
+          <div className='grid gap-2'>
             <Label htmlFor='amount'>Amount</Label>
             <Input
               id='amount'
@@ -188,33 +247,48 @@ export function EditTransactionDialog({
               </PopoverContent>
             </Popover>
           </div>
-          <div className='grid gap-2'>
-            <Label htmlFor='category'>Category</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger id='category'>
-                <SelectValue placeholder='Select a category' />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredCategories.length === 0 ? (
-                  <div className='p-2 text-sm text-center text-muted-foreground'>
-                    No {kind} categories found
-                  </div>
-                ) : (
-                  filteredCategories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+          <div className='flex items-center justify-between'>
+            <Label htmlFor='split-mode-edit' className='cursor-pointer font-normal'>
+              {t('transactions.splitTransaction')}
+            </Label>
+            <Switch id='split-mode-edit' checked={splitMode} onCheckedChange={toggleSplitMode} />
           </div>
+          {splitMode ? (
+            <SplitPostingsEditor
+              categories={filteredCategories}
+              totalAmount={amount}
+              splits={splits}
+              onChange={setSplits}
+            />
+          ) : (
+            <div className='grid gap-2'>
+              <Label htmlFor='category'>Category</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger id='category'>
+                  <SelectValue placeholder='Select a category' />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredCategories.length === 0 ? (
+                    <div className='p-2 text-sm text-center text-muted-foreground'>
+                      No {kind} categories found
+                    </div>
+                  ) : (
+                    filteredCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button type='submit' onClick={handleUpdateTransaction}>
+          <Button type='submit' onClick={handleUpdateTransaction} disabled={!canSave}>
             Save Changes
           </Button>
         </DialogFooter>

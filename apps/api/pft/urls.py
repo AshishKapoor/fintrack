@@ -8,6 +8,8 @@ from .views import (
     ChangePasswordView,
     DeleteAccountView,
     MeView,
+    NotificationPreferenceView,
+    NotificationTestView,
     RegisterUserAPIView,
     UpdateProfileView,
 )
@@ -28,4 +30,12 @@ urlpatterns = [
         "profile/change-password/", ChangePasswordView.as_view(), name="change-password"
     ),
     path("profile/delete-account/", DeleteAccountView.as_view(), name="delete-account"),
+    path(
+        "notifications/preferences/",
+        NotificationPreferenceView.as_view(),
+        name="notification-preferences",
+    ),
+    path(
+        "notifications/test/", NotificationTestView.as_view(), name="notification-test"
+    ),
 ]

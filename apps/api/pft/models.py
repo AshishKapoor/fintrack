@@ -827,6 +827,101 @@ class EncryptedBackupBundle(models.Model):
         ordering = ["-created_at", "-id"]
 
 
+class NotificationPreference(models.Model):
+    """How and when to reach one user - see pft/notifications.py.
+
+    One row per user (not per budget file): "am I on Slack via webhook" is a
+    property of the person, not of any one budget. Triggers that are
+    naturally per-budget-file (a threshold on category spend, a due bill)
+    fan out over every budget file this user can access - see
+    notifications.check_budget_threshold_alerts and
+    notifications.send_scheduled_transaction_reminders.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="notification_preference"
+    )
+
+    email_enabled = models.BooleanField(default=False)
+
+    ntfy_enabled = models.BooleanField(default=False)
+    ntfy_server_url = models.URLField(max_length=255, default="https://ntfy.sh")
+    ntfy_topic = models.CharField(max_length=120, blank=True)
+
+    webhook_enabled = models.BooleanField(default=False)
+    webhook_url = models.URLField(max_length=500, blank=True)
+
+    budget_alerts_enabled = models.BooleanField(default=True)
+    # Percent of a category's assigned envelope (assigned + carryover) that
+    # must be spent before an alert fires.
+    budget_alert_threshold = models.PositiveSmallIntegerField(default=90)
+
+    reminders_enabled = models.BooleanField(default=True)
+    reminder_days_before = models.PositiveSmallIntegerField(default=1)
+
+    weekly_digest_enabled = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name="notification_budget_alert_threshold_range",
+                check=Q(budget_alert_threshold__gte=1)
+                & Q(budget_alert_threshold__lte=100),
+            ),
+            models.CheckConstraint(
+                name="notification_reminder_days_before_range",
+                check=Q(reminder_days_before__gte=0)
+                & Q(reminder_days_before__lte=30),
+            ),
+        ]
+
+    def __str__(self):
+        return f"Notification preferences for {self.user.email}"
+
+
+class NotificationLog(models.Model):
+    """One row per notification actually sent - the dedupe ledger.
+
+    A beat task runs daily (or weekly, for the digest) and re-evaluates every
+    live condition from scratch rather than tracking "have I told this user
+    about this yet" in memory, so it must not re-alert on every run while a
+    category stays over threshold. `dedupe_key` encodes enough of the
+    condition to make that safe - see the callers in notifications.py for
+    what goes into it per kind. The unique constraint is what actually
+    prevents a duplicate send if two beat ticks ever overlap, the same
+    guarantee style as the ledger's zero-sum trigger.
+    """
+
+    KIND_BUDGET_THRESHOLD = "budget_threshold"
+    KIND_SCHEDULED_REMINDER = "scheduled_reminder"
+    KIND_WEEKLY_DIGEST = "weekly_digest"
+
+    KIND_CHOICES = (
+        (KIND_BUDGET_THRESHOLD, "Budget threshold"),
+        (KIND_SCHEDULED_REMINDER, "Scheduled reminder"),
+        (KIND_WEEKLY_DIGEST, "Weekly digest"),
+    )
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notification_logs"
+    )
+    kind = models.CharField(max_length=24, choices=KIND_CHOICES)
+    dedupe_key = models.CharField(max_length=255)
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-sent_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "kind", "dedupe_key"],
+                name="unique_notification_per_user_kind_dedupe_key",
+            )
+        ]
+
+
 class ImportJob(models.Model):
     FORMAT_CSV = "csv"
     FORMAT_OFX = "ofx"

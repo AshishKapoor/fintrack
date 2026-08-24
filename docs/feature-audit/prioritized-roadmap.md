@@ -56,12 +56,17 @@ This roadmap is derived directly from `feature-matrix.json` using the agreed Val
 - `data_export_csv_json`: optional future enhancement is backend-generated export files; current client-side export is available.
 - `data_import_csv_bank`: add CSV import pipeline and validation-driven import UX.
 - `account_delete_flow`: implement API + confirmation UX for account deletion.
-- `budget_alerts_notifications`: add threshold rules and in-app alert surfaces.
 - `recurring_transactions`: add recurrence model fields, schedule logic, and UI.
+
+`budget_alerts_notifications` and `pwa_offline_support` (both formerly
+listed here as pending) shipped as part of [ROADMAP.md](../../ROADMAP.md)
+Phase 1 - see `feature-matrix.json` for current evidence_refs. This
+narrative doc predates ROADMAP.md's phase numbering and is not
+script-regenerated like `feature-matrix.json`/`parity-report.md` are; treat
+the matrix as the source of truth if the two ever disagree.
 
 ## Optional Nice-to-Have (Deferred)
 
-- `pwa_offline_support`
 - `savings_goals`
 - `subscriptions_tracking`
 - `debt_tracking`

@@ -22,6 +22,7 @@ from pft.models import (
     CategoryV2,
     LedgerPosting,
     LedgerTransaction,
+    NotificationPreference,
     Payee,
     ScheduledTransaction,
     Transaction,
@@ -243,6 +244,13 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
                     self.client.delete(url).status_code,
                     status.HTTP_404_NOT_FOUND,
                 )
+
+    def test_cannot_query_another_tenants_payee_suggested_category(self):
+        """The custom @action isn't covered by other_tenant_detail_urls's get/delete table."""
+        response = self.client.get(
+            f"/api/v1/finance/payees/{self.alice.payee.id}/suggested-category/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_endpoints_only_return_own_rows(self):
         cases = {
@@ -523,3 +531,43 @@ class OrganizationSharingTests(TenantIsolationTestCase):
             ).status_code,
             status.HTTP_404_NOT_FOUND,
         )
+
+
+class NotificationPreferenceIsolationTests(TenantIsolationTestCase):
+    """NotificationPreference has no id in the URL at all - it's always
+
+    get_or_create(user=request.user) - so there is no "guess another user's
+    row's id" attack surface the way there is for ledger models. What's worth
+    proving instead: Bob's own GET/PATCH never sees or touches Alice's row.
+    """
+
+    def test_bob_get_never_returns_alices_preference(self):
+        NotificationPreference.objects.create(
+            user=self.alice.user, ntfy_topic="alices-secret-topic"
+        )
+
+        response = self.client.get("/api/v1/notifications/preferences/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(response.data["ntfy_topic"], "alices-secret-topic")
+        self.assertEqual(
+            NotificationPreference.objects.get(user=self.bob.user).ntfy_topic, ""
+        )
+
+    def test_bobs_patch_never_touches_alices_row(self):
+        alice_preference = NotificationPreference.objects.create(
+            user=self.alice.user, webhook_enabled=False
+        )
+
+        response = self.client.patch(
+            "/api/v1/notifications/preferences/",
+            # A literal public IP, not a hostname: resolves without a real DNS
+            # query (see is_safe_outbound_url), so this test is deterministic
+            # without network access.
+            {"webhook_enabled": True, "webhook_url": "https://8.8.8.8/hook"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        alice_preference.refresh_from_db()
+        self.assertFalse(alice_preference.webhook_enabled)

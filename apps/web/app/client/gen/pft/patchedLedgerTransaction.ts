@@ -15,6 +15,7 @@ export interface PatchedLedgerTransaction {
   transaction_date?: string;
   /** @nullable */
   payee?: number | null;
+  readonly payee_name?: string;
   memo?: string;
   source_type?: SourceTypeEnum;
   cleared?: boolean;

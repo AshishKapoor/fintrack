@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { SWRConfig } from 'swr'
 import { CurrencyProvider } from './context/currency-context'
 import { OrganizationProvider } from './context/organization-context'
+import { i18nReady } from './i18n'
 import { initAnalytics } from './lib/analytics'
 import { initAuth } from './lib/auth'
 
@@ -15,8 +16,10 @@ initAnalytics()
 // HttpOnly refresh cookie to find out whether there is actually a session
 // before anything in the tree (including the route guard in App and the
 // providers below, both of which read isLoggedIn() synchronously) renders.
+// i18nReady resolves once the detected language's catalog has loaded, so
+// nav chrome (sidebar, top bar) never needs a Suspense boundary of its own.
 async function bootstrap() {
-  await initAuth()
+  await Promise.all([initAuth(), i18nReady])
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

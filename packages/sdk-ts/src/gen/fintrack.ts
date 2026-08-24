@@ -20,6 +20,7 @@ import type {
   ImportJob,
   LedgerPostingRead,
   LedgerTransaction,
+  NotificationPreference,
   Organization,
   PaginatedAuditLogList,
   PaginatedBudgetList,
@@ -38,6 +39,7 @@ import type {
   PatchedExportJob,
   PatchedImportJob,
   PatchedLedgerTransaction,
+  PatchedNotificationPreference,
   PatchedOrganization,
   PatchedPayee,
   PatchedSavedReport,
@@ -49,6 +51,7 @@ import type {
   Payee,
   SavedReport,
   ScheduledTransaction,
+  SuggestedCategory,
   Tag,
   TokenObtainPair,
   TokenRefresh,
@@ -3727,6 +3730,46 @@ export const v1FinancePayeesDestroy = async (id: string, options?: RequestInit):
 
 
 /**
+ * The category most often used with this payee - powers quick-add's
+amount -> payee -> (suggested) category -> done flow (ROADMAP.md
+Phase 1). Ties broken by whichever was used most recently, so a
+payee's habits can drift over time instead of getting stuck on
+whatever was most common historically.
+ */
+export type v1FinancePayeesSuggestedCategoryRetrieveResponse200 = {
+  data: SuggestedCategory
+  status: 200
+}
+    
+export type v1FinancePayeesSuggestedCategoryRetrieveResponseSuccess = (v1FinancePayeesSuggestedCategoryRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinancePayeesSuggestedCategoryRetrieveResponse = (v1FinancePayeesSuggestedCategoryRetrieveResponseSuccess)
+
+export const getV1FinancePayeesSuggestedCategoryRetrieveUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/payees/${id}/suggested-category/`
+}
+
+export const v1FinancePayeesSuggestedCategoryRetrieve = async (id: string, options?: RequestInit): Promise<v1FinancePayeesSuggestedCategoryRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinancePayeesSuggestedCategoryRetrieveResponse>(getV1FinancePayeesSuggestedCategoryRetrieveUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -5350,6 +5393,164 @@ export const v1MeRetrieve = async ( options?: RequestInit): Promise<v1MeRetrieve
   {      
     ...options,
     method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export type v1NotificationsPreferencesRetrieveResponse200 = {
+  data: NotificationPreference
+  status: 200
+}
+    
+export type v1NotificationsPreferencesRetrieveResponseSuccess = (v1NotificationsPreferencesRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1NotificationsPreferencesRetrieveResponse = (v1NotificationsPreferencesRetrieveResponseSuccess)
+
+export const getV1NotificationsPreferencesRetrieveUrl = () => {
+
+
+  
+
+  return `/api/v1/notifications/preferences/`
+}
+
+export const v1NotificationsPreferencesRetrieve = async ( options?: RequestInit): Promise<v1NotificationsPreferencesRetrieveResponse> => {
+  
+  return fintrackFetch<v1NotificationsPreferencesRetrieveResponse>(getV1NotificationsPreferencesRetrieveUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export type v1NotificationsPreferencesUpdateResponse200 = {
+  data: NotificationPreference
+  status: 200
+}
+    
+export type v1NotificationsPreferencesUpdateResponseSuccess = (v1NotificationsPreferencesUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1NotificationsPreferencesUpdateResponse = (v1NotificationsPreferencesUpdateResponseSuccess)
+
+export const getV1NotificationsPreferencesUpdateUrl = () => {
+
+
+  
+
+  return `/api/v1/notifications/preferences/`
+}
+
+export const v1NotificationsPreferencesUpdate = async (notificationPreference: NonReadonly<NotificationPreference>, options?: RequestInit): Promise<v1NotificationsPreferencesUpdateResponse> => {
+  
+  return fintrackFetch<v1NotificationsPreferencesUpdateResponse>(getV1NotificationsPreferencesUpdateUrl(),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      notificationPreference,)
+  }
+);}
+
+
+
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export type v1NotificationsPreferencesPartialUpdateResponse200 = {
+  data: NotificationPreference
+  status: 200
+}
+    
+export type v1NotificationsPreferencesPartialUpdateResponseSuccess = (v1NotificationsPreferencesPartialUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1NotificationsPreferencesPartialUpdateResponse = (v1NotificationsPreferencesPartialUpdateResponseSuccess)
+
+export const getV1NotificationsPreferencesPartialUpdateUrl = () => {
+
+
+  
+
+  return `/api/v1/notifications/preferences/`
+}
+
+export const v1NotificationsPreferencesPartialUpdate = async (patchedNotificationPreference: NonReadonly<PatchedNotificationPreference>, options?: RequestInit): Promise<v1NotificationsPreferencesPartialUpdateResponse> => {
+  
+  return fintrackFetch<v1NotificationsPreferencesPartialUpdateResponse>(getV1NotificationsPreferencesPartialUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      patchedNotificationPreference,)
+  }
+);}
+
+
+
+/**
+ * Send a real notification now, on every enabled channel, bypassing dedupe.
+ */
+export type v1NotificationsTestCreateResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type v1NotificationsTestCreateResponseSuccess = (v1NotificationsTestCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1NotificationsTestCreateResponse = (v1NotificationsTestCreateResponseSuccess)
+
+export const getV1NotificationsTestCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/notifications/test/`
+}
+
+export const v1NotificationsTestCreate = async ( options?: RequestInit): Promise<v1NotificationsTestCreateResponse> => {
+  
+  return fintrackFetch<v1NotificationsTestCreateResponse>(getV1NotificationsTestCreateUrl(),
+  {      
+    ...options,
+    method: 'POST'
     
     
   }

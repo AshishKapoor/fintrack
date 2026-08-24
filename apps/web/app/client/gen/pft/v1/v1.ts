@@ -32,6 +32,7 @@ import type {
   ImportJob,
   LedgerPostingRead,
   LedgerTransaction,
+  NotificationPreference,
   Organization,
   PaginatedAuditLogList,
   PaginatedBudgetList,
@@ -50,6 +51,7 @@ import type {
   PatchedExportJob,
   PatchedImportJob,
   PatchedLedgerTransaction,
+  PatchedNotificationPreference,
   PatchedOrganization,
   PatchedPayee,
   PatchedSavedReport,
@@ -61,6 +63,7 @@ import type {
   Payee,
   SavedReport,
   ScheduledTransaction,
+  SuggestedCategory,
   Tag,
   Transaction,
   TransactionRule,
@@ -3858,6 +3861,45 @@ export const useV1FinancePayeesDestroy = <TError = unknown>(
   }
 }
 /**
+ * The category most often used with this payee - powers quick-add's
+amount -> payee -> (suggested) category -> done flow (ROADMAP.md
+Phase 1). Ties broken by whichever was used most recently, so a
+payee's habits can drift over time instead of getting stuck on
+whatever was most common historically.
+ */
+export const v1FinancePayeesSuggestedCategoryRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<SuggestedCategory>(
+    {url: `/api/v1/finance/payees/${id}/suggested-category/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinancePayeesSuggestedCategoryRetrieveKey = (id: string,) => [`/api/v1/finance/payees/${id}/suggested-category/`] as const;
+
+export type V1FinancePayeesSuggestedCategoryRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinancePayeesSuggestedCategoryRetrieve>>>
+export type V1FinancePayeesSuggestedCategoryRetrieveQueryError = unknown
+
+export const useV1FinancePayeesSuggestedCategoryRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinancePayeesSuggestedCategoryRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinancePayeesSuggestedCategoryRetrieveKey(id) : null);
+  const swrFn = () => v1FinancePayeesSuggestedCategoryRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -5588,6 +5630,177 @@ export const useV1MeRetrieve = <TError = unknown>(
   const swrFn = () => v1MeRetrieve()
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export const v1NotificationsPreferencesRetrieve = (
+    
+ ) => {
+    return httpPFTClient<NotificationPreference>(
+    {url: `/api/v1/notifications/preferences/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1NotificationsPreferencesRetrieveKey = () => [`/api/v1/notifications/preferences/`] as const;
+
+export type V1NotificationsPreferencesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1NotificationsPreferencesRetrieve>>>
+export type V1NotificationsPreferencesRetrieveQueryError = unknown
+
+export const useV1NotificationsPreferencesRetrieve = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1NotificationsPreferencesRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1NotificationsPreferencesRetrieveKey() : null);
+  const swrFn = () => v1NotificationsPreferencesRetrieve()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export const v1NotificationsPreferencesUpdate = (
+    notificationPreference: NonReadonly<NotificationPreference>,
+ ) => {
+    return httpPFTClient<NotificationPreference>(
+    {url: `/api/v1/notifications/preferences/`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: notificationPreference
+    },
+    );
+  }
+
+
+
+export const getV1NotificationsPreferencesUpdateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<NotificationPreference> }) => {
+    return v1NotificationsPreferencesUpdate(arg);
+  }
+}
+export const getV1NotificationsPreferencesUpdateMutationKey = () => [`/api/v1/notifications/preferences/`] as const;
+
+export type V1NotificationsPreferencesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1NotificationsPreferencesUpdate>>>
+export type V1NotificationsPreferencesUpdateMutationError = unknown
+
+export const useV1NotificationsPreferencesUpdate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1NotificationsPreferencesUpdate>>, TError, Key, NonReadonly<NotificationPreference>, Awaited<ReturnType<typeof v1NotificationsPreferencesUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1NotificationsPreferencesUpdateMutationKey();
+  const swrFn = getV1NotificationsPreferencesUpdateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per user, created on first access - see the model's docstring.
+
+A GET before any Save is what powers the settings tab showing sensible
+defaults (budget alerts on, threshold 90%, everything else off) rather
+than a 404 for every user who has never touched this tab.
+ */
+export const v1NotificationsPreferencesPartialUpdate = (
+    patchedNotificationPreference: NonReadonly<PatchedNotificationPreference>,
+ ) => {
+    return httpPFTClient<NotificationPreference>(
+    {url: `/api/v1/notifications/preferences/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedNotificationPreference
+    },
+    );
+  }
+
+
+
+export const getV1NotificationsPreferencesPartialUpdateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedNotificationPreference> }) => {
+    return v1NotificationsPreferencesPartialUpdate(arg);
+  }
+}
+export const getV1NotificationsPreferencesPartialUpdateMutationKey = () => [`/api/v1/notifications/preferences/`] as const;
+
+export type V1NotificationsPreferencesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1NotificationsPreferencesPartialUpdate>>>
+export type V1NotificationsPreferencesPartialUpdateMutationError = unknown
+
+export const useV1NotificationsPreferencesPartialUpdate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1NotificationsPreferencesPartialUpdate>>, TError, Key, NonReadonly<PatchedNotificationPreference>, Awaited<ReturnType<typeof v1NotificationsPreferencesPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1NotificationsPreferencesPartialUpdateMutationKey();
+  const swrFn = getV1NotificationsPreferencesPartialUpdateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Send a real notification now, on every enabled channel, bypassing dedupe.
+ */
+export const v1NotificationsTestCreate = (
+    
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/notifications/test/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1NotificationsTestCreateMutationFetcher = ( ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1NotificationsTestCreate();
+  }
+}
+export const getV1NotificationsTestCreateMutationKey = () => [`/api/v1/notifications/test/`] as const;
+
+export type V1NotificationsTestCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1NotificationsTestCreate>>>
+export type V1NotificationsTestCreateMutationError = unknown
+
+export const useV1NotificationsTestCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1NotificationsTestCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1NotificationsTestCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1NotificationsTestCreateMutationKey();
+  const swrFn = getV1NotificationsTestCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
   return {
     swrKey,

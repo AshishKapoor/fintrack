@@ -26,6 +26,7 @@ from .ledger_posting_read import LedgerPostingRead
 from .ledger_posting_write import LedgerPostingWrite
 from .ledger_transaction import LedgerTransaction
 from .mode_enum import ModeEnum
+from .notification_preference import NotificationPreference
 from .organization import Organization
 from .paginated_audit_log_list import PaginatedAuditLogList
 from .paginated_budget_list import PaginatedBudgetList
@@ -44,6 +45,7 @@ from .patched_envelope_assignment import PatchedEnvelopeAssignment
 from .patched_export_job import PatchedExportJob
 from .patched_import_job import PatchedImportJob
 from .patched_ledger_transaction import PatchedLedgerTransaction
+from .patched_notification_preference import PatchedNotificationPreference
 from .patched_organization import PatchedOrganization
 from .patched_payee import PatchedPayee
 from .patched_saved_report import PatchedSavedReport
@@ -58,6 +60,7 @@ from .role_enum import RoleEnum
 from .saved_report import SavedReport
 from .scheduled_transaction import ScheduledTransaction
 from .source_type_enum import SourceTypeEnum
+from .suggested_category import SuggestedCategory
 from .tag import Tag
 from .token_obtain_pair import TokenObtainPair
 from .token_refresh import TokenRefresh
@@ -94,6 +97,7 @@ __all__ = (
     "LedgerPostingWrite",
     "LedgerTransaction",
     "ModeEnum",
+    "NotificationPreference",
     "Organization",
     "PaginatedAuditLogList",
     "PaginatedBudgetList",
@@ -112,6 +116,7 @@ __all__ = (
     "PatchedExportJob",
     "PatchedImportJob",
     "PatchedLedgerTransaction",
+    "PatchedNotificationPreference",
     "PatchedOrganization",
     "PatchedPayee",
     "PatchedSavedReport",
@@ -126,6 +131,7 @@ __all__ = (
     "SavedReport",
     "ScheduledTransaction",
     "SourceTypeEnum",
+    "SuggestedCategory",
     "Tag",
     "TokenObtainPair",
     "TokenRefresh",

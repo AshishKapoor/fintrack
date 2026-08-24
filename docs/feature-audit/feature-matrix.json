@@ -268,18 +268,20 @@
       "feature_id": "budget_alerts_notifications",
       "module": "Budgets",
       "user_job": "Receive warnings when spending approaches or exceeds limits",
-      "status": "Missing",
+      "status": "Implemented",
       "tier": "AddNext",
       "value_score": 3,
       "effort_score": 4,
       "risk_score": 4,
       "priority_score": 3.1,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
-        "landing/app/page.tsx:364",
-        "web/app/components/budget-progress.tsx:85"
+        "api/pft/models.py:NotificationPreference",
+        "api/pft/notifications.py",
+        "api/pft/tasks.py:check_budget_threshold_alerts_task",
+        "web/app/components/notification-settings.tsx"
       ],
-      "notes": "UI shows percentage only; no alerting, notifications, or threshold actions."
+      "notes": "Phase 1: per-user NotificationPreference (email/ntfy/webhook, all off by default) with a configurable budget-alert threshold. A daily Celery beat sweep (check_budget_threshold_alerts_task) alerts once per category per month, deduped via NotificationLog. Settings > Notifications tab, with a send-test action."
     },
     {
       "feature_id": "responsive_theme_currency",
@@ -322,18 +324,20 @@
       "feature_id": "pwa_offline_support",
       "module": "Platform",
       "user_job": "Access core tracking flows with poor connectivity",
-      "status": "Missing",
+      "status": "Implemented",
       "tier": "Optional",
       "value_score": 2,
       "effort_score": 4,
       "risk_score": 2,
       "priority_score": 2.0,
-      "acceptance_status": "AtRisk",
+      "acceptance_status": "Accepted",
       "evidence_refs": [
-        "web/package.json:13",
-        "web/vite.config.ts:1"
+        "web/public/sw.js",
+        "web/public/manifest.webmanifest",
+        "web/app/pages/quick-add/index.tsx",
+        "web/app/client/httpPFTClient.ts:enqueueOfflineRequest"
       ],
-      "notes": "No service worker/offline storage strategy exists."
+      "notes": "Phase 1: installable (manifest + service worker, a Quick Add shortcut), and mutations attempted offline - including the new quick-add screen - queue in httpPFTClient and replay automatically once a connection returns."
     },
     {
       "feature_id": "savings_goals",

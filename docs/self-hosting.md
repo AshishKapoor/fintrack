@@ -129,6 +129,39 @@ That creates `demo@fintrack.local` with six months of transactions, two
 accounts and envelope budgets. Re-run with `--reset` to rebuild it, and delete
 the user when you are done.
 
+## Email
+
+Each user can turn on email as a delivery channel for FinTrack's notifications
+(budget threshold alerts, bill reminders, a weekly digest) under
+**Settings → Notifications** — see [docs/i18n.md](i18n.md) for the unrelated
+neighboring tabs, or just click around, it's a checkbox and a threshold.
+
+Without any `EMAIL_*` variables set, FinTrack uses Django's console backend:
+notifications still fire on schedule, they just print to the `worker`
+container's log instead of being delivered anywhere —
+`docker compose logs worker` to see them. That's enough to confirm the
+feature works; it is not email delivery.
+
+For real delivery, set these in `.env` and restart the stack:
+
+```bash
+EMAIL_HOST=smtp.your-provider.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your-smtp-username
+EMAIL_HOST_PASSWORD=your-smtp-password
+EMAIL_USE_TLS=True
+DEFAULT_FROM_EMAIL=FinTrack <notifications@yourdomain.com>
+```
+
+Any SMTP provider works — a self-hosted relay (Postfix, `msmtp`), or a
+transactional service (SES, Mailgun, Postmark, Resend, ...). Set
+`EMAIL_USE_SSL=True` and drop `EMAIL_USE_TLS` instead if your provider wants
+implicit TLS (usually port 465) rather than STARTTLS (usually port 587).
+
+The two other notification channels — [ntfy](https://ntfy.sh) and generic
+webhooks — need no server-side configuration at all; each user points them at
+their own ntfy topic or webhook URL directly in the Notifications tab.
+
 ## Backups
 
 Your data lives in the `postgres_data` volume. Nothing else in the stack holds

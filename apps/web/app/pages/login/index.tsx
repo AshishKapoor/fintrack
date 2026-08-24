@@ -6,9 +6,11 @@ import { Label } from '@/components/ui/label'
 import { Link } from 'react-router-dom'
 import { login, LoginError } from '@/lib/auth'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 export function LoginPage() {
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,11 +26,11 @@ export function LoginPage() {
       navigate('/home')
     } catch (err) {
       if (err instanceof LoginError && err.kind === 'invalid') {
-        setError('Invalid credentials')
+        setError(t('auth.login.errorInvalid'))
       } else if (err instanceof LoginError && err.kind === 'network') {
-        setError('Cannot reach the server — is the API running and reachable?')
+        setError(t('auth.login.errorNetwork'))
       } else {
-        setError('Something went wrong on the server. Please try again.')
+        setError(t('auth.login.errorGeneric'))
       }
       console.error(err)
     } finally {
@@ -43,11 +45,11 @@ export function LoginPage() {
           <form className='p-6 md:p-8' onSubmit={handleSubmit}>
             <div className='flex flex-col gap-6'>
               <div className='flex flex-col items-center text-center'>
-                <h1 className='text-2xl font-bold'>Welcome back</h1>
-                <p className='text-muted-foreground text-balance'>Login to your FinTrack account</p>
+                <h1 className='text-2xl font-bold'>{t('auth.login.welcomeBack')}</h1>
+                <p className='text-muted-foreground text-balance'>{t('auth.login.subtitle')}</p>
               </div>
               <div className='grid gap-3'>
-                <Label htmlFor='email'>Email</Label>
+                <Label htmlFor='email'>{t('auth.login.email')}</Label>
                 <Input
                   id='email'
                   type='email'
@@ -97,10 +99,10 @@ export function LoginPage() {
                         d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
                       />
                     </svg>
-                    Loading...
+                    {t('auth.login.submitting')}
                   </>
                 ) : (
-                  'Login'
+                  t('auth.login.submit')
                 )}
               </Button>
               {/* <div className='after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t'>
@@ -144,9 +146,9 @@ export function LoginPage() {
                 </Link>
               </div> */}
               <div className='text-center text-sm'>
-                Don&apos;t have an account?{' '}
+                {t('auth.login.noAccount')}{' '}
                 <Link to='/register' className='underline underline-offset-4'>
-                  Sign up
+                  {t('auth.login.signUp')}
                 </Link>
               </div>
             </div>
@@ -154,8 +156,8 @@ export function LoginPage() {
         </CardContent>
       </Card>
       <div className='text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4 mt-4'>
-        By clicking continue, you agree to our <a href='#'>Terms of Service</a> and{' '}
-        <a href='#'>Privacy Policy</a>.
+        {t('auth.login.termsPrefix')} <a href='#'>{t('auth.login.termsLink')}</a>{' '}
+        {t('auth.login.termsJoiner')} <a href='#'>{t('auth.login.privacyLink')}</a>.
       </div>
     </div>
   )

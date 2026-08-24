@@ -28,11 +28,12 @@ explained in full below.
   which clients poll. With no `REDIS_URL`, tasks run eagerly inline — the test
   suite and bare-metal trials need no broker.
 - `beat/` is again the same image, running `celery -A app beat`. It only ever
-  submits the periodic tasks in `CELERY_BEAT_SCHEDULE` (currently just the
-  daily `prune_finance_jobs_task`) for `worker` to actually run - see
-  `pft/tasks.py`. Its schedule state lives on the same `api_run` volume as
-  the generated `SECRET_KEY`, so a restart does not lose track of when a task
-  last fired.
+  submits the periodic tasks in `CELERY_BEAT_SCHEDULE` for `worker` to
+  actually run - see `pft/tasks.py`: a daily job-payload prune, an hourly
+  scheduled-transaction materialization, and three notification sweeps
+  (budget threshold alerts and reminders daily, a digest weekly). Its
+  schedule state lives on the same `api_run` volume as the generated
+  `SECRET_KEY`, so a restart does not lose track of when a task last fired.
 - `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 
@@ -197,27 +198,76 @@ codebase was of that shape.
 **This is why `apps/api/pft/tests/test_tenant_isolation.py` exists, and why any change
 to a queryset, serializer or permission needs a test there.**
 
+## Notifications
+
+`NotificationPreference` is one row per **user**, not per `BudgetFile` -
+unlike everything above, "how do I want to be reached" (email / ntfy /
+webhook, all off by default) and "what do I want to hear about" (budget
+threshold, bill reminders, a weekly digest) are properties of a person, not
+of a ledger. It lives on the account surface (`/api/v1/notifications/*`,
+next to `/api/v1/profile/`), not the finance one.
+
+The three triggers - `pft/notifications.py`'s `check_budget_threshold_alerts`,
+`send_scheduled_transaction_reminders`, `send_weekly_digest` - each iterate
+every opted-in preference and fan out across every `BudgetFile` that user can
+access (`tenancy.accessible_budget_files`), so a shared workspace's members
+each get alerted (or not) according to their own preference, not the
+workspace's. Their Celery beat wrappers live in `pft/tasks.py` alongside
+`materialize_due_scheduled_transactions_task`, same shape: a thin task,
+`on_error`-tolerant business logic underneath, one bad tenant's data cannot
+block another's.
+
+Repeat sends are prevented by `NotificationLog`, a row per
+`(user, kind, dedupe_key)` with a DB `UniqueConstraint` backing it, the same
+"enforce the invariant in the database too" pattern as the ledger's zero-sum
+trigger — a sweep that runs twice (or two beat processes running at once)
+cannot double-send. `dedupe_key` encodes enough of the condition to be safe
+to recompute from scratch every run: `"<budget_file>:<year-month>:<category>"`
+for a threshold alert (one per category per month, however many days it
+stays over), `"<schedule_id>:<next_run_date>"` for a reminder (the *next*
+occurrence gets a fresh key once `next_run_date` advances), an ISO week for
+the digest.
+
+Channel sends (`send_email`, `send_ntfy`, `send_webhook`) are best-effort:
+logged on failure, never raised, so one broken webhook cannot take down a
+person's email alert or block the next tenant's sweep. `is_safe_outbound_url`
+guards ntfy server URLs and webhook URLs against pointing the server at its
+own private network (loopback/private/link-local/reserved ranges) — an SSRF
+concern worth taking seriously specifically because self-hosting is the
+primary deployment shape here, often on the same private network as other,
+less-guarded services.
+
 ## Frontend structure
 
 ```
 apps/web/app/
 ├── main.tsx              root: router, SWR config, currency context, analytics
+├── i18n.ts               react-i18next setup — see docs/i18n.md
 ├── app.tsx               route table and layout switch
-├── pages/                one directory per route
-├── components/           feature components
+├── pages/                one directory per route (quick-add is the PWA
+│                         quick-capture screen; settings/ reads ?tab= to
+│                         land on a specific tab, e.g. from the bell icon)
+├── components/           feature components (payee-combobox and
+│   │                     split-postings-editor are shared by the desktop
+│   │                     dialogs, the register's inline row, and quick-add)
 │   └── ui/               shadcn primitives
 ├── client/
 │   ├── httpPFTClient.ts  axios instance, auth header, 401 refresh-and-retry,
 │   │                     error toasts, offline mutation queue
 │   └── gen/              orval output — generated, TRACKED in git, guarded by
 │                         a CI regen-diff gate
-├── lib/                  auth (JWT cookies), ledger.ts (posting builders, SWR
+├── lib/                  auth (JWT cookies), ledger.ts (posting builders —
+│                         buildSplitPostings handles N category legs, SWR
 │                         invalidation), finance-client (thin helpers), backup,
 │                         import/export, dates, analytics
 ├── e2e/  (../e2e)        Playwright suite — runs against the real stack in CI
 ├── hooks/                Zustand stores
 └── context/              currency + organization providers
 ```
+
+`public/locales/<lang>/translation.json` are the i18next catalogs (fetched at
+runtime, not bundled) and `public/manifest.webmanifest` + `public/sw.js` are
+the PWA app shell - both covered in `docs/i18n.md`.
 
 Data fetching is SWR keyed on URL-ish strings. Note that global revalidation is
 switched off in `main.tsx`, so data refreshes on explicit mutation rather than
@@ -282,13 +332,17 @@ apps/api/pft/tests/
 ├── test_organizations.py     workspaces, roles, invitations
 ├── test_audit_log.py         audit recording and manager-only access
 ├── test_auth_hardening.py    logout, token revocation, throttling
-└── test_account_deletion.py  account deletion cascades
+├── test_account_deletion.py  account deletion cascades
+├── test_scheduled_transaction_scheduler.py  beat-driven materialization
+├── test_notifications.py     channel senders, dedupe, the three triggers, the API
+└── test_payee_suggestions.py payee → suggested-category learning
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright
 end-to-end suite (`apps/web/e2e/`) that drives the real Docker stack through
-nginx — login, transactions, budgets, import, backup/restore, and a two-browser
-shared-workspace scenario. Both run in CI.
+nginx — login, transactions, budgets, import, backup/restore, notification
+preferences, keyboard-first register entry (splits, the inline row), quick
+add, and a two-browser shared-workspace scenario. Both run in CI.
 
 ## Monorepo and SDKs
 

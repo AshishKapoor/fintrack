@@ -8,6 +8,7 @@ import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog'
 import { ImportTransactionsDialog } from '@/components/import-transactions-dialog'
+import { InlineTransactionRow } from '@/components/inline-transaction-row'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -57,6 +58,8 @@ import {
   Upload,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
@@ -67,12 +70,22 @@ const ORDERING: Record<'newest' | 'oldest' | 'highest' | 'lowest', string> = {
 }
 
 export default function TransactionsPage() {
-  const [showAddTransaction, setShowAddTransaction] = useState(false)
+  const { t } = useTranslation()
+  const [searchParams, setSearchParams] = useSearchParams()
+  // The command palette's "Add transaction" action lands here with ?new=1 so
+  // opening the dialog does not need its own route - see command-menu.tsx.
+  // Read directly into the initial state (rather than an effect) so the
+  // dialog is already open on first paint, with no ?new=1 -> render -> effect
+  // -> setState -> re-render round trip.
+  const [showAddTransaction, setShowAddTransaction] = useState(
+    () => searchParams.get('new') === '1',
+  )
   const [showAddTransfer, setShowAddTransfer] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<LedgerTransaction | null>(null)
+  const [inlineEditId, setInlineEditId] = useState<number | null>(null)
   const [date, setDate] = useState<Date | undefined>(undefined)
   const [searchQuery, setSearchQuery] = useState('')
   const [transactionType, setTransactionType] = useState<'all' | 'income' | 'expense'>('all')
@@ -80,11 +93,22 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      const next = new URLSearchParams(searchParams)
+      next.delete('new')
+      setSearchParams(next, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // Debounced so typing does not fire a request per keystroke.
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300)
     return () => clearTimeout(timer)
   }, [searchQuery])
+
+  const isFiltering = Boolean(debouncedSearch || transactionType !== 'all' || date)
 
   // Any filter change invalidates the current page number. Adjusting state
   // during render (with a tracked previous value) is React's sanctioned
@@ -122,34 +146,16 @@ export default function TransactionsPage() {
     return <AnimateSpinner size={64} />
   }
 
-  // Show empty state for no transactions
-  if (!transactions?.results?.length) {
-    return (
-      <div className='p-6'>
-        <EmptyPlaceholder
-          icon={<CircleDollarSign className='w-12 h-12' />}
-          title='No transactions yet'
-          description='Start tracking your finances by adding your first transaction.'
-          action={
-            <div className='flex gap-2'>
-              <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
-              <Button variant='outline' onClick={() => setShowImport(true)}>
-                <Upload className='mr-2 h-4 w-4' />
-                Import statement
-              </Button>
-            </div>
-          }
-        />
-        <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
-        <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
-      </div>
-    )
-  }
-
   // Search, type, date and ordering are applied by the API across the whole
   // ledger. Doing it here only ever filtered the current page, so the result
   // count disagreed with what was shown.
   const filteredTransactions = Array.isArray(transactions?.results) ? transactions.results : []
+  // The whole ledger is empty (not just this filtered view) - the friendly
+  // onboarding message below instead of the plain "No transactions found"
+  // row. The inline add row above the table stays visible either way: a
+  // brand new account is exactly when the fast, no-dialog entry point
+  // matters most, so it must not hide behind an empty-state early return.
+  const hasNoTransactionsAtAll = !isFiltering && transactions?.count === 0
 
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
@@ -288,6 +294,7 @@ export default function TransactionsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            <InlineTransactionRow onDone={() => void refreshTransactions()} />
             {isLoadingTransactions ? (
               <TableRow>
                 <TableCell colSpan={5} className='text-center'>
@@ -297,25 +304,84 @@ export default function TransactionsPage() {
             ) : filteredTransactions?.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className='text-center'>
-                  <EmptyPlaceholder title={''} description={''}>
-                    No transactions found
-                  </EmptyPlaceholder>
+                  {hasNoTransactionsAtAll ? (
+                    <EmptyPlaceholder
+                      icon={<CircleDollarSign className='w-12 h-12' />}
+                      title='No transactions yet'
+                      description='Add one above, or import a statement to get started.'
+                      action={
+                        <Button variant='outline' onClick={() => setShowImport(true)}>
+                          <Upload className='mr-2 h-4 w-4' />
+                          Import statement
+                        </Button>
+                      }
+                    />
+                  ) : (
+                    <EmptyPlaceholder title={''} description={''}>
+                      No transactions found
+                    </EmptyPlaceholder>
+                  )}
                 </TableCell>
               </TableRow>
             ) : (
               filteredTransactions?.map((transaction) => {
+                if (inlineEditId === transaction.id) {
+                  return (
+                    <InlineTransactionRow
+                      key={transaction.id}
+                      transaction={transaction}
+                      onDone={() => setInlineEditId(null)}
+                      onCancel={() => setInlineEditId(null)}
+                    />
+                  )
+                }
+
                 const display = displayFields(transaction)
                 // A transfer has two account legs and no category leg.
                 const isTransfer = transaction.posting_lines.every((line) => line.category === null)
-                const categoryName = isTransfer ? 'Transfer' : display.categoryName || 'Uncategorized'
+                const categoryLabel = isTransfer
+                  ? t('transactions.transfer')
+                  : display.isSplit
+                    ? t('transactions.splitCount', { count: display.categoryCount })
+                    : display.categoryName || t('transactions.uncategorized')
+
+                const canEditInline = !isTransfer && !display.isSplit
+                const openEdit = () => {
+                  if (canEditInline) {
+                    setInlineEditId(transaction.id)
+                  } else {
+                    setSelectedTransaction(transaction)
+                    setShowEditTransaction(true)
+                  }
+                }
 
                 return (
-                  <TableRow key={transaction.id}>
+                  <TableRow
+                    key={transaction.id}
+                    tabIndex={0}
+                    className='cursor-default focus-visible:bg-muted/50 focus-visible:outline-none'
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        openEdit()
+                      } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                        e.preventDefault()
+                        setSelectedTransaction(transaction)
+                        setShowDeleteAlert(true)
+                      }
+                    }}
+                  >
                     <TableCell>
                       {format(new Date(transaction.transaction_date), 'dd MMM yyyy')}
                     </TableCell>
                     <TableCell>{display.title}</TableCell>
-                    <TableCell>{categoryName}</TableCell>
+                    <TableCell>
+                      {display.isSplit ? (
+                        <span className='text-muted-foreground'>{categoryLabel}</span>
+                      ) : (
+                        categoryLabel
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         {display.kind === 'income' ? (
@@ -342,12 +408,7 @@ export default function TransactionsPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setSelectedTransaction(transaction)
-                              setShowEditTransaction(true)
-                            }}
-                          >
+                          <DropdownMenuItem onClick={openEdit}>
                             <Pencil className='mr-2 h-4 w-4' />
                             Edit
                           </DropdownMenuItem>

@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from .models import (
@@ -37,7 +38,7 @@ class UserOwnedBudgetFileMixin:
 
         request = self.context["request"]
         if not can_access(request.user, budget_file, write=True):
-            raise serializers.ValidationError("Budget file not found.")
+            raise serializers.ValidationError(_("Budget file not found."))
 
 
 class BudgetFileSerializer(serializers.ModelSerializer):
@@ -155,6 +156,17 @@ class PayeeSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
         return value
 
 
+class SuggestedCategorySerializer(serializers.Serializer):
+    """Response shape for PayeeViewSet.suggested_category - schema-only (see
+    @extend_schema on the view): without it, drf-spectacular falls back to
+    the viewset's own PayeeSerializer for this action's response, which
+    doesn't have these fields and would generate a wrong/unusable client type.
+    """
+
+    category = serializers.IntegerField(allow_null=True)
+    category_name = serializers.CharField(allow_blank=True)
+
+
 class TagSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
         model = Tag
@@ -198,6 +210,10 @@ class LedgerTransactionSerializer(
     posting_lines = LedgerPostingReadSerializer(
         source="postings", many=True, read_only=True
     )
+    # Mirrors LedgerPostingReadSerializer's account_name/category_name: absent
+    # from the response entirely (not null) when there is no payee, same as
+    # those two - the frontend already treats that shape as optional.
+    payee_name = serializers.CharField(source="payee.name", read_only=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True, required=False
     )
@@ -209,6 +225,7 @@ class LedgerTransactionSerializer(
             "budget_file",
             "transaction_date",
             "payee",
+            "payee_name",
             "memo",
             "source_type",
             "cleared",
@@ -226,7 +243,7 @@ class LedgerTransactionSerializer(
     def _validate_postings(self, postings, budget_file):
         if len(postings) < 2:
             raise serializers.ValidationError(
-                "At least two posting lines are required."
+                _("At least two posting lines are required.")
             )
 
         total = Decimal("0.00")
@@ -235,24 +252,24 @@ class LedgerTransactionSerializer(
             category = posting.get("category")
             if bool(account) == bool(category):
                 raise serializers.ValidationError(
-                    "Each posting must reference exactly one account or one category."
+                    _("Each posting must reference exactly one account or one category.")
                 )
 
             if account and account.budget_file_id != budget_file.id:
                 raise serializers.ValidationError(
-                    "Posting account must belong to budget file."
+                    _("Posting account must belong to budget file.")
                 )
 
             if category and category.budget_file_id != budget_file.id:
                 raise serializers.ValidationError(
-                    "Posting category must belong to budget file."
+                    _("Posting category must belong to budget file.")
                 )
 
             total += posting["amount"]
 
         if total != Decimal("0.00"):
             raise serializers.ValidationError(
-                "Double-entry check failed: postings must sum to zero."
+                _("Double-entry check failed: postings must sum to zero.")
             )
 
     def validate(self, attrs):
@@ -260,19 +277,19 @@ class LedgerTransactionSerializer(
             self.instance, "budget_file", None
         )
         if not budget_file:
-            raise serializers.ValidationError("budget_file is required")
+            raise serializers.ValidationError(_("budget_file is required"))
 
         self._validate_budget_file_owner(budget_file)
 
         payee = attrs.get("payee")
         if payee and payee.budget_file_id != budget_file.id:
-            raise serializers.ValidationError("Payee must belong to same budget file.")
+            raise serializers.ValidationError(_("Payee must belong to same budget file."))
 
         tags = attrs.get("tags") or []
         for tag in tags:
             if tag.budget_file_id != budget_file.id:
                 raise serializers.ValidationError(
-                    "Tag must belong to same budget file."
+                    _("Tag must belong to same budget file.")
                 )
 
         postings = attrs.get("postings")

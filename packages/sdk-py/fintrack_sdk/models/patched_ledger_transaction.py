@@ -28,6 +28,7 @@ class PatchedLedgerTransaction:
         budget_file (int | Unset):
         transaction_date (datetime.date | Unset):
         payee (int | None | Unset):
+        payee_name (str | Unset):
         memo (str | Unset):
         source_type (SourceTypeEnum | Unset): * `manual` - Manual
             * `import` - Import
@@ -49,6 +50,7 @@ class PatchedLedgerTransaction:
     budget_file: int | Unset = UNSET
     transaction_date: datetime.date | Unset = UNSET
     payee: int | None | Unset = UNSET
+    payee_name: str | Unset = UNSET
     memo: str | Unset = UNSET
     source_type: SourceTypeEnum | Unset = UNSET
     cleared: bool | Unset = UNSET
@@ -76,6 +78,8 @@ class PatchedLedgerTransaction:
             payee = UNSET
         else:
             payee = self.payee
+
+        payee_name = self.payee_name
 
         memo = self.memo
 
@@ -134,6 +138,8 @@ class PatchedLedgerTransaction:
             field_dict["transaction_date"] = transaction_date
         if payee is not UNSET:
             field_dict["payee"] = payee
+        if payee_name is not UNSET:
+            field_dict["payee_name"] = payee_name
         if memo is not UNSET:
             field_dict["memo"] = memo
         if source_type is not UNSET:
@@ -184,6 +190,8 @@ class PatchedLedgerTransaction:
             return cast(int | None | Unset, data)
 
         payee = _parse_payee(d.pop("payee", UNSET))
+
+        payee_name = d.pop("payee_name", UNSET)
 
         memo = d.pop("memo", UNSET)
 
@@ -258,6 +266,7 @@ class PatchedLedgerTransaction:
             budget_file=budget_file,
             transaction_date=transaction_date,
             payee=payee,
+            payee_name=payee_name,
             memo=memo,
             source_type=source_type,
             cleared=cleared,

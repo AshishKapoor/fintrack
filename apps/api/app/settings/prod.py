@@ -41,6 +41,10 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    # See the matching comment in settings/dev.py: needed for any deployment
+    # that serves the web app and API from different origins instead of
+    # nginx's same-origin /api/ proxy.
+    "x-use-refresh-cookie",
 ]
 
 LOGGING = {

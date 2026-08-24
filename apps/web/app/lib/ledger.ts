@@ -29,24 +29,39 @@ export interface LedgerDisplay {
   title: string
   categoryId: number | null
   categoryName: string
+  payeeName: string
+  /** Total across every category leg - the full amount for a split transaction, not just the first. */
   amount: number
   kind: TransactionKind
+  /** More than one category leg: a split transaction (see buildSplitPostings). */
+  isSplit: boolean
+  categoryCount: number
 }
 
 /**
- * The category leg carries the classification: negative for income (value
+ * The category legs carry the classification: negative for income (value
  * flows out of the income category into the account), positive for spending.
+ * A split transaction has more than one category leg; amount is their sum so
+ * the list total matches what was actually entered, not just the first leg.
  */
 export function displayFields(transaction: LedgerTransaction): LedgerDisplay {
-  const categoryLeg = transaction.posting_lines.find((line) => line.category !== null)
-  const raw = Number(categoryLeg?.amount ?? transaction.posting_lines[0]?.amount ?? 0)
+  const categoryLegs = transaction.posting_lines.filter((line) => line.category !== null)
+  const firstLeg = categoryLegs[0] ?? transaction.posting_lines[0]
+  const raw = Number(firstLeg?.amount ?? 0)
   const kind: TransactionKind = raw < 0 ? 'income' : 'expense'
+  const total = categoryLegs.reduce((sum, leg) => sum + Math.abs(Number(leg.amount)), 0)
+  const payeeName = transaction.payee_name || ''
   return {
-    title: transaction.memo || `Transaction ${transaction.id}`,
-    categoryId: categoryLeg?.category ?? null,
-    categoryName: categoryLeg?.category_name || '',
-    amount: Math.abs(raw),
+    // payee_name is absent (not just empty) from the API response entirely
+    // when there is no payee - see LedgerTransactionSerializer.payee_name.
+    title: transaction.memo || payeeName || `Transaction ${transaction.id}`,
+    categoryId: firstLeg?.category ?? null,
+    categoryName: firstLeg?.category_name || '',
+    payeeName,
+    amount: categoryLegs.length ? total : Math.abs(raw),
     kind,
+    isSplit: categoryLegs.length > 1,
+    categoryCount: categoryLegs.length,
   }
 }
 
@@ -70,23 +85,43 @@ export async function resolveDefaultAccountId(): Promise<number> {
   return account.id
 }
 
+export interface SplitLeg {
+  categoryId: number
+  amount: string | number
+}
+
 /**
- * Build the balanced posting pair for a simple categorised entry: money moves
- * between the account and the category, summing to zero by construction.
+ * Build a balanced posting set: one account leg (the sum of every split) plus
+ * one category leg per split. A plain, non-split entry is just the N=1 case -
+ * see the backend's LedgerTransactionSerializer._validate_postings, which
+ * only requires two-or-more balanced postings and has never actually
+ * enforced exactly two.
  */
+export function buildSplitPostings(
+  accountId: number,
+  splits: SplitLeg[],
+  kind: TransactionKind,
+) {
+  const categoryLegs = splits.map((split, index) => {
+    const magnitude = Math.abs(Number(split.amount || 0)).toFixed(2)
+    const categoryAmount = kind === 'income' ? `-${magnitude}` : magnitude
+    return { category: split.categoryId, amount: categoryAmount, sort_order: index + 1 }
+  })
+  const totalMagnitude = splits
+    .reduce((sum, split) => sum + Math.abs(Number(split.amount || 0)), 0)
+    .toFixed(2)
+  const accountAmount = kind === 'income' ? totalMagnitude : `-${totalMagnitude}`
+  return [{ account: accountId, amount: accountAmount, sort_order: 0 }, ...categoryLegs]
+}
+
+/** The common single-category case: a convenience wrapper over buildSplitPostings. */
 export function buildPostings(
   accountId: number,
   categoryId: number,
   amount: string | number,
   kind: TransactionKind,
 ) {
-  const magnitude = Math.abs(Number(amount || 0)).toFixed(2)
-  const accountAmount = kind === 'income' ? magnitude : `-${magnitude}`
-  const categoryAmount = kind === 'income' ? `-${magnitude}` : magnitude
-  return [
-    { account: accountId, amount: accountAmount, sort_order: 0 },
-    { category: categoryId, amount: categoryAmount, sort_order: 1 },
-  ]
+  return buildSplitPostings(accountId, [{ categoryId, amount }], kind)
 }
 
 /**

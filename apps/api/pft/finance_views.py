@@ -1,10 +1,11 @@
 from datetime import date
 from decimal import Decimal
 
-from django.db.models import Q, Sum, Value
+from django.db.models import Count, Max, Q, Sum, Value
 from django.db.models.functions import Abs, Coalesce
 from django.http import HttpResponse
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -27,6 +28,7 @@ from .finance_serializers import (
     PayeeSerializer,
     SavedReportSerializer,
     ScheduledTransactionSerializer,
+    SuggestedCategorySerializer,
     TagSerializer,
     TransactionRuleSerializer,
 )
@@ -229,6 +231,32 @@ class PayeeViewSet(UserScopedModelViewSet):
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
         return queryset
+
+    @extend_schema(responses=SuggestedCategorySerializer)
+    @action(detail=True, methods=["get"], url_path="suggested-category")
+    def suggested_category(self, request, pk=None):
+        """The category most often used with this payee - powers quick-add's
+        amount -> payee -> (suggested) category -> done flow (ROADMAP.md
+        Phase 1). Ties broken by whichever was used most recently, so a
+        payee's habits can drift over time instead of getting stuck on
+        whatever was most common historically.
+        """
+        payee = self.get_object()
+        row = (
+            LedgerPosting.objects.filter(
+                transaction__payee=payee,
+                category__isnull=False,
+            )
+            .values("category_id", "category__name")
+            .annotate(count=Count("id"), last_used=Max("transaction__transaction_date"))
+            .order_by("-count", "-last_used")
+            .first()
+        )
+        if not row:
+            return Response({"category": None, "category_name": ""})
+        return Response(
+            {"category": row["category_id"], "category_name": row["category__name"]}
+        )
 
 
 class TagViewSet(UserScopedModelViewSet):

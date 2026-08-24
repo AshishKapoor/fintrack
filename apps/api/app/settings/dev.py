@@ -18,4 +18,10 @@ CORS_ALLOW_HEADERS = [
     "user-agent",
     "x-csrftoken",
     "x-requested-with",
+    # Opts a browser call to /api/token/* into the HttpOnly refresh cookie -
+    # see pft/auth_cookies.py and ARCHITECTURE.md's Authentication section.
+    # Without this, `pnpm dev` against a bare `manage.py runserver` (a
+    # different origin, unlike the same-origin nginx proxy docker-compose
+    # uses) fails every login/refresh at the CORS preflight.
+    "x-use-refresh-cookie",
 ]

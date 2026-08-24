@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: fintrack-api\n"
+"Report-Msgid-Bugs-To: https://github.com/AshishKapoor/fintrack/issues\n"
+"PO-Revision-Date: 2026-08-24 00:00+0000\n"
+"Last-Translator: FinTrack contributors\n"
+"Language-Team: English <https://github.com/AshishKapoor/fintrack>\n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# English is the source language: msgid IS the string shown, so every
+# msgstr below is intentionally empty (gettext falls back to msgid when
+# msgstr is empty) rather than a word-for-word duplicate of it above.
+msgid "Budget file not found."
+msgstr ""
+
+msgid "At least two posting lines are required."
+msgstr ""
+
+msgid "Each posting must reference exactly one account or one category."
+msgstr ""
+
+msgid "Posting account must belong to budget file."
+msgstr ""
+
+msgid "Posting category must belong to budget file."
+msgstr ""
+
+msgid "Double-entry check failed: postings must sum to zero."
+msgstr ""
+
+msgid "budget_file is required"
+msgstr ""
+
+msgid "Payee must belong to same budget file."
+msgstr ""
+
+msgid "Tag must belong to same budget file."
+msgstr ""
+
+msgid "Email is required."
+msgstr ""
+
+msgid "Passwords do not match."
+msgstr ""
+
+msgid "Password must be at least 8 characters long."
+msgstr ""
+
+msgid "A category with this name already exists."
+msgstr ""
+
+msgid "Unknown category."
+msgstr ""
+
+msgid "No refresh token found."
+msgstr ""
+
+msgid "All sessions signed out."
+msgstr ""
+
+msgid "refresh is required (or pass all=true)."
+msgstr ""
+
+msgid "Signed out."
+msgstr ""
+
+msgid "Enter a valid email address."
+msgstr ""
+
+msgid "Something went wrong. Please contact support or try again."
+msgstr ""
+
+msgid "Your password is required to delete your account."
+msgstr ""
+
+msgid "Password is incorrect"
+msgstr ""
+
+#, python-format
+msgid "Type %(confirmation)s to confirm."
+msgstr ""
+
+msgid "All password fields are required"
+msgstr ""
+
+msgid "Current password is incorrect"
+msgstr ""
+
+msgid "New passwords do not match"
+msgstr ""
+
+msgid "Password updated successfully"
+msgstr ""
+
+msgid "All existing sessions have been signed out."
+msgstr ""

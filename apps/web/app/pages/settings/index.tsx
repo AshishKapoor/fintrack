@@ -1,5 +1,6 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
 import { BackupManager } from '@/components/backup-manager'
+import { NotificationSettings } from '@/components/notification-settings'
 import { WorkspaceSettings } from '@/components/workspace-settings'
 import { DeleteAccountDialog } from '@/components/delete-account-dialog'
 import { AnimateSpinner } from '@/components/spinner'
@@ -26,8 +27,10 @@ import { Textarea } from '@/components/ui/textarea'
 import Typography from '@/components/ui/typography'
 import { useToast } from '@/hooks/use-toast'
 import { AxiosError } from 'axios'
-import { Building2, DatabaseBackup, Key, User } from 'lucide-react'
+import { Bell, Building2, DatabaseBackup, Key, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 
 interface UserProfile {
   id: number
@@ -48,6 +51,8 @@ interface PasswordChange {
 }
 
 export default function UserSettingsPage() {
+  const { t } = useTranslation()
+  const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -56,6 +61,12 @@ export default function UserSettingsPage() {
     new_password: '',
     confirm_password: '',
   })
+
+  const requestedTab = searchParams.get('tab')
+  const defaultTab =
+    requestedTab && ['profile', 'account', 'notifications', 'workspace', 'backups'].includes(requestedTab)
+      ? requestedTab
+      : 'profile'
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -69,11 +80,11 @@ export default function UserSettingsPage() {
       } catch (error: unknown) {
         console.error('Failed to fetch profile:', error)
         toast({
-          title: 'Error',
+          title: t('common.error'),
           description:
             error instanceof AxiosError
-              ? error.response?.data?.message || 'Failed to fetch profile data'
-              : 'Failed to fetch profile data',
+              ? error.response?.data?.message || t('settings.profile.fetchError')
+              : t('settings.profile.fetchError'),
           variant: 'destructive',
         })
       } finally {
@@ -82,7 +93,7 @@ export default function UserSettingsPage() {
     }
 
     fetchProfile()
-  }, [toast])
+  }, [toast, t])
 
   const updateProfile = async (formData: Partial<UserProfile>) => {
     setLoading(true)
@@ -94,17 +105,17 @@ export default function UserSettingsPage() {
       })
       setProfile(response)
       toast({
-        title: 'Success',
-        description: 'Profile updated successfully',
+        title: t('common.success'),
+        description: t('settings.profile.updateSuccess'),
       })
     } catch (error: unknown) {
       console.error('Failed to update profile:', error)
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description:
           error instanceof AxiosError
-            ? error.response?.data?.message || 'Failed to update profile'
-            : 'Failed to update profile',
+            ? error.response?.data?.message || t('settings.profile.updateError')
+            : t('settings.profile.updateError'),
         variant: 'destructive',
       })
     } finally {
@@ -116,8 +127,8 @@ export default function UserSettingsPage() {
     e.preventDefault()
     if (passwordData.new_password !== passwordData.confirm_password) {
       toast({
-        title: 'Error',
-        description: 'New passwords do not match',
+        title: t('common.error'),
+        description: t('settings.account.passwordMismatch'),
         variant: 'destructive',
       })
       return
@@ -135,8 +146,8 @@ export default function UserSettingsPage() {
         },
       })
       toast({
-        title: 'Success',
-        description: 'Password changed successfully',
+        title: t('common.success'),
+        description: t('settings.account.passwordSuccess'),
       })
       setPasswordData({
         current_password: '',
@@ -146,11 +157,11 @@ export default function UserSettingsPage() {
     } catch (error: unknown) {
       console.error('Failed to change password:', error)
       toast({
-        title: 'Error',
+        title: t('common.error'),
         description:
           error instanceof AxiosError
-            ? error.response?.data?.message || 'Failed to change password'
-            : 'Failed to change password',
+            ? error.response?.data?.message || t('settings.account.passwordError')
+            : t('settings.account.passwordError'),
         variant: 'destructive',
       })
     } finally {
@@ -161,7 +172,7 @@ export default function UserSettingsPage() {
   return (
     <div className='p-6'>
       <Typography variant='h2' className='mb-4'>
-        Settings
+        {t('settings.title')}
       </Typography>
       {loading && (
         // <div className="flex justify-center items-center my-8">
@@ -170,40 +181,40 @@ export default function UserSettingsPage() {
         <AnimateSpinner size={64} />
       )}
       {!loading && profile && (
-        <Tabs defaultValue='profile' className='space-y-6'>
+        <Tabs defaultValue={defaultTab} className='space-y-6'>
           <TabsList className='w-full justify-start p-0'>
             <TabsTrigger value='profile'>
               <User className='mr-2 h-4 w-4' />
-              Profile
+              {t('settings.tabs.profile')}
             </TabsTrigger>
             <TabsTrigger value='account'>
               <Key className='mr-2 h-4 w-4' />
-              Account
+              {t('settings.tabs.account')}
             </TabsTrigger>
-            {/* <TabsTrigger value='notifications'>
+            <TabsTrigger value='notifications'>
               <Bell className='mr-2 h-4 w-4' />
-              Notifications
-            </TabsTrigger> */}
+              {t('settings.tabs.notifications')}
+            </TabsTrigger>
             <TabsTrigger value='workspace'>
               <Building2 className='mr-2 h-4 w-4' />
-              Workspace
+              {t('settings.tabs.workspace')}
             </TabsTrigger>
             <TabsTrigger value='backups'>
               <DatabaseBackup className='mr-2 h-4 w-4' />
-              Backups
+              {t('settings.tabs.backups')}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value='profile' className='space-y-6'>
             <Card>
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
+                <CardTitle>{t('settings.profile.infoTitle')}</CardTitle>
+                <CardDescription>{t('settings.profile.infoDescription')}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
                 <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                   <div className='space-y-2'>
-                    <Label htmlFor='first_name'>First Name</Label>
+                    <Label htmlFor='first_name'>{t('settings.profile.firstName')}</Label>
                     <Input
                       id='first_name'
                       value={profile?.first_name || ''}
@@ -216,7 +227,7 @@ export default function UserSettingsPage() {
                     />
                   </div>
                   <div className='space-y-2'>
-                    <Label htmlFor='last_name'>Last Name</Label>
+                    <Label htmlFor='last_name'>{t('settings.profile.lastName')}</Label>
                     <Input
                       id='last_name'
                       value={profile?.last_name || ''}
@@ -229,7 +240,7 @@ export default function UserSettingsPage() {
                     />
                   </div>
                   <div className='space-y-2'>
-                    <Label htmlFor='phone'>Phone Number</Label>
+                    <Label htmlFor='phone'>{t('settings.profile.phone')}</Label>
                     <Input
                       id='phone_number'
                       value={profile?.phone_number || ''}
@@ -242,7 +253,7 @@ export default function UserSettingsPage() {
                     />
                   </div>
                   <div className='space-y-2'>
-                    <Label htmlFor='location'>Location</Label>
+                    <Label htmlFor='location'>{t('settings.profile.location')}</Label>
                     <Input
                       id='location'
                       value={profile?.location || ''}
@@ -255,7 +266,7 @@ export default function UserSettingsPage() {
                     />
                   </div>
                   <div className='space-y-2 md:col-span-2'>
-                    <Label htmlFor='bio'>Bio</Label>
+                    <Label htmlFor='bio'>{t('settings.profile.bio')}</Label>
                     <Textarea
                       id='bio'
                       rows={4}
@@ -272,20 +283,20 @@ export default function UserSettingsPage() {
               </CardContent>
               <CardFooter className='flex justify-end'>
                 <Button onClick={() => updateProfile(profile!)} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Profile'}
+                  {loading ? t('common.saving') : t('settings.profile.saveProfile')}
                 </Button>
               </CardFooter>
             </Card>
 
             <Card>
               <CardHeader>
-                <CardTitle>Work Information</CardTitle>
-                <CardDescription>Update your work details</CardDescription>
+                <CardTitle>{t('settings.profile.workTitle')}</CardTitle>
+                <CardDescription>{t('settings.profile.workDescription')}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
                 <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                   <div className='space-y-2'>
-                    <Label htmlFor='department'>Department</Label>
+                    <Label htmlFor='department'>{t('settings.profile.department')}</Label>
                     <Select
                       value={profile?.department || ''}
                       onValueChange={(value) =>
@@ -309,14 +320,14 @@ export default function UserSettingsPage() {
                     </Select>
                   </div>
                   <div className='space-y-2'>
-                    <Label htmlFor='role'>Role</Label>
+                    <Label htmlFor='role'>{t('settings.profile.role')}</Label>
                     <Input id='role' value={profile?.role || ''} disabled />
                   </div>
                 </div>
               </CardContent>
               <CardFooter className='flex justify-end'>
                 <Button onClick={() => updateProfile(profile!)} disabled={loading}>
-                  {loading ? 'Saving...' : 'Save Work Info'}
+                  {loading ? t('common.saving') : t('settings.profile.saveWorkInfo')}
                 </Button>
               </CardFooter>
             </Card>
@@ -325,14 +336,16 @@ export default function UserSettingsPage() {
           <TabsContent value='account' className='space-y-6'>
             <Card>
               <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>Update your password</CardDescription>
+                <CardTitle>{t('settings.account.changePasswordTitle')}</CardTitle>
+                <CardDescription>{t('settings.account.changePasswordDescription')}</CardDescription>
               </CardHeader>
               <form onSubmit={changePassword}>
                 <CardContent className='space-y-6'>
                   <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
                     <div className='space-y-2'>
-                      <Label htmlFor='current-password'>Current Password</Label>
+                      <Label htmlFor='current-password'>
+                        {t('settings.account.currentPassword')}
+                      </Label>
                       <Input
                         id='current-password'
                         type='password'
@@ -346,7 +359,7 @@ export default function UserSettingsPage() {
                       />
                     </div>
                     <div className='space-y-2'>
-                      <Label htmlFor='new-password'>New Password</Label>
+                      <Label htmlFor='new-password'>{t('settings.account.newPassword')}</Label>
                       <Input
                         id='new-password'
                         type='password'
@@ -360,7 +373,9 @@ export default function UserSettingsPage() {
                       />
                     </div>
                     <div className='space-y-2'>
-                      <Label htmlFor='confirm-password'>Confirm New Password</Label>
+                      <Label htmlFor='confirm-password'>
+                        {t('settings.account.confirmPassword')}
+                      </Label>
                       <Input
                         id='confirm-password'
                         type='password'
@@ -377,7 +392,7 @@ export default function UserSettingsPage() {
                 </CardContent>
                 <CardFooter className='flex justify-end'>
                   <Button type='submit' disabled={loading}>
-                    {loading ? 'Updating...' : 'Update Password'}
+                    {loading ? t('settings.account.updating') : t('settings.account.updatePassword')}
                   </Button>
                 </CardFooter>
               </form>
@@ -385,15 +400,17 @@ export default function UserSettingsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className='text-destructive'>Danger Zone</CardTitle>
-                <CardDescription>Irreversible account actions</CardDescription>
+                <CardTitle className='text-destructive'>
+                  {t('settings.account.dangerZoneTitle')}
+                </CardTitle>
+                <CardDescription>{t('settings.account.dangerZoneDescription')}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-6'>
                 <div className='flex items-center justify-between'>
                   <div>
-                    <h3 className='font-medium'>Delete Account</h3>
+                    <h3 className='font-medium'>{t('settings.account.deleteAccountTitle')}</h3>
                     <p className='text-sm text-muted-foreground'>
-                      Permanently delete your account and all data
+                      {t('settings.account.deleteAccountDescription')}
                     </p>
                   </div>
                   <DeleteAccountDialog />
@@ -402,39 +419,10 @@ export default function UserSettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* <TabsContent value='notifications' className='space-y-6'>
-            <Card>
-              <CardHeader>
-                <CardTitle>Email Notifications</CardTitle>
-                <CardDescription>Manage your email notification preferences</CardDescription>
-              </CardHeader>
-              <CardContent className='space-y-6'>
-                <div className='space-y-4'>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <h3 className='font-medium'>Project Updates</h3>
-                      <p className='text-sm text-muted-foreground'>
-                        Receive emails about project changes and updates
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <div>
-                      <h3 className='font-medium'>Account Alerts</h3>
-                      <p className='text-sm text-muted-foreground'>
-                        Security and account-related notifications
-                      </p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className='flex justify-end'>
-                <Button>Save Preferences</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent> */}
+          <TabsContent value='notifications' className='space-y-6'>
+            <NotificationSettings email={profile.email} />
+          </TabsContent>
+
           <TabsContent value='workspace' className='space-y-6'>
             <WorkspaceSettings />
           </TabsContent>

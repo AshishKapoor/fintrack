@@ -14,6 +14,7 @@ const DashboardPage = lazy(() => import('@/pages/dashboard'))
 const CategoriesPage = lazy(() => import('@/pages/category'))
 const BudgetsPage = lazy(() => import('@/pages/budget'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
+const QuickAddPage = lazy(() => import('@/pages/quick-add'))
 const ReportsPage = lazy(() => import('@/pages/reports'))
 const RulesAndRecurringPage = lazy(() => import('@/pages/rules'))
 const AuditLogPage = lazy(() => import('@/pages/audit-log'))
@@ -59,6 +60,7 @@ function App() {
                 <Route path='/categories' element={<CategoriesPage />} />
                 <Route path='/budgets' element={<BudgetsPage />} />
                 <Route path='/transactions' element={<TransactionsPage />} />
+                <Route path='/quick-add' element={<QuickAddPage />} />
                 <Route path='/reports' element={<ReportsPage />} />
                 <Route path='/rules' element={<RulesAndRecurringPage />} />
                 <Route path='/audit-log' element={<AuditLogPage />} />

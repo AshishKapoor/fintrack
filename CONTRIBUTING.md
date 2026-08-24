@@ -153,6 +153,14 @@ four.
   real stack through nginx, so it catches things unit tests cannot - it is how
   the login redirect loop and the stale transaction list were found.
 
+## Translations
+
+FinTrack's UI and API errors are translatable (react-i18next on the web app,
+Django gettext on the API) - see [docs/i18n.md](docs/i18n.md) for how to add a
+string to the pipeline, add a language, or wire up Weblate. Only English and
+Spanish exist today; most of the app isn't translated yet, so both adding new
+languages and extending coverage of existing ones are welcome.
+
 ## Good first issues
 
 Look for the `good first issue` label. If none are open and you want somewhere to
@@ -164,3 +172,6 @@ start, these are all real and self-contained:
   clients) before `v1.0.0` bakes the names in.
 - Merge `apps/web/app/lib/finance-client.ts`'s remaining helpers into the
   generated client + `lib/ledger.ts` and delete it.
+- Pick any page or dialog not yet listed in [docs/i18n.md](docs/i18n.md)'s
+  "what it does" section and wire its strings through `t()` /
+  `gettext_lazy`.

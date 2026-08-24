@@ -27,6 +27,7 @@ class LedgerTransaction:
         id (int):
         budget_file (int):
         transaction_date (datetime.date):
+        payee_name (str):
         postings (list[LedgerPostingWrite]):
         posting_lines (list[LedgerPostingRead]):
         created_at (datetime.datetime):
@@ -48,6 +49,7 @@ class LedgerTransaction:
     id: int
     budget_file: int
     transaction_date: datetime.date
+    payee_name: str
     postings: list[LedgerPostingWrite]
     posting_lines: list[LedgerPostingRead]
     created_at: datetime.datetime
@@ -68,6 +70,8 @@ class LedgerTransaction:
         budget_file = self.budget_file
 
         transaction_date = self.transaction_date.isoformat()
+
+        payee_name = self.payee_name
 
         postings = []
         for postings_item_data in self.postings:
@@ -120,6 +124,7 @@ class LedgerTransaction:
                 "id": id,
                 "budget_file": budget_file,
                 "transaction_date": transaction_date,
+                "payee_name": payee_name,
                 "postings": postings,
                 "posting_lines": posting_lines,
                 "created_at": created_at,
@@ -156,6 +161,8 @@ class LedgerTransaction:
         budget_file = d.pop("budget_file")
 
         transaction_date = datetime.date.fromisoformat(d.pop("transaction_date"))
+
+        payee_name = d.pop("payee_name")
 
         postings = []
         _postings = d.pop("postings", [])
@@ -222,6 +229,7 @@ class LedgerTransaction:
             id=id,
             budget_file=budget_file,
             transaction_date=transaction_date,
+            payee_name=payee_name,
             postings=postings,
             posting_lines=posting_lines,
             created_at=created_at,

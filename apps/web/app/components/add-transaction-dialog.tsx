@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Dialog,
   DialogContent,
@@ -20,17 +21,21 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Switch } from '@/components/ui/switch'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { PayeeCombobox } from '@/components/payee-combobox'
+import { SplitPostingsEditor } from '@/components/split-postings-editor'
 import { useV1FinanceCategoriesList, v1FinanceTransactionsCreate } from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFile, getDefaultBudgetFileId } from '@/lib/finance-client'
 import {
-  buildPostings,
+  buildSplitPostings,
   resolveDefaultAccountId,
   useInvalidateLedger,
+  type SplitLeg,
   type TransactionKind,
 } from '@/lib/ledger'
 import { toast } from 'sonner'
@@ -43,11 +48,15 @@ export function AddTransactionDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const [kind, setKind] = useState<TransactionKind>('expense')
   const [date, setDate] = useState<Date | undefined>(new Date())
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [payeeId, setPayeeId] = useState<number | null>(null)
+  const [splitMode, setSplitMode] = useState(false)
+  const [splits, setSplits] = useState<SplitLeg[]>([{ categoryId: 0, amount: '' }])
   const [saving, setSaving] = useState(false)
 
   // Native finance categories through the generated SDK: the classification
@@ -57,6 +66,26 @@ export function AddTransactionDialog({
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 
+  const resetForm = () => {
+    setTitle('')
+    setAmount('')
+    setSelectedCategory('')
+    setPayeeId(null)
+    setSplitMode(false)
+    setSplits([{ categoryId: 0, amount: '' }])
+    setDate(new Date())
+    setKind('expense')
+  }
+
+  const toggleSplitMode = (enabled: boolean) => {
+    setSplitMode(enabled)
+    if (enabled) {
+      setSplits([{ categoryId: parseInt(selectedCategory) || 0, amount }])
+    } else if (splits[0]?.categoryId) {
+      setSelectedCategory(String(splits[0].categoryId))
+    }
+  }
+
   const handleCreateTransaction = async () => {
     if (!date || saving) return
     setSaving(true)
@@ -65,21 +94,18 @@ export function AddTransactionDialog({
         getDefaultBudgetFileId(),
         resolveDefaultAccountId(),
       ])
+      const effectiveSplits = splitMode ? splits : [{ categoryId: parseInt(selectedCategory), amount }]
       await v1FinanceTransactionsCreate({
         budget_file: budgetFileId,
         transaction_date: format(date, 'yyyy-MM-dd'),
         memo: title,
-        postings: buildPostings(accountId, parseInt(selectedCategory), amount, kind),
-      })
+        payee: payeeId,
+        postings: buildSplitPostings(accountId, effectiveSplits, kind),
+      } as never)
       await refreshLedger()
       toast.success('Transaction created successfully')
       onOpenChange(false)
-      // Reset form
-      setTitle('')
-      setAmount('')
-      setSelectedCategory('')
-      setDate(new Date())
-      setKind('expense')
+      resetForm()
     } catch (err) {
       console.error('Failed to create transaction:', err)
       toast.error('Failed to create transaction')
@@ -99,8 +125,26 @@ export function AddTransactionDialog({
       (activeFile ? category.budget_file === activeFile.id : true),
   )
 
+  const splitTotalValid =
+    !splitMode ||
+    (splits.length > 0 &&
+      splits.every((split) => split.categoryId && Number(split.amount) > 0) &&
+      Math.abs(
+        splits.reduce((sum, split) => sum + Math.abs(Number(split.amount || 0)), 0) -
+          Math.abs(Number(amount || 0)),
+      ) < 0.005)
+
+  const canSave =
+    !!title &&
+    !!amount &&
+    (splitMode ? splitTotalValid : !!selectedCategory) &&
+    !saving
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => {
+      onOpenChange(next)
+      if (!next) resetForm()
+    }}>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
           <DialogTitle>Transaction</DialogTitle>
@@ -115,6 +159,7 @@ export function AddTransactionDialog({
               onValueChange={(value) => {
                 setKind(value as TransactionKind)
                 setSelectedCategory('')
+                setSplits([{ categoryId: 0, amount: '' }])
               }}
               className='flex gap-4'
             >
@@ -142,6 +187,14 @@ export function AddTransactionDialog({
             />
           </div>
           <div className='grid gap-2'>
+            <Label>{t('transactions.payee')}</Label>
+            <PayeeCombobox
+              budgetFileId={activeFile?.id ?? null}
+              value={payeeId}
+              onChange={setPayeeId}
+            />
+          </div>
+          <div className='grid gap-2'>
             <Label htmlFor='amount'>Amount</Label>
             <Input
               id='amount'
@@ -153,21 +206,36 @@ export function AddTransactionDialog({
               onChange={(e) => setAmount(e.target.value)}
             />
           </div>
-          <div className='grid gap-2'>
-            <Label htmlFor='category'>Category</Label>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger id='category'>
-                <SelectValue placeholder='Select a category' />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredCategories.map((category) => (
-                  <SelectItem key={category.id} value={String(category.id)}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className='flex items-center justify-between'>
+            <Label htmlFor='split-mode' className='cursor-pointer font-normal'>
+              {t('transactions.splitTransaction')}
+            </Label>
+            <Switch id='split-mode' checked={splitMode} onCheckedChange={toggleSplitMode} />
           </div>
+          {splitMode ? (
+            <SplitPostingsEditor
+              categories={filteredCategories}
+              totalAmount={amount}
+              splits={splits}
+              onChange={setSplits}
+            />
+          ) : (
+            <div className='grid gap-2'>
+              <Label htmlFor='category'>Category</Label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger id='category'>
+                  <SelectValue placeholder='Select a category' />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredCategories.map((category) => (
+                    <SelectItem key={category.id} value={String(category.id)}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className='grid gap-2'>
             <Label htmlFor='date'>Date</Label>
             <Popover>
@@ -194,11 +262,7 @@ export function AddTransactionDialog({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button
-            type='submit'
-            onClick={handleCreateTransaction}
-            disabled={!title || !amount || !selectedCategory || saving}
-          >
+          <Button type='submit' onClick={handleCreateTransaction} disabled={!canSave}>
             {saving ? 'Saving...' : 'Save'}
           </Button>
         </DialogFooter>

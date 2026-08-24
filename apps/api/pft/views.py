@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.pagination import PageNumberPagination
@@ -27,11 +28,14 @@ from .auth_cookies import (
 from .models import (
     Budget,
     Category,
+    NotificationPreference,
     Transaction,
 )
+from .notifications import send_test_notification
 from .serializers import (
     BudgetSerializer,
     CategorySerializer,
+    NotificationPreferenceSerializer,
     TransactionSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
@@ -144,7 +148,7 @@ class CookieTokenRefreshView(TokenViewBase):
 
         if not refresh:
             return Response(
-                {"detail": "No refresh token found.", "code": "token_not_found"},
+                {"detail": _("No refresh token found."), "code": "token_not_found"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
@@ -183,7 +187,7 @@ class LogoutView(APIView):
         if request.data.get("all"):
             revoked = blacklist_all_refresh_tokens(request.user)
             response = Response(
-                {"detail": "All sessions signed out.", "revoked": revoked}
+                {"detail": _("All sessions signed out."), "revoked": revoked}
             )
             clear_refresh_cookie(response)
             return response
@@ -193,7 +197,7 @@ class LogoutView(APIView):
         )
         if not refresh_token:
             return Response(
-                {"detail": "refresh is required (or pass all=true)."},
+                {"detail": _("refresh is required (or pass all=true).")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -204,7 +208,7 @@ class LogoutView(APIView):
             # out either way; do not leak which case it was.
             pass
 
-        response = Response({"detail": "Signed out."})
+        response = Response({"detail": _("Signed out.")})
         clear_refresh_cookie(response)
         return response
 
@@ -333,7 +337,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
         # Check if email is provided
         if not email:
             return Response(
-                {"email": ["Email is required."]},
+                {"email": [_("Email is required.")]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -342,7 +346,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
             validate_email(email)
         except ValidationError:
             return Response(
-                {"email": ["Enter a valid email address."]},
+                {"email": [_("Enter a valid email address.")]},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -351,7 +355,7 @@ class RegisterUserAPIView(generics.CreateAPIView):
             return Response(
                 {
                     "email": [
-                        "Something went wrong. Please contact support or try again."
+                        _("Something went wrong. Please contact support or try again.")
                     ]
                 },
                 status=status.HTTP_400_BAD_REQUEST,
@@ -402,19 +406,19 @@ class DeleteAccountView(APIView):
 
         if not password:
             return Response(
-                {"error": "Your password is required to delete your account."},
+                {"error": _("Your password is required to delete your account.")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not user.check_password(password):
             return Response(
-                {"error": "Password is incorrect"},
+                {"error": _("Password is incorrect")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if confirmation != self.CONFIRMATION:
             return Response(
-                {"error": f"Type {self.CONFIRMATION} to confirm."},
+                {"error": _("Type %(confirmation)s to confirm.") % {"confirmation": self.CONFIRMATION}},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -439,19 +443,19 @@ class ChangePasswordView(APIView):
 
         if not current_password or not new_password or not confirm_password:
             return Response(
-                {"error": "All password fields are required"},
+                {"error": _("All password fields are required")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not user.check_password(current_password):
             return Response(
-                {"error": "Current password is incorrect"},
+                {"error": _("Current password is incorrect")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         if new_password != confirm_password:
             return Response(
-                {"error": "New passwords do not match"},
+                {"error": _("New passwords do not match")},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -469,8 +473,46 @@ class ChangePasswordView(APIView):
 
         return Response(
             {
-                "message": "Password updated successfully",
-                "detail": "All existing sessions have been signed out.",
+                "message": _("Password updated successfully"),
+                "detail": _("All existing sessions have been signed out."),
             },
             status=status.HTTP_200_OK,
         )
+
+
+class NotificationPreferenceView(generics.RetrieveUpdateAPIView):
+    """One row per user, created on first access - see the model's docstring.
+
+    A GET before any Save is what powers the settings tab showing sensible
+    defaults (budget alerts on, threshold 90%, everything else off) rather
+    than a 404 for every user who has never touched this tab.
+    """
+
+    serializer_class = NotificationPreferenceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        preference, _created = NotificationPreference.objects.get_or_create(
+            user=self.request.user
+        )
+        return preference
+
+
+class NotificationTestView(APIView):
+    """Send a real notification now, on every enabled channel, bypassing dedupe."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "notification_test"
+
+    def post(self, request):
+        preference, _created = NotificationPreference.objects.get_or_create(
+            user=request.user
+        )
+        attempted = send_test_notification(preference)
+        if not attempted:
+            return Response(
+                {"detail": _("Turn on at least one delivery channel first.")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response({"attempted_channels": attempted})

@@ -70,15 +70,19 @@ more, FinTrack is worth trying.
 ## ✨ Features
 
 - 📊 **Income & expense tracking** with custom categories and tags
-- 🧱 **Double-entry ledger** with accounts, payees, transactions, and postings
+- 🧱 **Double-entry ledger** with accounts, payees, transactions, and postings — including split transactions across multiple categories
 - ✉️ **Envelope budgeting** — budget months, envelope assignments, and progress tracking
 - 📅 **Flexible views** — browse transactions by day, week, or month
+- ⌨️ **Keyboard-first entry** — an always-on inline row in the transaction register for add and edit, plus a command palette (`⌘K`)
+- 📲 **Installable PWA with a mobile quick-add screen** — amount → payee → done, with a payee → category autocomplete that learns from your history, and offline-tolerant saves that sync once you're back online
+- 🔔 **Notifications** — budget threshold alerts, bill/scheduled-transaction reminders, and a weekly digest over email, [ntfy](https://ntfy.sh), or a generic webhook
 - 🔁 **Scheduled transactions and rules** for recurring activity
 - 📈 **Reports** on spending, budgets, and trends
 - 📦 **Import / export** your data (CSV, OFX, QIF, YNAB and more in; CSV, JSON, XLSX out) plus encrypted backup & restore from the UI
 - 🔒 **100% self-hosted** — your data never leaves your server
 - 👥 **Shared workspaces** — organizations with owner / admin / member / viewer roles, invitations, and a manager-visible audit log
 - 🌗 **Light / dark mode** with a responsive UI for mobile and desktop
+- 🌍 **Multi-language** — English and Spanish today, with a [translation pipeline](docs/i18n.md) contributors can extend
 - 🔌 **API-first architecture** with OpenAPI docs, plus official [TypeScript](packages/sdk-ts) and [Python](packages/sdk-py) SDKs
 
 ## 🛠️ Tech stack

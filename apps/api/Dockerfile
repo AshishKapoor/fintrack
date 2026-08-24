@@ -11,7 +11,7 @@ COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
 RUN chmod +x /entrypoint.sh /entrypoint.migrate.sh /usr/local/bin/wait-for-db.sh
 
 RUN apt-get update && \
-    apt-get install -y libpq-dev gcc build-essential && \
+    apt-get install -y libpq-dev gcc build-essential gettext && \
     rm -rf /var/lib/apt/lists/*
 
 RUN --mount=type=cache,target=/root/.cache/uv \

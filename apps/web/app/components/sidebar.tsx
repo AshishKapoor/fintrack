@@ -12,9 +12,11 @@ import {
   PieChart,
   Repeat,
   Settings,
+  Smartphone,
   Tag,
   TrendingUp,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router-dom'
 
 interface SidebarProps {
@@ -26,6 +28,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChange }: SidebarProps) {
+  const { t } = useTranslation()
   const location = useLocation()
   const { activeOrg } = useOrganization()
   // Same gate as the audit log page itself (see pages/audit-log/index.tsx) -
@@ -33,6 +36,37 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
   // since the API silently returns nothing to a non-manager rather than 403.
   const canManageAuditLog =
     activeOrg && !activeOrg.personal && (activeOrg.my_role === 'owner' || activeOrg.my_role === 'admin')
+
+  const mainNavItems = [
+    { to: '/home', icon: Home, label: t('nav.dashboard') },
+    { to: '/categories', icon: Tag, label: t('nav.categories') },
+    { to: '/budgets', icon: PieChart, label: t('nav.budgets') },
+    { to: '/transactions', icon: CreditCard, label: t('nav.transactions') },
+    { to: '/quick-add', icon: Smartphone, label: t('nav.quickAdd') },
+    { to: '/reports', icon: TrendingUp, label: t('nav.reports') },
+    { to: '/rules', icon: Repeat, label: t('nav.rules') },
+  ]
+
+  const settingsNavItems = [
+    { to: '/settings', icon: Settings, label: t('nav.settings') },
+    ...(canManageAuditLog
+      ? [{ to: '/audit-log', icon: History, label: t('nav.auditLog') }]
+      : []),
+  ]
+
+  const renderLink = ({ to, icon: Icon, label }: (typeof mainNavItems)[number]) => (
+    <Link
+      key={to}
+      to={to}
+      className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+        location.pathname === to ? 'bg-muted text-primary-background' : 'hover:bg-muted'
+      } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
+      onClick={() => isMobile && onOpenChange(false)}
+    >
+      <Icon className='h-4 w-4' />
+      {(expanded || isMobile) && <span>{label}</span>}
+    </Link>
+  )
 
   const sidebarContent = (
     <>
@@ -50,123 +84,32 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
         {!isMobile && (
           <Button variant='ghost' size='icon' onClick={toggleSidebar} className='h-8 w-8'>
             {expanded ? <ChevronLeft className='h-4 w-4' /> : <ChevronRight className='h-4 w-4' />}
+            <span className='sr-only'>{t('nav.toggleSidebar')}</span>
           </Button>
         )}
       </div>
 
       <div className='p-4'>
         {(expanded || isMobile) && (
-          <h3 className='mb-2 text-xs font-semibold text-muted-foreground'>MAIN MENU</h3>
+          <h3 className='mb-2 text-xs font-semibold text-muted-foreground'>{t('nav.mainMenu')}</h3>
         )}
-        <nav className='space-y-1'>
-          <Link
-            to='/home'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/home' ? 'bg-muted text-primary-background' : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <Home className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Dashboard</span>}
-          </Link>
-          <Link
-            to='/categories'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/categories'
-                ? 'bg-muted text-primary-background'
-                : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <Tag className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Categories</span>}
-          </Link>
-          <Link
-            to='/budgets'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/budgets'
-                ? 'bg-muted text-primary-background'
-                : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <PieChart className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Budgets</span>}
-          </Link>
-          <Link
-            to='/transactions'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/transactions'
-                ? 'bg-muted text-primary-background'
-                : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <CreditCard className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Transactions</span>}
-          </Link>
-          <Link
-            to='/reports'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/reports' ? 'bg-muted text-primary-background' : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <TrendingUp className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Reports</span>}
-          </Link>
-          <Link
-            to='/rules'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/rules' ? 'bg-muted text-primary-background' : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <Repeat className='h-4 w-4' />
-            {(expanded || isMobile) && <span>Rules & Recurring</span>}
-          </Link>
-        </nav>
+        <nav className='space-y-1'>{mainNavItems.map(renderLink)}</nav>
       </div>
 
       <div className='p-4'>
         {(expanded || isMobile) && (
-          <h3 className='mb-2 text-xs font-semibold text-muted-foreground'>SETTINGS</h3>
+          <h3 className='mb-2 text-xs font-semibold text-muted-foreground'>
+            {t('nav.settingsSection')}
+          </h3>
         )}
-        <nav className='space-y-1'>
-          <Link
-            to='/settings'
-            className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-              location.pathname === '/settings'
-                ? 'bg-muted text-primary-background'
-                : 'hover:bg-muted'
-            } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-            onClick={() => isMobile && onOpenChange(false)}
-          >
-            <Settings className='h-4 w-4' />
-            {(expanded || isMobile) && <span>General</span>}
-          </Link>
-          {canManageAuditLog && (
-            <Link
-              to='/audit-log'
-              className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
-                location.pathname === '/audit-log'
-                  ? 'bg-muted text-primary-background'
-                  : 'hover:bg-muted'
-              } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
-              onClick={() => isMobile && onOpenChange(false)}
-            >
-              <History className='h-4 w-4' />
-              {(expanded || isMobile) && <span>Audit Log</span>}
-            </Link>
-          )}
-        </nav>
+        <nav className='space-y-1'>{settingsNavItems.map(renderLink)}</nav>
       </div>
 
       <div className='mt-auto p-4 border-t'>
         {(expanded || isMobile) && (
           <div className='text-xs text-muted-foreground'>
-            <p>© 2025 FinTrack.</p>
-            <p>All rights reserved</p>
+            <p>{t('nav.footer')}</p>
+            <p>{t('nav.footerRights')}</p>
           </div>
         )}
       </div>

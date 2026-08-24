@@ -90,6 +90,56 @@ def materialize_due_scheduled_transactions_task() -> None:
 
 
 @shared_task
+def check_budget_threshold_alerts_task() -> None:
+    """Alert every user whose envelope spending crossed their own threshold.
+
+    Scheduled daily via CELERY_BEAT_SCHEDULE. See
+    notifications.check_budget_threshold_alerts for the per-category math and
+    NotificationLog for why running this daily (rather than, say, hourly)
+    cannot double-send an alert.
+    """
+    from .notifications import check_budget_threshold_alerts
+
+    sent, errors = check_budget_threshold_alerts()
+    if sent:
+        logger.info("sent %d budget threshold alert(s)", sent)
+    if errors:
+        logger.warning("%d notification preference(s) failed this run", len(errors))
+
+
+@shared_task
+def send_scheduled_transaction_reminders_task() -> None:
+    """Remind every user about schedules due in their configured lead time.
+
+    Scheduled daily via CELERY_BEAT_SCHEDULE, independently of
+    materialize_due_scheduled_transactions_task - a reminder fires *before*
+    the transaction posts, materialization happens *when* it's due.
+    """
+    from .notifications import send_scheduled_transaction_reminders
+
+    sent, errors = send_scheduled_transaction_reminders()
+    if sent:
+        logger.info("sent %d scheduled transaction reminder(s)", sent)
+    if errors:
+        logger.warning("%d notification preference(s) failed this run", len(errors))
+
+
+@shared_task
+def send_weekly_digest_task() -> None:
+    """A Monday-morning spend/income/upcoming-bills summary for opted-in users.
+
+    Scheduled weekly (Mondays) via CELERY_BEAT_SCHEDULE.
+    """
+    from .notifications import send_weekly_digest
+
+    sent, errors = send_weekly_digest()
+    if sent:
+        logger.info("sent %d weekly digest(s)", sent)
+    if errors:
+        logger.warning("%d notification preference(s) failed this run", len(errors))
+
+
+@shared_task
 def reset_demo_data_task() -> None:
     """Rebuild the public demo account from scratch.
 

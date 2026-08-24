@@ -35,11 +35,11 @@ Status legend: `[ ]` planned · `[~]` in progress · `[x]` shipped
 
 *Goal: logging a transaction takes under 10 seconds from anywhere, the app reaches out to you (not the other way around), and non-English speakers are first-class users.*
 
-- [ ] **PWA + mobile quick-add** — installable app with an offline-tolerant quick-capture screen: amount → payee (autocomplete that learns payee → category) → done
-- [ ] **Keyboard-first desktop entry** — inline add/edit in the transaction register, split transactions, extend the existing command palette
-- [ ] **Notifications engine** — budget threshold alerts, bill/scheduled-transaction reminders, weekly digest. Channels: email, [ntfy](https://ntfy.sh), and generic webhook. (The Notifications settings tab is already scaffolded and commented out — this un-comments it.)
+- [x] **PWA + mobile quick-add** — a new `/quick-add` screen (sidebar, command palette, and manifest shortcut for one-tap access once installed): amount → payee (autocomplete that learns payee → category via `PayeeViewSet.suggested_category`) → done. Saves through the existing generated client, so it's offline-tolerant for free via `httpPFTClient`'s mutation queue. An `InstallPrompt` surfaces the browser's native "Add to Home Screen" flow instead of leaving it undiscoverable behind a menu.
+- [x] **Keyboard-first desktop entry** — an always-on inline row at the top of the transaction register for add, reused for in-place edit (`InlineTransactionRow`); Enter/Delete work on a focused row. Split transactions (`SplitPostingsEditor`, `lib/ledger.ts`'s `buildSplitPostings`) in both the register and the Add/Edit dialogs — the backend already accepted any number of balanced postings, this was purely a frontend gap. The command palette gained quick actions (Add transaction, Quick Add) and the navigation entries it was missing (Reports, Rules, Audit Log).
+- [x] **Notifications engine** — `NotificationPreference`/`NotificationLog` (`pft/notifications.py`), three daily/weekly Celery beat sweeps, email/[ntfy](https://ntfy.sh)/webhook channels (all off by default, an SSRF guard on the latter two), dedup via a DB-constrained log so a sweep can safely re-run from scratch every time. The previously-scaffolded Notifications settings tab and top-bar bell are now wired up, with a send-test-now action.
 - [x] **Celery beat scheduler** — a new hourly `materialize_due_scheduled_transactions_task` (`pft/tasks.py`) posts every due recurring transaction automatically across all tenants, sharing its due-schedule logic with the manual `run-due` API action via `materialize_due_scheduled_transactions` (`pft/finance_services.py`). The manual trigger stays as a fallback for deployments that never run a beat process at all (e.g. the Render one-click deploy)
-- [ ] **i18n infrastructure** — string extraction with react-i18next (web) and Django gettext (API), wired to Weblate for community translation. Landing *before* the string count doubles with new features.
+- [~] **i18n infrastructure** — react-i18next (web) and Django gettext (API) are wired end to end, with string-extraction tooling (`pnpm i18n:extract`, `manage.py makemessages`) and English + Spanish catalogs covering navigation, auth, settings, and every other Phase 1 feature above, built translation-ready from the start (see [docs/i18n.md](docs/i18n.md)). Actually connecting a Weblate project is the one step left, since — like the Phase 0 demo instance — that needs an account only the maintainer can create.
 
 ## Phase 2 — Reasons to switch
 
@@ -92,9 +92,9 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
 
 | If you are a… | High-impact places to start |
 |---|---|
-| Translator | Phase 1 i18n — once Weblate is live, translations are the fastest path to contributor status |
-| Frontend dev | Quick-add PWA screen, insights charts, keyboard-first register entry |
-| Backend dev | Notification channels (ntfy/webhook), a bank sync provider against the adapter interface (SimpleFIN wanted!) |
+| Translator | The i18n pipeline is live (see [docs/i18n.md](docs/i18n.md)) — once Weblate is connected, translating is the fastest path to contributor status; until then, PRs extending `t()`/`gettext_lazy` coverage to a page not yet listed there are just as welcome |
+| Frontend dev | Extend i18n coverage page by page, insights charts (Phase 3), Phase 2's bank-sync and multi-currency UI |
+| Backend dev | A bank sync provider against the Phase 2 adapter interface (SimpleFIN wanted!), subscription detection heuristics (Phase 3) |
 | Self-hosting enthusiast | Get FinTrack listed on [PikaPods](https://feedback.pikapods.com/) (upvote or help submit), stand up the actual public demo host, docs for reverse-proxy setups |
 | Designer | A demo GIF for the README, insights dashboard concepts |
 | Anyone | Try the demo, file honest bug reports, tell us where week-three fatigue sets in |
@@ -111,3 +111,22 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   automatically via an hourly Celery beat task instead of requiring the
   manual "Run Due" trigger, which remains available for deployments that
   don't run a beat process (e.g. Render).
+- **2026-08-24** — i18n infrastructure landed: react-i18next + Django gettext,
+  English/Spanish seed catalogs, extraction tooling, and docs/i18n.md. Also
+  fixed a CORS gap (`X-Use-Refresh-Cookie` wasn't in `CORS_ALLOW_HEADERS`)
+  that broke login for any deployment serving the web app and API from
+  different origins, found while testing this against a non-Docker `pnpm dev`
+  setup.
+- **2026-08-24** — Phase 1 complete except for actually connecting Weblate
+  (see above): the notifications engine (email/ntfy/webhook, budget alerts,
+  reminders, a weekly digest), keyboard-first desktop entry (inline
+  add/edit, split transactions, a fuller command palette), and the PWA quick
+  add screen with payee→category learning all shipped, each with backend
+  tests and a Playwright e2e spec. Along the way: `LedgerTransaction` gained
+  a `payee_name` read field (mirroring how postings already expose
+  `account_name`/`category_name`), `PayeeViewSet` gained a
+  `suggested-category` action, and the transactions page's old full-page
+  empty state was replaced with an always-visible register (inline add row
+  included) plus an in-table empty message — a brand-new account is exactly
+  when the fast entry point matters most, so it cannot hide behind an empty
+  state.

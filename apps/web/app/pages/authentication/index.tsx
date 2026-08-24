@@ -1,9 +1,11 @@
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { UserAuthForm } from "@/components/user-auth-form";
 
 export default function AuthenticationPage() {
+  const { t } = useTranslation();
   return (
     <>
       <div className="flex flex-col items-center justify-center">
@@ -18,7 +20,7 @@ export default function AuthenticationPage() {
                 "absolute right-4 top-4 md:right-8 md:top-8"
               )}
             >
-              Login
+              {t("auth.register.loginLink")}
             </Link>
 
             {/* Left side - Brand section */}
@@ -45,27 +47,27 @@ export default function AuthenticationPage() {
               <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
                 <div className="flex flex-col space-y-2 text-center">
                   <h1 className="text-2xl font-semibold tracking-tight">
-                    Create an account
+                    {t("auth.register.title")}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Enter your email below to create your account
+                    {t("auth.register.subtitle")}
                   </p>
                 </div>
                 <UserAuthForm />
                 <p className="px-4 md:px-8 text-center text-sm text-muted-foreground">
-                  By clicking continue, you agree to our{" "}
+                  {t("auth.register.termsPrefix")}{" "}
                   <Link
                     to="/terms"
                     className="underline underline-offset-4 hover:text-primary"
                   >
-                    Terms of Service
+                    {t("auth.register.termsLink")}
                   </Link>{" "}
-                  and{" "}
+                  {t("auth.register.termsJoiner")}{" "}
                   <Link
                     to="/privacy"
                     className="underline underline-offset-4 hover:text-primary"
                   >
-                    Privacy Policy
+                    {t("auth.register.privacyLink")}
                   </Link>
                   .
                 </p>

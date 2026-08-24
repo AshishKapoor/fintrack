@@ -9,8 +9,10 @@ import { useToast } from '@/hooks/use-toast'
 import { register } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { Loader } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  const { t } = useTranslation()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const [email, setEmail] = React.useState('')
@@ -25,15 +27,15 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
       await register(email, password)
       // Optionally redirect or show success message
       toast({
-        title: 'Registration successful',
-        description: 'You have successfully registered. Please log in.',
+        title: t('auth.register.success'),
+        description: t('auth.register.successDescription'),
       })
       setTimeout(() => {
         window.location.href = '/login'
       }, 1000)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err.message || 'Registration failed')
+      setError(err.message || t('auth.register.genericError'))
     } finally {
       setIsLoading(false)
     }
@@ -45,7 +47,7 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
         <div className='grid gap-2'>
           <div className='grid gap-1'>
             <Label className='sr-only' htmlFor='email'>
-              Email
+              {t('auth.register.email')}
             </Label>
             <Input
               id='email'
@@ -61,11 +63,11 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
           </div>
           <div className='grid gap-1'>
             <Label className='sr-only' htmlFor='password'>
-              Password
+              {t('auth.register.password')}
             </Label>
             <Input
               id='password'
-              placeholder='Password'
+              placeholder={t('auth.register.password')}
               type='password'
               autoComplete='new-password'
               disabled={isLoading}
@@ -76,7 +78,7 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
           {error && <div className='text-red-500 text-sm mb-8'>{error}</div>}
           <Button type='submit' disabled={isLoading} className='w-full'>
             {isLoading && <Loader className='mr-2 h-4 w-4 animate-spin' />}
-            Sign Up
+            {t('auth.register.submit')}
           </Button>
         </div>
       </form>

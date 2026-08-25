@@ -17,6 +17,7 @@ const AccountsPage = lazy(() => import('@/pages/accounts'))
 const TransactionsPage = lazy(() => import('@/pages/transactions'))
 const QuickAddPage = lazy(() => import('@/pages/quick-add'))
 const ReportsPage = lazy(() => import('@/pages/reports'))
+const InsightsPage = lazy(() => import('@/pages/insights'))
 const RulesAndRecurringPage = lazy(() => import('@/pages/rules'))
 const AuditLogPage = lazy(() => import('@/pages/audit-log'))
 const BankSyncCallbackPage = lazy(() => import('@/pages/bank-sync-callback'))
@@ -65,6 +66,7 @@ function App() {
                 <Route path='/transactions' element={<TransactionsPage />} />
                 <Route path='/quick-add' element={<QuickAddPage />} />
                 <Route path='/reports' element={<ReportsPage />} />
+                <Route path='/insights' element={<InsightsPage />} />
                 <Route path='/rules' element={<RulesAndRecurringPage />} />
                 <Route path='/audit-log' element={<AuditLogPage />} />
                 <Route path='/bank-sync/callback' element={<BankSyncCallbackPage />} />

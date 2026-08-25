@@ -202,6 +202,81 @@ export function useMonthlyCashFlow(startDate?: string, endDate?: string) {
   )
 }
 
+export interface NetWorthSeriesPoint {
+  date: string
+  total: string
+  missing_rate: boolean
+}
+
+/**
+ * Net worth at each month-end boundary. Unlike useCashFlow/useMonthlyCashFlow,
+ * this is safe to call with no dates at all: the backend defaults to the
+ * trailing 12 months server-side (see compute_net_worth_series), so the hook
+ * is never gated on start/end both being present.
+ */
+export function useNetWorthSeries(startDate?: string, endDate?: string) {
+  return useSWR(['report/net_worth_series', startDate, endDate], () =>
+    runReport<{ start_date: string; end_date: string; points: NetWorthSeriesPoint[] }>({
+      report_type: 'net_worth_series',
+      start_date: startDate,
+      end_date: endDate,
+    }),
+  )
+}
+
+export interface SankeyNode {
+  name: string
+}
+
+export interface SankeyLink {
+  source: number
+  target: number
+  value: string
+}
+
+/** Top income categories -> one hub -> top expense categories, with a
+ * "Savings"/"From savings" node absorbing the surplus/deficit so the hub
+ * always balances (see compute_cash_flow_sankey). No FX conversion, matching
+ * useCashFlow/compute_spending_trends' own precedent. */
+export function useCashFlowSankey(startDate?: string, endDate?: string, topN = 8) {
+  return useSWR(
+    startDate && endDate ? ['report/cash_flow_sankey', startDate, endDate, topN] : null,
+    () =>
+      runReport<{ nodes: SankeyNode[]; links: SankeyLink[] }>({
+        report_type: 'cash_flow_sankey',
+        start_date: startDate,
+        end_date: endDate,
+        top_n: topN,
+      }),
+  )
+}
+
+export interface SpendingTrendRow {
+  year: number
+  month: number
+  category_id: number
+  category: string
+  amount: string
+}
+
+/**
+ * Expense totals per (month, category) - the source for the insights page's
+ * month-over-month category comparison panel. Note the request report_type is
+ * "spending" (matches SavedReport.TYPE_SPENDING); "spending_trends" only
+ * appears in the response body's own internal "type" field.
+ */
+export function useSpendingTrends(startDate?: string, endDate?: string) {
+  return useSWR(
+    startDate && endDate ? ['report/spending', startDate, endDate] : null,
+    () =>
+      runReport<{ rows: SpendingTrendRow[] }>({
+        report_type: 'spending',
+        start_date: startDate,
+        end_date: endDate,
+      }),
+  )
+}
+
 export interface EnvelopeSnapshotRow {
   category_id: number
   category: string

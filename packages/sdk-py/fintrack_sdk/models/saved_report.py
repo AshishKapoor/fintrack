@@ -25,6 +25,8 @@ class SavedReport:
             * `cash_flow` - Cash Flow
             * `spending` - Spending Trends
             * `custom` - Custom
+            * `net_worth_series` - Net Worth Over Time
+            * `cash_flow_sankey` - Cash Flow Sankey
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         definition (Any | Unset):

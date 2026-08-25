@@ -25,6 +25,8 @@ class PatchedSavedReport:
             * `cash_flow` - Cash Flow
             * `spending` - Spending Trends
             * `custom` - Custom
+            * `net_worth_series` - Net Worth Over Time
+            * `cash_flow_sankey` - Cash Flow Sankey
         definition (Any | Unset):
         pinned (bool | Unset):
         created_at (datetime.datetime | Unset):

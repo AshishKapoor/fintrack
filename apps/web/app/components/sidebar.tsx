@@ -10,6 +10,7 @@ import {
   History,
   Home,
   Landmark,
+  LineChart,
   PieChart,
   Repeat,
   Settings,
@@ -46,6 +47,7 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
     { to: '/transactions', icon: CreditCard, label: t('nav.transactions') },
     { to: '/quick-add', icon: Smartphone, label: t('nav.quickAdd') },
     { to: '/reports', icon: TrendingUp, label: t('nav.reports') },
+    { to: '/insights', icon: LineChart, label: t('nav.insights') },
     { to: '/rules', icon: Repeat, label: t('nav.rules') },
   ]
 

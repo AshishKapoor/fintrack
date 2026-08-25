@@ -126,6 +126,97 @@ def compute_net_worth(budget_file: BudgetFile, as_of: date | None = None):
     }
 
 
+def _trailing_month_start(end_date: date, months: int) -> date:
+    """The first day of the month `months - 1` months before end_date's month
+    - e.g. months=12 anchored on any day in Aug 2026 gives Sep 1, 2025, so the
+    12 month-end boundaries built from it run Sep 2025..Aug 2026 inclusive.
+    """
+    total = end_date.year * 12 + (end_date.month - 1) - (months - 1)
+    return date(total // 12, total % 12 + 1, 1)
+
+
+def compute_net_worth_series(
+    budget_file: BudgetFile, start_date: date | None = None, end_date: date | None = None
+):
+    """Net worth at each calendar month-end between start_date and end_date
+    (default: the trailing 12 months, ending today), from a single pass over
+    postings rather than one compute_net_worth(as_of=X) call per point.
+
+    Each account's running balance is seeded from its opening_balance and
+    replayed forward through postings in transaction_date order, snapshotting
+    at every month boundary - mathematically identical to account_balances(
+    as_of=boundary) at each boundary (summation is commutative, and a
+    snapshot only needs the postings already consumed), but O(postings) once
+    instead of O(postings x points).
+
+    Each point converts with `as_of` set to *that point's own* boundary date.
+    fx_rates.convert_amount looks up the nearest rate on or before `as_of`
+    (defaulting to today when omitted) - sharing one as_of across every point,
+    or omitting it, would silently price months-old balances at today's rate.
+    """
+    today = timezone.now().date()
+    end_date = end_date or today
+    if start_date is None:
+        start_date = _trailing_month_start(end_date, 12)
+
+    boundaries = []
+    year, month = start_date.year, start_date.month
+    while True:
+        _, month_end = month_bounds(year, month)
+        boundary = min(month_end, end_date)
+        boundaries.append(boundary)
+        if boundary >= end_date:
+            break
+        year, month = (year + 1, 1) if month == 12 else (year, month + 1)
+
+    accounts = list(budget_file.accounts.all().order_by("id"))
+    running_balance = {account.id: account.opening_balance for account in accounts}
+    home_currency = budget_file.currency_code
+
+    postings = (
+        LedgerPosting.objects.filter(
+            account__budget_file=budget_file,
+            transaction__transaction_date__lte=end_date,
+        )
+        .order_by("transaction__transaction_date")
+        .values("account_id", "transaction__transaction_date", "amount")
+    )
+    posting_iter = iter(postings)
+    pending = next(posting_iter, None)
+
+    points = []
+    for boundary in boundaries:
+        while pending is not None and pending["transaction__transaction_date"] <= boundary:
+            running_balance[pending["account_id"]] += pending["amount"]
+            pending = next(posting_iter, None)
+
+        total = Decimal("0.00")
+        missing_rate = False
+        for account in accounts:
+            balance = running_balance[account.id]
+            converted = convert_amount(
+                balance, account.effective_currency_code, home_currency, as_of=boundary
+            )
+            if converted is None:
+                missing_rate = True
+                continue
+            if account.type in {Account.TYPE_CREDIT, Account.TYPE_LIABILITY}:
+                total -= abs(converted)
+            else:
+                total += converted
+        points.append(
+            {"date": boundary.isoformat(), "total": str(total), "missing_rate": missing_rate}
+        )
+
+    return {
+        "type": "net_worth_series",
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "currency_code": home_currency,
+        "points": points,
+    }
+
+
 def compute_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date):
     category_rows = (
         LedgerPosting.objects.filter(
@@ -239,6 +330,106 @@ def compute_spending_trends(budget_file: BudgetFile, start_date: date, end_date:
     }
 
 
+def compute_cash_flow_sankey(
+    budget_file: BudgetFile, start_date: date, end_date: date, top_n: int = 8
+):
+    """A cash-flow Sankey: top income categories -> one hub -> top expense
+    categories, each side capped to top_n by total with the remainder folded
+    into "Other income"/"Other expenses". Matches compute_cash_flow's and
+    compute_spending_trends' precedent of summing raw native-currency amounts
+    with no FX conversion - a multi-currency budget file already gets an
+    unconverted total from those two today, and this stays consistent with
+    them rather than silently being more correct on its own.
+
+    Single-hub topology, not Income hub -> Expenses hub: a two-hub design
+    leaves the "Expenses" hub's inflow != outflow whenever expenses > income -
+    a common case, not an edge case - and recharts' Sankey assumes flow
+    conservation at each node. A "Savings" (surplus) or "From savings"
+    (deficit) node absorbs exactly the difference on whichever side needs it,
+    so the hub's inflow always equals its outflow.
+    """
+    top_n = min(max(int(top_n), 1), 20)
+
+    def _category_totals(kind):
+        rows = (
+            LedgerPosting.objects.filter(
+                transaction__budget_file=budget_file,
+                transaction__transaction_date__gte=start_date,
+                transaction__transaction_date__lte=end_date,
+                category__kind=kind,
+            )
+            .values("category__name")
+            .annotate(total=Sum("amount"))
+        )
+        # category names are unique per budget_file (unique_category_v2_name_
+        # per_budget_file), so grouping by name alone can't collide two
+        # distinct categories together.
+        return {row["category__name"]: abs(row["total"] or Decimal("0.00")) for row in rows}
+
+    def _top_and_other(totals):
+        # Amount descending, category name ascending as a tiebreak - without
+        # it, two same-total categories would split the top_n/Other boundary
+        # based on incidental queryset iteration order instead of reliably.
+        ordered = sorted(totals.items(), key=lambda item: (-item[1], item[0]))
+        other_total = sum((amount for _, amount in ordered[top_n:]), Decimal("0.00"))
+        return ordered[:top_n], other_total
+
+    income_totals = _category_totals(CategoryV2.KIND_INCOME)
+    expense_totals = _category_totals(CategoryV2.KIND_EXPENSE)
+    top_income, other_income = _top_and_other(income_totals)
+    top_expense, other_expense = _top_and_other(expense_totals)
+    total_income = sum(income_totals.values(), Decimal("0.00"))
+    total_expense = sum(expense_totals.values(), Decimal("0.00"))
+
+    income_entries = list(top_income)
+    if other_income > 0:
+        income_entries.append(("Other income", other_income))
+    if total_expense > total_income:
+        income_entries.append(("From savings", total_expense - total_income))
+
+    expense_entries = list(top_expense)
+    if other_expense > 0:
+        expense_entries.append(("Other expenses", other_expense))
+    if total_income > total_expense:
+        expense_entries.append(("Savings", total_income - total_expense))
+
+    nodes = []
+    links = []
+    if income_entries or expense_entries:
+        # Every node first, left to right, so index arithmetic never has to
+        # look ahead: income category nodes, then the hub, then expense
+        # category nodes. Links are then just "each side's nodes <-> hub".
+        # Each node carries its own side ("income"/"hub"/"expense") - the
+        # frontend colors by flow direction (a diverging in-vs-out scheme),
+        # and reading that off an explicit field is far more robust than
+        # having it re-derive direction from recharts' internal node depth.
+        income_indices = []
+        for name, amount in income_entries:
+            income_indices.append((len(nodes), amount))
+            nodes.append({"name": name, "side": "income"})
+
+        hub_index = len(nodes)
+        nodes.append({"name": "Income", "side": "hub"})
+
+        expense_indices = []
+        for name, amount in expense_entries:
+            expense_indices.append((len(nodes), amount))
+            nodes.append({"name": name, "side": "expense"})
+
+        for index, amount in income_indices:
+            links.append({"source": index, "target": hub_index, "value": str(amount)})
+        for index, amount in expense_indices:
+            links.append({"source": hub_index, "target": index, "value": str(amount)})
+
+    return {
+        "type": "cash_flow_sankey",
+        "start_date": start_date.isoformat(),
+        "end_date": end_date.isoformat(),
+        "nodes": nodes,
+        "links": links,
+    }
+
+
 def _report_date(value, field_name):
     """Parse a report date, turning malformed input into a clear ValueError."""
     try:
@@ -280,6 +471,20 @@ def run_report(budget_file: BudgetFile, payload: dict):
 
     if report_type == "monthly_cash_flow":
         return compute_monthly_cash_flow(budget_file, start_date, end_date)
+
+    if report_type == SavedReport.TYPE_NET_WORTH_SERIES:
+        # Pass through None when the caller didn't supply a date, so this
+        # report's own trailing-12-month default applies instead of the
+        # generic month-to-date default every other branch above uses.
+        return compute_net_worth_series(
+            budget_file,
+            start_date if start_date_value else None,
+            end_date if end_date_value else None,
+        )
+
+    if report_type == SavedReport.TYPE_CASH_FLOW_SANKEY:
+        top_n = payload.get("top_n", 8)
+        return compute_cash_flow_sankey(budget_file, start_date, end_date, top_n=top_n)
 
     group_by = payload.get("group_by", "category")
     queryset = LedgerPosting.objects.filter(

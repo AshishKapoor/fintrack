@@ -57,7 +57,7 @@ Explicitly *not* first: Plaid. If it ever lands, it lands as another adapter, be
 
 *Goal: FinTrack tells you things about your money you didn't already know.*
 
-- [ ] **Insights dashboard** — Sankey cash-flow diagram, net worth over time, month-over-month category comparisons
+- [x] **Insights dashboard** — Sankey cash-flow diagram, net worth over time, month-over-month category comparisons
 - [ ] **Subscription detection** — surface recurring charges from payee recurrence heuristics and scheduled-transaction data ("you have 6 recurring charges totaling $84/mo")
 - [ ] **First-class savings goals** — goals as real objects with progress tracking, not just envelope goal fields
 - [ ] **Debt payoff planning** — snowball/avalanche projections and payoff timelines
@@ -93,7 +93,7 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
 | If you are a… | High-impact places to start |
 |---|---|
 | Translator | The i18n pipeline is live (see [docs/i18n.md](docs/i18n.md)) — once Weblate is connected, translating is the fastest path to contributor status; until then, PRs extending `t()`/`gettext_lazy` coverage to a page not yet listed there are just as welcome |
-| Frontend dev | Extend i18n coverage page by page, insights charts (Phase 3) |
+| Frontend dev | Extend i18n coverage page by page — the new `/insights` page's own strings included |
 | Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`), subscription detection heuristics (Phase 3) |
 | Self-hosting enthusiast | Get FinTrack listed on [PikaPods](https://feedback.pikapods.com/) (upvote or help submit), stand up the actual public demo host, docs for reverse-proxy setups |
 | Designer | A demo GIF for the README, insights dashboard concepts |
@@ -158,3 +158,28 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   `{field: [messages]}` and silently showed just the first character of any
   `{"detail": "a string"}` response, which several of this phase's own new
   actions return.
+- **2026-08-24** — Phase 3's Insights dashboard shipped: a new `/insights`
+  page with three panels. Net worth over time (`compute_net_worth_series`)
+  walks the whole posting history in one pass rather than recomputing the
+  existing point-in-time `compute_net_worth` once per month, converting each
+  point at *its own* date - `fx_rates.convert_amount` does genuine
+  nearest-on-or-before lookback, so a shared or omitted `as_of` would have
+  silently priced months-old balances at today's rate. Month-over-month
+  category comparison needed no backend change at all - `compute_spending_trends`
+  already returned exactly this shape. The cash flow Sankey
+  (`compute_cash_flow_sankey`) uses a single-hub topology with a
+  "Savings"/"From savings" gap node absorbing the surplus or deficit, so the
+  hub always stays flow-balanced; an initial two-hub design would have left
+  it unbalanced in any deficit month. `LedgerTransaction.transaction_date`
+  gained a database index, and `SavedReport.report_type` grew room for the
+  two new types alongside the existing net_worth/cash_flow/spending/custom
+  ones. Found and fixed live in the browser rather than by inspection alone:
+  `ChartLegendContent`'s label lookup has no fallback to the real series name
+  the way `ChartTooltipContent`'s does, so the category chart's legend
+  rendered colored swatches with no text until given its own lookup-free
+  legend; and recharts' Sankey checks `trigger === 'hover'` on the *raw*
+  child element's props before React merges in `Tooltip`'s defaultProps, so
+  its hover tooltip needs that prop set explicitly - and even set correctly,
+  it never activated in this app's recharts 2.15.2 + React 19 combination
+  (confirmed live, pointer position verified via `elementFromPoint`), so
+  Sankey node labels carry their amount directly instead of relying on it.

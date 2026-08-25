@@ -11,6 +11,8 @@
 * `cash_flow` - Cash Flow
 * `spending` - Spending Trends
 * `custom` - Custom
+* `net_worth_series` - Net Worth Over Time
+* `cash_flow_sankey` - Cash Flow Sankey
  */
 export type ReportTypeEnum = typeof ReportTypeEnum[keyof typeof ReportTypeEnum];
 
@@ -21,4 +23,6 @@ export const ReportTypeEnum = {
   cash_flow: 'cash_flow',
   spending: 'spending',
   custom: 'custom',
+  net_worth_series: 'net_worth_series',
+  cash_flow_sankey: 'cash_flow_sankey',
 } as const;

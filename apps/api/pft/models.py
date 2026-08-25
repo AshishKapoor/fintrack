@@ -483,7 +483,7 @@ class LedgerTransaction(models.Model):
     budget_file = models.ForeignKey(
         BudgetFile, on_delete=models.CASCADE, related_name="ledger_transactions"
     )
-    transaction_date = models.DateField()
+    transaction_date = models.DateField(db_index=True)
     payee = models.ForeignKey(
         Payee,
         null=True,
@@ -742,19 +742,25 @@ class SavedReport(models.Model):
     TYPE_CASH_FLOW = "cash_flow"
     TYPE_SPENDING = "spending"
     TYPE_CUSTOM = "custom"
+    TYPE_NET_WORTH_SERIES = "net_worth_series"
+    TYPE_CASH_FLOW_SANKEY = "cash_flow_sankey"
 
     TYPE_CHOICES = (
         (TYPE_NET_WORTH, "Net Worth"),
         (TYPE_CASH_FLOW, "Cash Flow"),
         (TYPE_SPENDING, "Spending Trends"),
         (TYPE_CUSTOM, "Custom"),
+        (TYPE_NET_WORTH_SERIES, "Net Worth Over Time"),
+        (TYPE_CASH_FLOW_SANKEY, "Cash Flow Sankey"),
     )
 
     budget_file = models.ForeignKey(
         BudgetFile, on_delete=models.CASCADE, related_name="saved_reports"
     )
     name = models.CharField(max_length=160)
-    report_type = models.CharField(max_length=16, choices=TYPE_CHOICES)
+    # 32 leaves headroom past the two longest current slots (both 16 chars) -
+    # this field was hard-capped at 16 before the Phase 3 insights types.
+    report_type = models.CharField(max_length=32, choices=TYPE_CHOICES)
     definition = models.JSONField(default=dict, blank=True)
     pinned = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

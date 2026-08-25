@@ -6221,12 +6221,16 @@ components:
       - cash_flow
       - spending
       - custom
+      - net_worth_series
+      - cash_flow_sankey
       type: string
       description: |-
         * `net_worth` - Net Worth
         * `cash_flow` - Cash Flow
         * `spending` - Spending Trends
         * `custom` - Custom
+        * `net_worth_series` - Net Worth Over Time
+        * `cash_flow_sankey` - Cash Flow Sankey
     RoleEnum:
       enum:
       - admin

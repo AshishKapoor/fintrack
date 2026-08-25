@@ -8,6 +8,7 @@ import {
   History,
   Home,
   Landmark,
+  LineChart,
   PieChart,
   Repeat,
   Search,
@@ -104,6 +105,10 @@ export function CommandMenu() {
             <CommandItem onSelect={() => runCommand(() => navigate("/reports"))}>
               <Gauge className="mr-2 h-4 w-4" />
               <span>{t("nav.reports")}</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate("/insights"))}>
+              <LineChart className="mr-2 h-4 w-4" />
+              <span>{t("nav.insights")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/rules"))}>
               <Repeat className="mr-2 h-4 w-4" />

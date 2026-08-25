@@ -1,11 +1,11 @@
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile, CategoryV2, FxRate
+from pft.models import Account, BudgetFile, CategoryV2, FxRate, LedgerTransaction, Payee
 
 User = get_user_model()
 
@@ -300,3 +300,153 @@ class CashFlowSankeyTests(APITestCase):
 
         self._assert_no_node(data, "Transportation")
         self._assert_no_node(data, "Utilities")
+
+
+class SubscriptionDetectionTests(APITestCase):
+    """compute_subscriptions / report_type=subscriptions - ROADMAP.md Phase
+    3's "surface recurring charges from payee recurrence heuristics" item.
+    Detection (regular interval + regular amount, from transaction history)
+    is deliberately independent of ScheduledTransaction (a user-declared
+    schedule) - these tests check both that real recurrence gets found and
+    that irregular spending and already-scheduled charges don't.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="subs-user@example.com",
+            username="subs-user@example.com",
+            password="StrongPass123!",
+        )
+        self.client.force_authenticate(user=self.user)
+        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
+        self.expense_category = CategoryV2.objects.filter(
+            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        ).first()
+
+    def _payee(self, name):
+        return Payee.objects.create(budget_file=self.budget_file, name=name)
+
+    def _charge(self, payee, day, amount, source_type=LedgerTransaction.SOURCE_MANUAL):
+        self.client.post(
+            "/api/v1/finance/transactions/",
+            {
+                "budget_file": self.budget_file.id,
+                "transaction_date": day.isoformat(),
+                "payee": payee.id,
+                "memo": "subscription fixture",
+                "source_type": source_type,
+                "postings": [
+                    {"account": self.account.id, "amount": str(-amount)},
+                    {"category": self.expense_category.id, "amount": str(amount)},
+                ],
+            },
+            format="json",
+        )
+
+    def _run(self):
+        response = self.client.post(
+            "/api/v1/finance/reports/run/",
+            {"budget_file": self.budget_file.id, "report_type": "subscriptions"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        return response.data
+
+    def _by_payee(self, data, name):
+        for item in data["subscriptions"]:
+            if item["payee"] == name:
+                return item
+        return None
+
+    def test_detects_a_clean_monthly_subscription(self):
+        netflix = self._payee("Netflix")
+        start = date(2026, 1, 5)
+        for i in range(5):
+            self._charge(netflix, start + timedelta(days=30 * i), Decimal("15.99"))
+
+        data = self._run()
+        hit = self._by_payee(data, "Netflix")
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["cadence"], "monthly")
+        self.assertEqual(hit["amount"], "15.99")
+        self.assertEqual(hit["occurrences"], 5)
+        self.assertEqual(hit["monthly_equivalent"], "15.99")
+
+    def test_ignores_a_payee_with_too_few_charges(self):
+        rare = self._payee("One-off Store")
+        self._charge(rare, date(2026, 1, 5), Decimal("50.00"))
+        self._charge(rare, date(2026, 2, 5), Decimal("50.00"))
+
+        data = self._run()
+        self.assertIsNone(self._by_payee(data, "One-off Store"))
+
+    def test_ignores_irregular_amounts_and_timing(self):
+        groceries = self._payee("Corner Grocer")
+        for day, amount in [
+            (date(2026, 1, 3), Decimal("42.10")),
+            (date(2026, 1, 19), Decimal("87.55")),
+            (date(2026, 2, 2), Decimal("13.40")),
+            (date(2026, 2, 25), Decimal("64.90")),
+        ]:
+            self._charge(groceries, day, amount)
+
+        data = self._run()
+        self.assertIsNone(self._by_payee(data, "Corner Grocer"))
+
+    def test_excludes_already_scheduled_transactions(self):
+        rent = self._payee("Landlord")
+        start = date(2026, 1, 1)
+        for i in range(4):
+            self._charge(
+                rent,
+                start + timedelta(days=30 * i),
+                Decimal("1200.00"),
+                source_type=LedgerTransaction.SOURCE_SCHEDULED,
+            )
+
+        data = self._run()
+        # Already explicitly recurring via ScheduledTransaction - detecting
+        # it again here would show the same subscription twice.
+        self.assertIsNone(self._by_payee(data, "Landlord"))
+
+    def test_tolerates_a_price_change_using_the_median_amount(self):
+        gym = self._payee("Gym Membership")
+        start = date(2026, 1, 10)
+        amounts = [Decimal("29.99")] * 2 + [Decimal("32.99")] * 3
+        for i, amount in enumerate(amounts):
+            self._charge(gym, start + timedelta(days=30 * i), amount)
+
+        data = self._run()
+        hit = self._by_payee(data, "Gym Membership")
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["amount"], "32.99")  # median of [29.99,29.99,32.99,32.99,32.99]
+
+    def test_weekly_cadence_converts_to_a_monthly_equivalent(self):
+        coffee = self._payee("Coffee Club")
+        start = date(2026, 1, 5)
+        for i in range(6):
+            self._charge(coffee, start + timedelta(days=7 * i), Decimal("7.00"))
+
+        data = self._run()
+        hit = self._by_payee(data, "Coffee Club")
+        self.assertIsNotNone(hit)
+        self.assertEqual(hit["cadence"], "weekly")
+        self.assertEqual(hit["monthly_equivalent"], "30.00")  # 7.00 * 30/7
+
+    def test_total_monthly_equivalent_sums_every_detected_subscription(self):
+        netflix = self._payee("Netflix")
+        spotify = self._payee("Spotify")
+        start = date(2026, 1, 5)
+        for i in range(4):
+            self._charge(netflix, start + timedelta(days=30 * i), Decimal("15.99"))
+            self._charge(spotify, start + timedelta(days=30 * i), Decimal("10.99"))
+
+        data = self._run()
+        self.assertEqual(len(data["subscriptions"]), 2)
+        self.assertEqual(Decimal(data["total_monthly_equivalent"]), Decimal("26.98"))
+
+    def test_empty_ledger_returns_no_subscriptions(self):
+        data = self._run()
+        self.assertEqual(data["subscriptions"], [])
+        self.assertEqual(data["total_monthly_equivalent"], "0.00")

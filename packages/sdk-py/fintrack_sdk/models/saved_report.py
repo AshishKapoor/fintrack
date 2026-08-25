@@ -27,6 +27,8 @@ class SavedReport:
             * `custom` - Custom
             * `net_worth_series` - Net Worth Over Time
             * `cash_flow_sankey` - Cash Flow Sankey
+            * `subscriptions` - Subscriptions
+            * `debt_payoff` - Debt Payoff
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
         definition (Any | Unset):

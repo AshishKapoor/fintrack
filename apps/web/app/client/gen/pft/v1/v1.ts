@@ -18,6 +18,7 @@ import type {
 } from 'swr/mutation';
 
 import type {
+  AICategorizationSettings,
   Account,
   AuditLog,
   BankSyncInstitution,
@@ -45,6 +46,7 @@ import type {
   PaginatedCategoryList,
   PaginatedLedgerTransactionList,
   PaginatedTransactionList,
+  PatchedAICategorizationSettings,
   PatchedAccount,
   PatchedBudget,
   PatchedBudgetFile,
@@ -61,6 +63,7 @@ import type {
   PatchedOrganization,
   PatchedPayee,
   PatchedSavedReport,
+  PatchedSavingsGoal,
   PatchedScheduledTransaction,
   PatchedSyncConnection,
   PatchedTag,
@@ -69,6 +72,7 @@ import type {
   PatchedUserProfile,
   Payee,
   SavedReport,
+  SavingsGoal,
   ScheduledTransaction,
   SuggestedCategory,
   SyncConnection,
@@ -1001,6 +1005,229 @@ export const useV1FinanceAccountsDestroy = <TError = unknown>(
 
   const swrKey = swrOptions?.swrKey ?? getV1FinanceAccountsDestroyMutationKey(id);
   const swrFn = getV1FinanceAccountsDestroyMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Write-only: encrypts and stores (or clears, given an empty key) the
+API key. Never returns it - the caller already knows what they just
+typed. Mirrors bank sync's secret_data write path (pft/
+bank_sync_simplefin.py), the same reasoning as AICategorizationSettings'
+own docstring.
+ */
+export const v1FinanceAiCategorizationSetApiKeyCreate = (
+    
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/finance/ai-categorization/set-api-key/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceAiCategorizationSetApiKeyCreateMutationFetcher = ( ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceAiCategorizationSetApiKeyCreate();
+  }
+}
+export const getV1FinanceAiCategorizationSetApiKeyCreateMutationKey = () => [`/api/v1/finance/ai-categorization/set-api-key/`] as const;
+
+export type V1FinanceAiCategorizationSetApiKeyCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAiCategorizationSetApiKeyCreate>>>
+export type V1FinanceAiCategorizationSetApiKeyCreateMutationError = unknown
+
+export const useV1FinanceAiCategorizationSetApiKeyCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceAiCategorizationSetApiKeyCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceAiCategorizationSetApiKeyCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceAiCategorizationSetApiKeyCreateMutationKey();
+  const swrFn = getV1FinanceAiCategorizationSetApiKeyCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export const v1FinanceAiCategorizationSettingsRetrieve = (
+    
+ ) => {
+    return httpPFTClient<AICategorizationSettings>(
+    {url: `/api/v1/finance/ai-categorization/settings/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceAiCategorizationSettingsRetrieveKey = () => [`/api/v1/finance/ai-categorization/settings/`] as const;
+
+export type V1FinanceAiCategorizationSettingsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsRetrieve>>>
+export type V1FinanceAiCategorizationSettingsRetrieveQueryError = unknown
+
+export const useV1FinanceAiCategorizationSettingsRetrieve = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceAiCategorizationSettingsRetrieveKey() : null);
+  const swrFn = () => v1FinanceAiCategorizationSettingsRetrieve()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export const v1FinanceAiCategorizationSettingsUpdate = (
+    aICategorizationSettings: NonReadonly<AICategorizationSettings>,
+ ) => {
+    return httpPFTClient<AICategorizationSettings>(
+    {url: `/api/v1/finance/ai-categorization/settings/`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: aICategorizationSettings
+    },
+    );
+  }
+
+
+
+export const getV1FinanceAiCategorizationSettingsUpdateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<AICategorizationSettings> }) => {
+    return v1FinanceAiCategorizationSettingsUpdate(arg);
+  }
+}
+export const getV1FinanceAiCategorizationSettingsUpdateMutationKey = () => [`/api/v1/finance/ai-categorization/settings/`] as const;
+
+export type V1FinanceAiCategorizationSettingsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsUpdate>>>
+export type V1FinanceAiCategorizationSettingsUpdateMutationError = unknown
+
+export const useV1FinanceAiCategorizationSettingsUpdate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsUpdate>>, TError, Key, NonReadonly<AICategorizationSettings>, Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceAiCategorizationSettingsUpdateMutationKey();
+  const swrFn = getV1FinanceAiCategorizationSettingsUpdateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export const v1FinanceAiCategorizationSettingsPartialUpdate = (
+    patchedAICategorizationSettings: NonReadonly<PatchedAICategorizationSettings>,
+ ) => {
+    return httpPFTClient<AICategorizationSettings>(
+    {url: `/api/v1/finance/ai-categorization/settings/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedAICategorizationSettings
+    },
+    );
+  }
+
+
+
+export const getV1FinanceAiCategorizationSettingsPartialUpdateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedAICategorizationSettings> }) => {
+    return v1FinanceAiCategorizationSettingsPartialUpdate(arg);
+  }
+}
+export const getV1FinanceAiCategorizationSettingsPartialUpdateMutationKey = () => [`/api/v1/finance/ai-categorization/settings/`] as const;
+
+export type V1FinanceAiCategorizationSettingsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsPartialUpdate>>>
+export type V1FinanceAiCategorizationSettingsPartialUpdateMutationError = unknown
+
+export const useV1FinanceAiCategorizationSettingsPartialUpdate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsPartialUpdate>>, TError, Key, NonReadonly<PatchedAICategorizationSettings>, Awaited<ReturnType<typeof v1FinanceAiCategorizationSettingsPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceAiCategorizationSettingsPartialUpdateMutationKey();
+  const swrFn = getV1FinanceAiCategorizationSettingsPartialUpdateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Fire a real request now, for the settings UI's "test" button - same
+reasoning as NotificationTestView (pft/views.py) and bank sync's own
+actions for its own scoped throttle.
+ */
+export const v1FinanceAiCategorizationTestCreate = (
+    
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/finance/ai-categorization/test/`, method: 'POST'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceAiCategorizationTestCreateMutationFetcher = ( ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceAiCategorizationTestCreate();
+  }
+}
+export const getV1FinanceAiCategorizationTestCreateMutationKey = () => [`/api/v1/finance/ai-categorization/test/`] as const;
+
+export type V1FinanceAiCategorizationTestCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAiCategorizationTestCreate>>>
+export type V1FinanceAiCategorizationTestCreateMutationError = unknown
+
+export const useV1FinanceAiCategorizationTestCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceAiCategorizationTestCreate>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceAiCategorizationTestCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceAiCategorizationTestCreateMutationKey();
+  const swrFn = getV1FinanceAiCategorizationTestCreateMutationFetcher();
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions)
 
@@ -3989,6 +4216,12 @@ amount -> payee -> (suggested) category -> done flow (ROADMAP.md
 Phase 1). Ties broken by whichever was used most recently, so a
 payee's habits can drift over time instead of getting stuck on
 whatever was most common historically.
+
+Falls back to opt-in AI categorization (pft/ai_categorization.py,
+ROADMAP.md Phase 3) only when this payee has no categorized history
+at all - a real transaction history is always the better signal
+when one exists, so AI never overrides or is even consulted once a
+payee has a track record.
  */
 export const v1FinancePayeesSuggestedCategoryRetrieve = (
     id: string,
@@ -4772,6 +5005,274 @@ export const useV1FinanceRulesApplyCreate = <TError = unknown>(
 
   const swrKey = swrOptions?.swrKey ?? getV1FinanceRulesApplyCreateMutationKey();
   const swrFn = getV1FinanceRulesApplyCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsList = (
+    
+ ) => {
+    return httpPFTClient<SavingsGoal[]>(
+    {url: `/api/v1/finance/savings-goals/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsListKey = () => [`/api/v1/finance/savings-goals/`] as const;
+
+export type V1FinanceSavingsGoalsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsList>>>
+export type V1FinanceSavingsGoalsListQueryError = unknown
+
+export const useV1FinanceSavingsGoalsList = <TError = unknown>(
+   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSavingsGoalsListKey() : null);
+  const swrFn = () => v1FinanceSavingsGoalsList()
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsCreate = (
+    savingsGoal: NonReadonly<SavingsGoal>,
+ ) => {
+    return httpPFTClient<SavingsGoal>(
+    {url: `/api/v1/finance/savings-goals/`, method: 'POST',
+      headers: {'Content-Type': 'application/json', },
+      data: savingsGoal
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsCreateMutationFetcher = ( ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SavingsGoal> }) => {
+    return v1FinanceSavingsGoalsCreate(arg);
+  }
+}
+export const getV1FinanceSavingsGoalsCreateMutationKey = () => [`/api/v1/finance/savings-goals/`] as const;
+
+export type V1FinanceSavingsGoalsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsCreate>>>
+export type V1FinanceSavingsGoalsCreateMutationError = unknown
+
+export const useV1FinanceSavingsGoalsCreate = <TError = unknown>(
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsCreate>>, TError, Key, NonReadonly<SavingsGoal>, Awaited<ReturnType<typeof v1FinanceSavingsGoalsCreate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSavingsGoalsCreateMutationKey();
+  const swrFn = getV1FinanceSavingsGoalsCreateMutationFetcher();
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsRetrieve = (
+    id: string,
+ ) => {
+    return httpPFTClient<SavingsGoal>(
+    {url: `/api/v1/finance/savings-goals/${id}/`, method: 'GET'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsRetrieveKey = (id: string,) => [`/api/v1/finance/savings-goals/${id}/`] as const;
+
+export type V1FinanceSavingsGoalsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsRetrieve>>>
+export type V1FinanceSavingsGoalsRetrieveQueryError = unknown
+
+export const useV1FinanceSavingsGoalsRetrieve = <TError = unknown>(
+  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+) => {
+  const {swr: swrOptions} = options ?? {}
+
+  const isEnabled = swrOptions?.enabled !== false && !!(id)
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSavingsGoalsRetrieveKey(id) : null);
+  const swrFn = () => v1FinanceSavingsGoalsRetrieve(id)
+
+  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsUpdate = (
+    id: string,
+    savingsGoal: NonReadonly<SavingsGoal>,
+ ) => {
+    return httpPFTClient<SavingsGoal>(
+    {url: `/api/v1/finance/savings-goals/${id}/`, method: 'PUT',
+      headers: {'Content-Type': 'application/json', },
+      data: savingsGoal
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<SavingsGoal> }) => {
+    return v1FinanceSavingsGoalsUpdate(id, arg);
+  }
+}
+export const getV1FinanceSavingsGoalsUpdateMutationKey = (id: string,) => [`/api/v1/finance/savings-goals/${id}/`] as const;
+
+export type V1FinanceSavingsGoalsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsUpdate>>>
+export type V1FinanceSavingsGoalsUpdateMutationError = unknown
+
+export const useV1FinanceSavingsGoalsUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsUpdate>>, TError, Key, NonReadonly<SavingsGoal>, Awaited<ReturnType<typeof v1FinanceSavingsGoalsUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSavingsGoalsUpdateMutationKey(id);
+  const swrFn = getV1FinanceSavingsGoalsUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsPartialUpdate = (
+    id: string,
+    patchedSavingsGoal: NonReadonly<PatchedSavingsGoal>,
+ ) => {
+    return httpPFTClient<SavingsGoal>(
+    {url: `/api/v1/finance/savings-goals/${id}/`, method: 'PATCH',
+      headers: {'Content-Type': 'application/json', },
+      data: patchedSavingsGoal
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsPartialUpdateMutationFetcher = (id: string, ) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedSavingsGoal> }) => {
+    return v1FinanceSavingsGoalsPartialUpdate(id, arg);
+  }
+}
+export const getV1FinanceSavingsGoalsPartialUpdateMutationKey = (id: string,) => [`/api/v1/finance/savings-goals/${id}/`] as const;
+
+export type V1FinanceSavingsGoalsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsPartialUpdate>>>
+export type V1FinanceSavingsGoalsPartialUpdateMutationError = unknown
+
+export const useV1FinanceSavingsGoalsPartialUpdate = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsPartialUpdate>>, TError, Key, NonReadonly<PatchedSavingsGoal>, Awaited<ReturnType<typeof v1FinanceSavingsGoalsPartialUpdate>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSavingsGoalsPartialUpdateMutationKey(id);
+  const swrFn = getV1FinanceSavingsGoalsPartialUpdateMutationFetcher(id);
+
+  const query = useSWRMutation(swrKey, swrFn, swrOptions)
+
+  return {
+    swrKey,
+    ...query
+  }
+}
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export const v1FinanceSavingsGoalsDestroy = (
+    id: string,
+ ) => {
+    return httpPFTClient<void>(
+    {url: `/api/v1/finance/savings-goals/${id}/`, method: 'DELETE'
+    },
+    );
+  }
+
+
+
+export const getV1FinanceSavingsGoalsDestroyMutationFetcher = (id: string, ) => {
+  return (_: Key, __: { arg: Arguments }) => {
+    return v1FinanceSavingsGoalsDestroy(id);
+  }
+}
+export const getV1FinanceSavingsGoalsDestroyMutationKey = (id: string,) => [`/api/v1/finance/savings-goals/${id}/`] as const;
+
+export type V1FinanceSavingsGoalsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsDestroy>>>
+export type V1FinanceSavingsGoalsDestroyMutationError = unknown
+
+export const useV1FinanceSavingsGoalsDestroy = <TError = unknown>(
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1FinanceSavingsGoalsDestroy>>> & { swrKey?: string }, }
+) => {
+
+  const {swr: swrOptions} = options ?? {}
+
+  const swrKey = swrOptions?.swrKey ?? getV1FinanceSavingsGoalsDestroyMutationKey(id);
+  const swrFn = getV1FinanceSavingsGoalsDestroyMutationFetcher(id);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions)
 

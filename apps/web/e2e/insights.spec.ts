@@ -52,6 +52,13 @@ test('insights shows an empty state, then a category breakdown once there is spe
     // unlike category spending, it has no empty state of its own to assert.
     await expect(page.getByText('Net worth over time')).toBeVisible({ timeout: 30_000 })
     await expect(page.getByText('No spending to compare yet')).toBeVisible({ timeout: 30_000 })
+    // Detection needs several charges spread months apart to see a pattern -
+    // precisely backdating that many transactions isn't practical through
+    // the calendar-popover date picker, so the detection algorithm itself
+    // (regular interval + amount, excluding already-scheduled charges) is
+    // covered precisely by the backend test suite instead; this only checks
+    // the panel renders its empty state correctly with nothing to detect.
+    await expect(page.getByText('No recurring charges detected yet')).toBeVisible()
   })
 
   await test.step('add expenses in two different categories', async () => {
@@ -65,6 +72,9 @@ test('insights shows an empty state, then a category breakdown once there is spe
     // Still renders correctly alongside the now-populated category panel -
     // exact post-expense figures are covered by the backend test suite.
     await expect(page.getByText('Net worth over time')).toBeVisible()
+    // Two one-off charges are not a pattern - still correctly empty, not a
+    // false positive.
+    await expect(page.getByText('No recurring charges detected yet')).toBeVisible()
     // The legend renders each category's name as plain text - a real reading
     // of the API response, not just "some chart rendered".
     await expect(page.getByText('Groceries', { exact: true })).toBeVisible({ timeout: 30_000 })

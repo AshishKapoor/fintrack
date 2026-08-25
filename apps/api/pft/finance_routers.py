@@ -15,6 +15,7 @@ from .finance_views import (
     PayeeViewSet,
     PostingViewSet,
     ReportViewSet,
+    SavingsGoalViewSet,
     ScheduledTransactionViewSet,
     SyncConnectionAccountViewSet,
     SyncConnectionViewSet,
@@ -25,6 +26,7 @@ from .finance_views import (
 router = DefaultRouter()
 router.register("budget-files", BudgetFileViewSet, basename="budget-file")
 router.register("accounts", AccountViewSet, basename="account")
+router.register("savings-goals", SavingsGoalViewSet, basename="savings-goal")
 router.register("category-groups", CategoryGroupViewSet, basename="category-group")
 router.register("categories", CategoryV2ViewSet, basename="category")
 router.register("payees", PayeeViewSet, basename="payee")

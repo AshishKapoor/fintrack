@@ -23,6 +23,25 @@ export interface FinanceAccount {
   opening_balance: string
   currency_code: string
   current_balance?: string
+  /** Debt payoff planning inputs (ROADMAP.md Phase 3) - null on every
+   * account until set, and meaningless outside a credit/liability account. */
+  interest_rate: string | null
+  minimum_payment: string | null
+  is_archived: boolean
+}
+
+export interface SavingsGoal {
+  id: number
+  budget_file: number
+  account: number
+  account_name?: string
+  name: string
+  target_amount: string
+  target_date: string | null
+  /** account.current_balance, read at request time - see SavingsGoalSerializer. */
+  current_amount: string
+  /** Not capped at 100 - a goal can be exceeded. Null if target_amount is 0. */
+  progress_percent: number | null
   is_archived: boolean
 }
 
@@ -260,6 +279,8 @@ export const createAccount = async (payload: {
   type: string
   opening_balance: string
   currency_code?: string
+  interest_rate?: string | null
+  minimum_payment?: string | null
 }) => {
   const budgetFileId = await getDefaultBudgetFileId()
   return post<FinanceAccount>('/api/v1/finance/accounts/', {
@@ -270,13 +291,99 @@ export const createAccount = async (payload: {
 
 export const updateAccount = async (
   id: number,
-  payload: Partial<Pick<FinanceAccount, 'name' | 'type' | 'opening_balance' | 'currency_code' | 'is_archived'>>,
+  payload: Partial<
+    Pick<
+      FinanceAccount,
+      'name' | 'type' | 'opening_balance' | 'currency_code' | 'interest_rate' | 'minimum_payment' | 'is_archived'
+    >
+  >,
 ) => {
   return patch<FinanceAccount>(`/api/v1/finance/accounts/${id}/`, payload)
 }
 
 export const deleteAccount = async (id: number) => {
   return del(`/api/v1/finance/accounts/${id}/`)
+}
+
+export interface AICategorizationSettings {
+  id: number
+  budget_file: number
+  is_enabled: boolean
+  provider: 'openai_compatible' | 'ollama'
+  base_url: string
+  model_name: string
+  /** Whether a key is stored - the key itself is never returned, see
+   * AICategorizationSettingsSerializer. */
+  has_api_key: boolean
+}
+
+/** get_or_create on the server - a fresh budget file gets sensible (off)
+ * defaults instead of a 404. See AICategorizationSettingsView. */
+export const getAICategorizationSettings = async (budgetFileId?: number) => {
+  const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
+  return get<AICategorizationSettings>(
+    `/api/v1/finance/ai-categorization/settings/${toQueryString({ budget_file: resolved })}`,
+  )
+}
+
+export const updateAICategorizationSettings = async (
+  payload: Partial<Pick<AICategorizationSettings, 'is_enabled' | 'provider' | 'base_url' | 'model_name'>>,
+  budgetFileId?: number,
+) => {
+  const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
+  return patch<AICategorizationSettings>(
+    `/api/v1/finance/ai-categorization/settings/${toQueryString({ budget_file: resolved })}`,
+    payload,
+  )
+}
+
+/** Encrypts and stores (or, given an empty string, clears) the API key.
+ * Never returns it - see AICategorizationApiKeyView. */
+export const setAICategorizationApiKey = async (apiKey: string, budgetFileId?: number) => {
+  const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
+  return post<AICategorizationSettings>('/api/v1/finance/ai-categorization/set-api-key/', {
+    budget_file: resolved,
+    api_key: apiKey,
+  })
+}
+
+export const testAICategorizationConnection = async (budgetFileId?: number) => {
+  const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
+  return post<{ ok: boolean; detail: string }>('/api/v1/finance/ai-categorization/test/', {
+    budget_file: resolved,
+  })
+}
+
+export const listSavingsGoals = async (budgetFileId?: number) => {
+  const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
+  const response = await get<PaginatedResponse<SavingsGoal> | SavingsGoal[]>(
+    `/api/v1/finance/savings-goals/${toQueryString({ budget_file: resolved })}`,
+  )
+  return asPaginated<SavingsGoal>(response).results
+}
+
+export const createSavingsGoal = async (payload: {
+  account: number
+  name: string
+  target_amount: string
+  target_date?: string | null
+}) => {
+  const budgetFileId = await getDefaultBudgetFileId()
+  return post<SavingsGoal>('/api/v1/finance/savings-goals/', {
+    budget_file: budgetFileId,
+    ...payload,
+  })
+}
+
+export const updateSavingsGoal = async (
+  id: number,
+  payload: Partial<Pick<SavingsGoal, 'account' | 'name' | 'target_amount' | 'target_date' | 'is_archived'>>,
+) => {
+  return patch<SavingsGoal>(`/api/v1/finance/savings-goals/${id}/`, payload)
+}
+
+export const deleteSavingsGoal = async (id: number) => {
+  return del(`/api/v1/finance/savings-goals/${id}/`)
 }
 
 /** Native + home-currency-converted balances for every account - powers the

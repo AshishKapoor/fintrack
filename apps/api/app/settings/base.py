@@ -177,6 +177,10 @@ REST_FRAMEWORK = {
         # separately caps daily calls per account regardless of this.
         "bank_sync": os.getenv("THROTTLE_BANK_SYNC", "30/hour"),
         "fx_sync": os.getenv("THROTTLE_FX_SYNC", "10/hour"),
+        # AI categorization calls out to a user's own BYOK provider or local
+        # Ollama endpoint on the caller's behalf - same reasoning as
+        # notification_test/bank_sync.
+        "ai_categorization": os.getenv("THROTTLE_AI_CATEGORIZATION", "60/hour"),
     },
 }
 

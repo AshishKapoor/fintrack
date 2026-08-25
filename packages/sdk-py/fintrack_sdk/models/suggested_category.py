@@ -20,10 +20,12 @@ class SuggestedCategory:
         Attributes:
             category (int | None):
             category_name (str):
+            source (None | str):
     """
 
     category: int | None
     category_name: str
+    source: None | str
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -32,12 +34,16 @@ class SuggestedCategory:
 
         category_name = self.category_name
 
+        source: None | str
+        source = self.source
+
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "category": category,
                 "category_name": category_name,
+                "source": source,
             }
         )
 
@@ -56,9 +62,17 @@ class SuggestedCategory:
 
         category_name = d.pop("category_name")
 
+        def _parse_source(data: object) -> None | str:
+            if data is None:
+                return data
+            return cast(None | str, data)
+
+        source = _parse_source(d.pop("source"))
+
         suggested_category = cls(
             category=category,
             category_name=category_name,
+            source=source,
         )
 
         suggested_category.additional_properties = d

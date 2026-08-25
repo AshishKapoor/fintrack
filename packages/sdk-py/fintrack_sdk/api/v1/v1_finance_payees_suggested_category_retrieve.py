@@ -60,6 +60,12 @@ def sync_detailed(
     payee's habits can drift over time instead of getting stuck on
     whatever was most common historically.
 
+    Falls back to opt-in AI categorization (pft/ai_categorization.py,
+    ROADMAP.md Phase 3) only when this payee has no categorized history
+    at all - a real transaction history is always the better signal
+    when one exists, so AI never overrides or is even consulted once a
+    payee has a track record.
+
     Args:
         id (str):
 
@@ -93,6 +99,12 @@ def sync(
     payee's habits can drift over time instead of getting stuck on
     whatever was most common historically.
 
+    Falls back to opt-in AI categorization (pft/ai_categorization.py,
+    ROADMAP.md Phase 3) only when this payee has no categorized history
+    at all - a real transaction history is always the better signal
+    when one exists, so AI never overrides or is even consulted once a
+    payee has a track record.
+
     Args:
         id (str):
 
@@ -120,6 +132,12 @@ async def asyncio_detailed(
     Phase 1). Ties broken by whichever was used most recently, so a
     payee's habits can drift over time instead of getting stuck on
     whatever was most common historically.
+
+    Falls back to opt-in AI categorization (pft/ai_categorization.py,
+    ROADMAP.md Phase 3) only when this payee has no categorized history
+    at all - a real transaction history is always the better signal
+    when one exists, so AI never overrides or is even consulted once a
+    payee has a track record.
 
     Args:
         id (str):
@@ -151,6 +169,12 @@ async def asyncio(
     Phase 1). Ties broken by whichever was used most recently, so a
     payee's habits can drift over time instead of getting stuck on
     whatever was most common historically.
+
+    Falls back to opt-in AI categorization (pft/ai_categorization.py,
+    ROADMAP.md Phase 3) only when this payee has no categorized history
+    at all - a real transaction history is always the better signal
+    when one exists, so AI never overrides or is even consulted once a
+    payee has a track record.
 
     Args:
         id (str):

@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .models import (
     Account,
+    AICategorizationSettings,
     Budget,
     BudgetFile,
     BudgetMonth,
@@ -22,6 +23,7 @@ from .models import (
     Organization,
     Payee,
     SavedReport,
+    SavingsGoal,
     ScheduledTransaction,
     SyncConnection,
     SyncConnectionAccount,
@@ -140,6 +142,21 @@ class AccountAdmin(admin.ModelAdmin):
     )
     list_filter = ("type", "currency_code", "is_archived")
     search_fields = ("name", "budget_file__name", "budget_file__user__email")
+
+
+@admin.register(SavingsGoal)
+class SavingsGoalAdmin(admin.ModelAdmin):
+    list_display = ("name", "budget_file", "account", "target_amount", "target_date", "is_archived")
+    list_filter = ("is_archived",)
+    search_fields = ("name", "budget_file__name", "budget_file__user__email")
+
+
+@admin.register(AICategorizationSettings)
+class AICategorizationSettingsAdmin(admin.ModelAdmin):
+    # encrypted_api_key deliberately excluded - same reasoning as SyncConnection.
+    list_display = ("budget_file", "is_enabled", "provider", "base_url", "updated_at")
+    list_filter = ("is_enabled", "provider")
+    search_fields = ("budget_file__name", "budget_file__user__email")
 
 
 @admin.register(CategoryGroupV2)

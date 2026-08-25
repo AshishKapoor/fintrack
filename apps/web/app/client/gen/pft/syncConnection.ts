@@ -5,14 +5,14 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
-import type { ProviderEnum } from './providerEnum';
+import type { SyncConnectionProviderEnum } from './syncConnectionProviderEnum';
 import type { SyncConnectionStatusEnum } from './syncConnectionStatusEnum';
 import type { SyncConnectionAccount } from './syncConnectionAccount';
 
 export interface SyncConnection {
   readonly id: number;
   budget_file: number;
-  provider: ProviderEnum;
+  provider: SyncConnectionProviderEnum;
   readonly provider_label: string;
   readonly status: SyncConnectionStatusEnum;
   readonly institution_name: string;

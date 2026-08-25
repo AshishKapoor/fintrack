@@ -3,6 +3,10 @@
 from .account import Account
 from .account_type_enum import AccountTypeEnum
 from .action_enum import ActionEnum
+from .ai_categorization_settings import AICategorizationSettings
+from .ai_categorization_settings_provider_enum import (
+    AICategorizationSettingsProviderEnum,
+)
 from .audit_log import AuditLog
 from .bank_sync_institution import BankSyncInstitution
 from .bank_sync_link_result import BankSyncLinkResult
@@ -40,6 +44,7 @@ from .paginated_category_list import PaginatedCategoryList
 from .paginated_ledger_transaction_list import PaginatedLedgerTransactionList
 from .paginated_transaction_list import PaginatedTransactionList
 from .patched_account import PatchedAccount
+from .patched_ai_categorization_settings import PatchedAICategorizationSettings
 from .patched_budget import PatchedBudget
 from .patched_budget_file import PatchedBudgetFile
 from .patched_budget_month import PatchedBudgetMonth
@@ -55,6 +60,7 @@ from .patched_notification_preference import PatchedNotificationPreference
 from .patched_organization import PatchedOrganization
 from .patched_payee import PatchedPayee
 from .patched_saved_report import PatchedSavedReport
+from .patched_savings_goal import PatchedSavingsGoal
 from .patched_scheduled_transaction import PatchedScheduledTransaction
 from .patched_sync_connection import PatchedSyncConnection
 from .patched_tag import PatchedTag
@@ -62,15 +68,16 @@ from .patched_transaction import PatchedTransaction
 from .patched_transaction_rule import PatchedTransactionRule
 from .patched_user_profile import PatchedUserProfile
 from .payee import Payee
-from .provider_enum import ProviderEnum
 from .report_type_enum import ReportTypeEnum
 from .role_enum import RoleEnum
 from .saved_report import SavedReport
+from .savings_goal import SavingsGoal
 from .scheduled_transaction import ScheduledTransaction
 from .source_type_enum import SourceTypeEnum
 from .suggested_category import SuggestedCategory
 from .sync_connection import SyncConnection
 from .sync_connection_account import SyncConnectionAccount
+from .sync_connection_provider_enum import SyncConnectionProviderEnum
 from .sync_connection_status_enum import SyncConnectionStatusEnum
 from .tag import Tag
 from .token_obtain_pair import TokenObtainPair
@@ -82,6 +89,8 @@ from .user_profile import UserProfile
 from .user_registration import UserRegistration
 
 __all__ = (
+    "AICategorizationSettings",
+    "AICategorizationSettingsProviderEnum",
     "Account",
     "AccountTypeEnum",
     "ActionEnum",
@@ -121,6 +130,7 @@ __all__ = (
     "PaginatedCategoryList",
     "PaginatedLedgerTransactionList",
     "PaginatedTransactionList",
+    "PatchedAICategorizationSettings",
     "PatchedAccount",
     "PatchedBudget",
     "PatchedBudgetFile",
@@ -137,6 +147,7 @@ __all__ = (
     "PatchedOrganization",
     "PatchedPayee",
     "PatchedSavedReport",
+    "PatchedSavingsGoal",
     "PatchedScheduledTransaction",
     "PatchedSyncConnection",
     "PatchedTag",
@@ -144,15 +155,16 @@ __all__ = (
     "PatchedTransactionRule",
     "PatchedUserProfile",
     "Payee",
-    "ProviderEnum",
     "ReportTypeEnum",
     "RoleEnum",
     "SavedReport",
+    "SavingsGoal",
     "ScheduledTransaction",
     "SourceTypeEnum",
     "SuggestedCategory",
     "SyncConnection",
     "SyncConnectionAccount",
+    "SyncConnectionProviderEnum",
     "SyncConnectionStatusEnum",
     "Tag",
     "TokenObtainPair",

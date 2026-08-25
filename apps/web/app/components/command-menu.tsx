@@ -10,6 +10,7 @@ import {
   Landmark,
   LineChart,
   PieChart,
+  PiggyBank,
   Repeat,
   Search,
   Smartphone,
@@ -97,6 +98,10 @@ export function CommandMenu() {
             <CommandItem onSelect={() => runCommand(() => navigate("/accounts"))}>
               <Landmark className="mr-2 h-4 w-4" />
               <span>{t("nav.accounts")}</span>
+            </CommandItem>
+            <CommandItem onSelect={() => runCommand(() => navigate("/savings-goals"))}>
+              <PiggyBank className="mr-2 h-4 w-4" />
+              <span>{t("nav.savingsGoals")}</span>
             </CommandItem>
             <CommandItem onSelect={() => runCommand(() => navigate("/transactions"))}>
               <CreditCard className="mr-2 h-4 w-4" />

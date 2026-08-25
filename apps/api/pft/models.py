@@ -334,6 +334,18 @@ class Account(models.Model):
     # migration 0011 at add-time, so in practice this is a defensive fallback,
     # not a state new code needs to handle).
     currency_code = models.CharField(max_length=3, blank=True)
+    # Debt payoff planning (ROADMAP.md Phase 3) inputs - null on every account
+    # that predates this, and on every non-debt account, which is exactly why
+    # compute_debt_payoff_projection excludes (rather than guesses for) an
+    # account missing either: a 0% default would silently understate real
+    # interest, and a $0 minimum would silently imply "no obligation".
+    interest_rate = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True,
+        help_text="Annual percentage rate, e.g. 19.99 for 19.99% APR.",
+    )
+    minimum_payment = models.DecimalField(
+        max_digits=14, decimal_places=2, null=True, blank=True
+    )
     is_archived = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -744,6 +756,8 @@ class SavedReport(models.Model):
     TYPE_CUSTOM = "custom"
     TYPE_NET_WORTH_SERIES = "net_worth_series"
     TYPE_CASH_FLOW_SANKEY = "cash_flow_sankey"
+    TYPE_SUBSCRIPTIONS = "subscriptions"
+    TYPE_DEBT_PAYOFF = "debt_payoff"
 
     TYPE_CHOICES = (
         (TYPE_NET_WORTH, "Net Worth"),
@@ -752,6 +766,8 @@ class SavedReport(models.Model):
         (TYPE_CUSTOM, "Custom"),
         (TYPE_NET_WORTH_SERIES, "Net Worth Over Time"),
         (TYPE_CASH_FLOW_SANKEY, "Cash Flow Sankey"),
+        (TYPE_SUBSCRIPTIONS, "Subscriptions"),
+        (TYPE_DEBT_PAYOFF, "Debt Payoff"),
     )
 
     budget_file = models.ForeignKey(
@@ -1135,3 +1151,90 @@ class FxRate(models.Model):
 
     def __str__(self):
         return f"{self.rate_date} EUR->{self.currency_code} {self.rate}"
+
+
+class SavingsGoal(models.Model):
+    """A persistent target for one account's balance - ROADMAP.md Phase 3's
+    "first-class savings goals... not just envelope goal fields": the four
+    goal_* fields on EnvelopeAssignment (goal_type/goal_value/goal_date/
+    goal_schedule) are read and written but never computed into progress
+    anywhere, and being per budget_month they get manually re-copied into
+    every new month rather than persisting on their own. This is account-
+    anchored rather than category-anchored: progress is a direct read of the
+    account's existing current_balance property, with no new computation and
+    no cross-month lookup - a category-anchored goal would need to resolve
+    "the current month's envelope" and thread carryover the way
+    build_envelope_snapshot already does, a meaningfully bigger feature left
+    for later rather than half-built alongside this one.
+    """
+
+    budget_file = models.ForeignKey(
+        BudgetFile, on_delete=models.CASCADE, related_name="savings_goals"
+    )
+    account = models.ForeignKey(
+        Account, on_delete=models.CASCADE, related_name="savings_goals"
+    )
+    name = models.CharField(max_length=120)
+    target_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    target_date = models.DateField(null=True, blank=True)
+    is_archived = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["budget_file", "name"], name="unique_savings_goal_name_per_budget_file"
+            )
+        ]
+
+    def __str__(self):
+        return self.name
+
+
+class AICategorizationSettings(models.Model):
+    """Opt-in payee -> category suggestions via an LLM - ROADMAP.md Phase 3's
+    "opt-in AI categorization... off by default, privacy-framed, never
+    required". Complements PayeeViewSet.suggested_category's existing
+    history-based lookup (finance_views.py) rather than replacing it: that
+    stays the primary suggestion, this only fires as a fallback when a payee
+    has no categorized history yet - see pft/ai_categorization.py.
+
+    Budget-file-scoped, not user-scoped: an API key is a credential (the
+    same reasoning as SyncConnection.secret_data, pft/bank_sync.py), not a
+    per-user delivery preference like NotificationPreference. One row per
+    budget file, created lazily on first access - see
+    AICategorizationSettingsView's get_object, mirroring
+    NotificationPreferenceView's exact pattern.
+
+    encrypted_api_key is never exposed via AICategorizationSettingsSerializer
+    - like secret_data, it is written only through a dedicated action
+    (set-api-key) that encrypts before the plaintext ever touches the DB,
+    using the same pft/crypto.py Fernet key as bank sync credentials.
+    """
+
+    PROVIDER_OPENAI_COMPATIBLE = "openai_compatible"
+    PROVIDER_OLLAMA = "ollama"
+    PROVIDER_CHOICES = (
+        (PROVIDER_OPENAI_COMPATIBLE, "OpenAI-compatible (bring your own key)"),
+        (PROVIDER_OLLAMA, "Ollama (local)"),
+    )
+
+    budget_file = models.OneToOneField(
+        BudgetFile, on_delete=models.CASCADE, related_name="ai_categorization_settings"
+    )
+    is_enabled = models.BooleanField(default=False)
+    provider = models.CharField(
+        max_length=20, choices=PROVIDER_CHOICES, default=PROVIDER_OPENAI_COMPATIBLE
+    )
+    # Blank means "use the provider's own default" - see
+    # ai_categorization.py's DEFAULT_BASE_URL/DEFAULT_MODEL.
+    base_url = models.CharField(max_length=500, blank=True)
+    model_name = models.CharField(max_length=100, blank=True)
+    encrypted_api_key = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"AI categorization settings for {self.budget_file}"

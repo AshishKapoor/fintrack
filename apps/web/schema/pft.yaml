@@ -599,6 +599,111 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/finance/ai-categorization/set-api-key/:
+    post:
+      operationId: v1_finance_ai_categorization_set_api_key_create
+      description: |-
+        Write-only: encrypts and stores (or clears, given an empty key) the
+        API key. Never returns it - the caller already knows what they just
+        typed. Mirrors bank sync's secret_data write path (pft/
+        bank_sync_simplefin.py), the same reasoning as AICategorizationSettings'
+        own docstring.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/finance/ai-categorization/settings/:
+    get:
+      operationId: v1_finance_ai_categorization_settings_retrieve
+      description: |-
+        One row per budget file, created on first access - mirrors
+        NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+        budget file instead of a user since this holds a credential (see the
+        model's docstring). GET only needs read access so a viewer can see
+        whether it's on; PATCH needs write, checked explicitly since
+        RetrieveUpdateAPIView has no perform_update hook of its own to route
+        through UserScopedModelViewSet's version.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AICategorizationSettings'
+          description: ''
+    put:
+      operationId: v1_finance_ai_categorization_settings_update
+      description: |-
+        One row per budget file, created on first access - mirrors
+        NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+        budget file instead of a user since this holds a credential (see the
+        model's docstring). GET only needs read access so a viewer can see
+        whether it's on; PATCH needs write, checked explicitly since
+        RetrieveUpdateAPIView has no perform_update hook of its own to route
+        through UserScopedModelViewSet's version.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AICategorizationSettings'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AICategorizationSettings'
+          description: ''
+    patch:
+      operationId: v1_finance_ai_categorization_settings_partial_update
+      description: |-
+        One row per budget file, created on first access - mirrors
+        NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+        budget file instead of a user since this holds a credential (see the
+        model's docstring). GET only needs read access so a viewer can see
+        whether it's on; PATCH needs write, checked explicitly since
+        RetrieveUpdateAPIView has no perform_update hook of its own to route
+        through UserScopedModelViewSet's version.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAICategorizationSettings'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AICategorizationSettings'
+          description: ''
+  /api/v1/finance/ai-categorization/test/:
+    post:
+      operationId: v1_finance_ai_categorization_test_create
+      description: |-
+        Fire a real request now, for the settings UI's "test" button - same
+        reasoning as NotificationTestView (pft/views.py) and bank sync's own
+        actions for its own scoped throttle.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/finance/backups/:
     get:
       operationId: v1_finance_backups_list
@@ -2418,6 +2523,12 @@ paths:
         Phase 1). Ties broken by whichever was used most recently, so a
         payee's habits can drift over time instead of getting stuck on
         whatever was most common historically.
+
+        Falls back to opt-in AI categorization (pft/ai_categorization.py,
+        ROADMAP.md Phase 3) only when this payee has no categorized history
+        at all - a real transaction history is always the better signal
+        when one exists, so AI never overrides or is even consulted once a
+        payee has a track record.
       parameters:
       - in: path
         name: id
@@ -2894,6 +3005,167 @@ paths:
               schema:
                 $ref: '#/components/schemas/TransactionRule'
           description: ''
+  /api/v1/finance/savings-goals/:
+    get:
+      operationId: v1_finance_savings_goals_list
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavingsGoal'
+          description: ''
+    post:
+      operationId: v1_finance_savings_goals_create
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingsGoal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsGoal'
+          description: ''
+  /api/v1/finance/savings-goals/{id}/:
+    get:
+      operationId: v1_finance_savings_goals_retrieve
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsGoal'
+          description: ''
+    put:
+      operationId: v1_finance_savings_goals_update
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingsGoal'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsGoal'
+          description: ''
+    patch:
+      operationId: v1_finance_savings_goals_partial_update
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSavingsGoal'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingsGoal'
+          description: ''
+    delete:
+      operationId: v1_finance_savings_goals_destroy
+      description: |-
+        Base class for the finance viewsets.
+
+        Enforces authentication and, on unsafe methods, that the target budget
+        file admits writes for this user (viewers are read-only). Every subclass
+        remains responsible for scoping its own get_queryset() through
+        tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - v1
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/finance/scheduled-transactions/:
     get:
       operationId: v1_finance_scheduled_transactions_list
@@ -4544,6 +4816,49 @@ paths:
           description: No response body
 components:
   schemas:
+    AICategorizationSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        is_enabled:
+          type: boolean
+        provider:
+          $ref: '#/components/schemas/AICategorizationSettingsProviderEnum'
+        base_url:
+          type: string
+          maxLength: 500
+        model_name:
+          type: string
+          maxLength: 100
+        has_api_key:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - budget_file
+      - created_at
+      - has_api_key
+      - id
+      - updated_at
+    AICategorizationSettingsProviderEnum:
+      enum:
+      - openai_compatible
+      - ollama
+      type: string
+      description: |-
+        * `openai_compatible` - OpenAI-compatible (bring your own key)
+        * `ollama` - Ollama (local)
     Account:
       type: object
       properties:
@@ -4569,6 +4884,17 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           readOnly: true
+        interest_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Annual percentage rate, e.g. 19.99 for 19.99% APR.
+        minimum_payment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
         is_archived:
           type: boolean
         created_at:
@@ -5514,6 +5840,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Transaction'
+    PatchedAICategorizationSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        is_enabled:
+          type: boolean
+        provider:
+          $ref: '#/components/schemas/AICategorizationSettingsProviderEnum'
+        base_url:
+          type: string
+          maxLength: 500
+        model_name:
+          type: string
+          maxLength: 100
+        has_api_key:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedAccount:
       type: object
       properties:
@@ -5539,6 +5894,17 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           readOnly: true
+        interest_rate:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Annual percentage rate, e.g. 19.99 for 19.99% APR.
+        minimum_payment:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          nullable: true
         is_archived:
           type: boolean
         created_at:
@@ -5994,6 +6360,46 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedSavingsGoal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        account:
+          type: integer
+        account_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        target_date:
+          type: string
+          format: date
+          nullable: true
+        current_amount:
+          type: string
+          readOnly: true
+        progress_percent:
+          type: string
+          readOnly: true
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
     PatchedScheduledTransaction:
       type: object
       properties:
@@ -6042,7 +6448,7 @@ components:
         budget_file:
           type: integer
         provider:
-          $ref: '#/components/schemas/ProviderEnum'
+          $ref: '#/components/schemas/SyncConnectionProviderEnum'
         provider_label:
           type: string
           readOnly: true
@@ -6207,14 +6613,6 @@ components:
       - id
       - name
       - updated_at
-    ProviderEnum:
-      enum:
-      - gocardless
-      - simplefin
-      type: string
-      description: |-
-        * `gocardless` - GoCardless Bank Account Data
-        * `simplefin` - SimpleFIN Bridge
     ReportTypeEnum:
       enum:
       - net_worth
@@ -6223,6 +6621,8 @@ components:
       - custom
       - net_worth_series
       - cash_flow_sankey
+      - subscriptions
+      - debt_payoff
       type: string
       description: |-
         * `net_worth` - Net Worth
@@ -6231,6 +6631,8 @@ components:
         * `custom` - Custom
         * `net_worth_series` - Net Worth Over Time
         * `cash_flow_sankey` - Cash Flow Sankey
+        * `subscriptions` - Subscriptions
+        * `debt_payoff` - Debt Payoff
     RoleEnum:
       enum:
       - admin
@@ -6271,6 +6673,57 @@ components:
       - id
       - name
       - report_type
+      - updated_at
+    SavingsGoal:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        account:
+          type: integer
+        account_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          maxLength: 120
+        target_amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        target_date:
+          type: string
+          format: date
+          nullable: true
+        current_amount:
+          type: string
+          readOnly: true
+        progress_percent:
+          type: string
+          readOnly: true
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - account
+      - account_name
+      - budget_file
+      - created_at
+      - current_amount
+      - id
+      - name
+      - progress_percent
+      - target_amount
       - updated_at
     ScheduledTransaction:
       type: object
@@ -6349,9 +6802,13 @@ components:
           nullable: true
         category_name:
           type: string
+        source:
+          type: string
+          nullable: true
       required:
       - category
       - category_name
+      - source
     SyncConnection:
       type: object
       properties:
@@ -6361,7 +6818,7 @@ components:
         budget_file:
           type: integer
         provider:
-          $ref: '#/components/schemas/ProviderEnum'
+          $ref: '#/components/schemas/SyncConnectionProviderEnum'
         provider_label:
           type: string
           readOnly: true
@@ -6458,6 +6915,14 @@ components:
       - id
       - last_synced_at
       - updated_at
+    SyncConnectionProviderEnum:
+      enum:
+      - gocardless
+      - simplefin
+      type: string
+      description: |-
+        * `gocardless` - GoCardless Bank Account Data
+        * `simplefin` - SimpleFIN Bridge
     SyncConnectionStatusEnum:
       enum:
       - pending

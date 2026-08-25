@@ -88,6 +88,41 @@ def is_safe_outbound_url(url: str) -> bool:
     return True
 
 
+def is_safe_local_service_url(url: str) -> bool:
+    """Like is_safe_outbound_url, but for the one legitimate case that needs
+    private-network access: a self-hosted Ollama endpoint (pft/
+    ai_categorization.py). A sibling function, not a parameter on
+    is_safe_outbound_url - every existing caller (ntfy, webhook, bank sync,
+    FX rates) keeps its exact current protection unchanged, with zero risk
+    of a parameter-logic mistake weakening it.
+
+    Ollama is normally reached at a private-network address by design (a
+    sibling container, a LAN box, sometimes literal loopback), so is_private/
+    is_loopback are allowed here - unlike is_safe_outbound_url, where they're
+    exactly what gets rejected. link-local, reserved, multicast and
+    unspecified stay blocked even so: link-local alone covers real targets
+    like the 169.254.169.254 cloud metadata endpoint, and none of the four is
+    ever a legitimate Ollama address regardless of deployment topology.
+    """
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    if parts.scheme not in ("http", "https") or not parts.hostname:
+        return False
+    try:
+        infos = socket.getaddrinfo(parts.hostname, None)
+    except socket.gaierror:
+        return False
+    if not infos:
+        return False
+    for info in infos:
+        ip = ipaddress.ip_address(info[4][0])
+        if ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified:
+            return False
+    return True
+
+
 def send_email(preference: NotificationPreference, subject: str, body: str) -> bool:
     if not preference.email_enabled or not preference.user.email:
         return False

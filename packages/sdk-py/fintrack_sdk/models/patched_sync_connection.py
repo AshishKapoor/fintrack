@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.provider_enum import ProviderEnum
+from ..models.sync_connection_provider_enum import SyncConnectionProviderEnum
 from ..models.sync_connection_status_enum import SyncConnectionStatusEnum
 from ..types import UNSET, Unset
 
@@ -25,7 +25,7 @@ class PatchedSyncConnection:
     Attributes:
         id (int | Unset):
         budget_file (int | Unset):
-        provider (ProviderEnum | Unset): * `gocardless` - GoCardless Bank Account Data
+        provider (SyncConnectionProviderEnum | Unset): * `gocardless` - GoCardless Bank Account Data
             * `simplefin` - SimpleFIN Bridge
         provider_label (str | Unset):
         status (SyncConnectionStatusEnum | Unset): * `pending` - Pending
@@ -42,7 +42,7 @@ class PatchedSyncConnection:
 
     id: int | Unset = UNSET
     budget_file: int | Unset = UNSET
-    provider: ProviderEnum | Unset = UNSET
+    provider: SyncConnectionProviderEnum | Unset = UNSET
     provider_label: str | Unset = UNSET
     status: SyncConnectionStatusEnum | Unset = UNSET
     institution_name: str | Unset = UNSET
@@ -133,11 +133,11 @@ class PatchedSyncConnection:
         budget_file = d.pop("budget_file", UNSET)
 
         _provider = d.pop("provider", UNSET)
-        provider: ProviderEnum | Unset
+        provider: SyncConnectionProviderEnum | Unset
         if isinstance(_provider, Unset):
             provider = UNSET
         else:
-            provider = ProviderEnum(_provider)
+            provider = SyncConnectionProviderEnum(_provider)
 
         provider_label = d.pop("provider_label", UNSET)
 

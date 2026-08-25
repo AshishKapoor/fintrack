@@ -6,6 +6,7 @@
  * OpenAPI spec version: 1.0.0
  */
 import type {
+  AICategorizationSettings,
   Account,
   AuditLog,
   BankSyncInstitution,
@@ -33,6 +34,7 @@ import type {
   PaginatedCategoryList,
   PaginatedLedgerTransactionList,
   PaginatedTransactionList,
+  PatchedAICategorizationSettings,
   PatchedAccount,
   PatchedBudget,
   PatchedBudgetFile,
@@ -49,6 +51,7 @@ import type {
   PatchedOrganization,
   PatchedPayee,
   PatchedSavedReport,
+  PatchedSavingsGoal,
   PatchedScheduledTransaction,
   PatchedSyncConnection,
   PatchedTag,
@@ -57,6 +60,7 @@ import type {
   PatchedUserProfile,
   Payee,
   SavedReport,
+  SavingsGoal,
   ScheduledTransaction,
   SuggestedCategory,
   SyncConnection,
@@ -1050,6 +1054,212 @@ export const v1FinanceAccountsDestroy = async (id: string, options?: RequestInit
   {      
     ...options,
     method: 'DELETE'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Write-only: encrypts and stores (or clears, given an empty key) the
+API key. Never returns it - the caller already knows what they just
+typed. Mirrors bank sync's secret_data write path (pft/
+bank_sync_simplefin.py), the same reasoning as AICategorizationSettings'
+own docstring.
+ */
+export type v1FinanceAiCategorizationSetApiKeyCreateResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type v1FinanceAiCategorizationSetApiKeyCreateResponseSuccess = (v1FinanceAiCategorizationSetApiKeyCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceAiCategorizationSetApiKeyCreateResponse = (v1FinanceAiCategorizationSetApiKeyCreateResponseSuccess)
+
+export const getV1FinanceAiCategorizationSetApiKeyCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/ai-categorization/set-api-key/`
+}
+
+export const v1FinanceAiCategorizationSetApiKeyCreate = async ( options?: RequestInit): Promise<v1FinanceAiCategorizationSetApiKeyCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceAiCategorizationSetApiKeyCreateResponse>(getV1FinanceAiCategorizationSetApiKeyCreateUrl(),
+  {      
+    ...options,
+    method: 'POST'
+    
+    
+  }
+);}
+
+
+
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export type v1FinanceAiCategorizationSettingsRetrieveResponse200 = {
+  data: AICategorizationSettings
+  status: 200
+}
+    
+export type v1FinanceAiCategorizationSettingsRetrieveResponseSuccess = (v1FinanceAiCategorizationSettingsRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceAiCategorizationSettingsRetrieveResponse = (v1FinanceAiCategorizationSettingsRetrieveResponseSuccess)
+
+export const getV1FinanceAiCategorizationSettingsRetrieveUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/ai-categorization/settings/`
+}
+
+export const v1FinanceAiCategorizationSettingsRetrieve = async ( options?: RequestInit): Promise<v1FinanceAiCategorizationSettingsRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinanceAiCategorizationSettingsRetrieveResponse>(getV1FinanceAiCategorizationSettingsRetrieveUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export type v1FinanceAiCategorizationSettingsUpdateResponse200 = {
+  data: AICategorizationSettings
+  status: 200
+}
+    
+export type v1FinanceAiCategorizationSettingsUpdateResponseSuccess = (v1FinanceAiCategorizationSettingsUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceAiCategorizationSettingsUpdateResponse = (v1FinanceAiCategorizationSettingsUpdateResponseSuccess)
+
+export const getV1FinanceAiCategorizationSettingsUpdateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/ai-categorization/settings/`
+}
+
+export const v1FinanceAiCategorizationSettingsUpdate = async (aICategorizationSettings: NonReadonly<AICategorizationSettings>, options?: RequestInit): Promise<v1FinanceAiCategorizationSettingsUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceAiCategorizationSettingsUpdateResponse>(getV1FinanceAiCategorizationSettingsUpdateUrl(),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      aICategorizationSettings,)
+  }
+);}
+
+
+
+/**
+ * One row per budget file, created on first access - mirrors
+NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+budget file instead of a user since this holds a credential (see the
+model's docstring). GET only needs read access so a viewer can see
+whether it's on; PATCH needs write, checked explicitly since
+RetrieveUpdateAPIView has no perform_update hook of its own to route
+through UserScopedModelViewSet's version.
+ */
+export type v1FinanceAiCategorizationSettingsPartialUpdateResponse200 = {
+  data: AICategorizationSettings
+  status: 200
+}
+    
+export type v1FinanceAiCategorizationSettingsPartialUpdateResponseSuccess = (v1FinanceAiCategorizationSettingsPartialUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceAiCategorizationSettingsPartialUpdateResponse = (v1FinanceAiCategorizationSettingsPartialUpdateResponseSuccess)
+
+export const getV1FinanceAiCategorizationSettingsPartialUpdateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/ai-categorization/settings/`
+}
+
+export const v1FinanceAiCategorizationSettingsPartialUpdate = async (patchedAICategorizationSettings: NonReadonly<PatchedAICategorizationSettings>, options?: RequestInit): Promise<v1FinanceAiCategorizationSettingsPartialUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceAiCategorizationSettingsPartialUpdateResponse>(getV1FinanceAiCategorizationSettingsPartialUpdateUrl(),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      patchedAICategorizationSettings,)
+  }
+);}
+
+
+
+/**
+ * Fire a real request now, for the settings UI's "test" button - same
+reasoning as NotificationTestView (pft/views.py) and bank sync's own
+actions for its own scoped throttle.
+ */
+export type v1FinanceAiCategorizationTestCreateResponse200 = {
+  data: void
+  status: 200
+}
+    
+export type v1FinanceAiCategorizationTestCreateResponseSuccess = (v1FinanceAiCategorizationTestCreateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceAiCategorizationTestCreateResponse = (v1FinanceAiCategorizationTestCreateResponseSuccess)
+
+export const getV1FinanceAiCategorizationTestCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/ai-categorization/test/`
+}
+
+export const v1FinanceAiCategorizationTestCreate = async ( options?: RequestInit): Promise<v1FinanceAiCategorizationTestCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceAiCategorizationTestCreateResponse>(getV1FinanceAiCategorizationTestCreateUrl(),
+  {      
+    ...options,
+    method: 'POST'
     
     
   }
@@ -3856,6 +4066,12 @@ amount -> payee -> (suggested) category -> done flow (ROADMAP.md
 Phase 1). Ties broken by whichever was used most recently, so a
 payee's habits can drift over time instead of getting stuck on
 whatever was most common historically.
+
+Falls back to opt-in AI categorization (pft/ai_categorization.py,
+ROADMAP.md Phase 3) only when this payee has no categorized history
+at all - a real transaction history is always the better signal
+when one exists, so AI never overrides or is even consulted once a
+payee has a track record.
  */
 export type v1FinancePayeesSuggestedCategoryRetrieveResponse200 = {
   data: SuggestedCategory
@@ -4596,6 +4812,257 @@ export const v1FinanceRulesApplyCreate = async (transactionRule: NonReadonly<Tra
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       transactionRule,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsListResponse200 = {
+  data: SavingsGoal[]
+  status: 200
+}
+    
+export type v1FinanceSavingsGoalsListResponseSuccess = (v1FinanceSavingsGoalsListResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsListResponse = (v1FinanceSavingsGoalsListResponseSuccess)
+
+export const getV1FinanceSavingsGoalsListUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/`
+}
+
+export const v1FinanceSavingsGoalsList = async ( options?: RequestInit): Promise<v1FinanceSavingsGoalsListResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsListResponse>(getV1FinanceSavingsGoalsListUrl(),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsCreateResponse201 = {
+  data: SavingsGoal
+  status: 201
+}
+    
+export type v1FinanceSavingsGoalsCreateResponseSuccess = (v1FinanceSavingsGoalsCreateResponse201) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsCreateResponse = (v1FinanceSavingsGoalsCreateResponseSuccess)
+
+export const getV1FinanceSavingsGoalsCreateUrl = () => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/`
+}
+
+export const v1FinanceSavingsGoalsCreate = async (savingsGoal: NonReadonly<SavingsGoal>, options?: RequestInit): Promise<v1FinanceSavingsGoalsCreateResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsCreateResponse>(getV1FinanceSavingsGoalsCreateUrl(),
+  {      
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      savingsGoal,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsRetrieveResponse200 = {
+  data: SavingsGoal
+  status: 200
+}
+    
+export type v1FinanceSavingsGoalsRetrieveResponseSuccess = (v1FinanceSavingsGoalsRetrieveResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsRetrieveResponse = (v1FinanceSavingsGoalsRetrieveResponseSuccess)
+
+export const getV1FinanceSavingsGoalsRetrieveUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/${id}/`
+}
+
+export const v1FinanceSavingsGoalsRetrieve = async (id: string, options?: RequestInit): Promise<v1FinanceSavingsGoalsRetrieveResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsRetrieveResponse>(getV1FinanceSavingsGoalsRetrieveUrl(id),
+  {      
+    ...options,
+    method: 'GET'
+    
+    
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsUpdateResponse200 = {
+  data: SavingsGoal
+  status: 200
+}
+    
+export type v1FinanceSavingsGoalsUpdateResponseSuccess = (v1FinanceSavingsGoalsUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsUpdateResponse = (v1FinanceSavingsGoalsUpdateResponseSuccess)
+
+export const getV1FinanceSavingsGoalsUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/${id}/`
+}
+
+export const v1FinanceSavingsGoalsUpdate = async (id: string,
+    savingsGoal: NonReadonly<SavingsGoal>, options?: RequestInit): Promise<v1FinanceSavingsGoalsUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsUpdateResponse>(getV1FinanceSavingsGoalsUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      savingsGoal,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsPartialUpdateResponse200 = {
+  data: SavingsGoal
+  status: 200
+}
+    
+export type v1FinanceSavingsGoalsPartialUpdateResponseSuccess = (v1FinanceSavingsGoalsPartialUpdateResponse200) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsPartialUpdateResponse = (v1FinanceSavingsGoalsPartialUpdateResponseSuccess)
+
+export const getV1FinanceSavingsGoalsPartialUpdateUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/${id}/`
+}
+
+export const v1FinanceSavingsGoalsPartialUpdate = async (id: string,
+    patchedSavingsGoal: NonReadonly<PatchedSavingsGoal>, options?: RequestInit): Promise<v1FinanceSavingsGoalsPartialUpdateResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsPartialUpdateResponse>(getV1FinanceSavingsGoalsPartialUpdateUrl(id),
+  {      
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(
+      patchedSavingsGoal,)
+  }
+);}
+
+
+
+/**
+ * Base class for the finance viewsets.
+
+Enforces authentication and, on unsafe methods, that the target budget
+file admits writes for this user (viewers are read-only). Every subclass
+remains responsible for scoping its own get_queryset() through
+tenancy.budget_file_q - see ARCHITECTURE.md.
+ */
+export type v1FinanceSavingsGoalsDestroyResponse204 = {
+  data: void
+  status: 204
+}
+    
+export type v1FinanceSavingsGoalsDestroyResponseSuccess = (v1FinanceSavingsGoalsDestroyResponse204) & {
+  headers: Headers;
+};
+;
+
+export type v1FinanceSavingsGoalsDestroyResponse = (v1FinanceSavingsGoalsDestroyResponseSuccess)
+
+export const getV1FinanceSavingsGoalsDestroyUrl = (id: string,) => {
+
+
+  
+
+  return `/api/v1/finance/savings-goals/${id}/`
+}
+
+export const v1FinanceSavingsGoalsDestroy = async (id: string, options?: RequestInit): Promise<v1FinanceSavingsGoalsDestroyResponse> => {
+  
+  return fintrackFetch<v1FinanceSavingsGoalsDestroyResponse>(getV1FinanceSavingsGoalsDestroyUrl(id),
+  {      
+    ...options,
+    method: 'DELETE'
+    
+    
   }
 );}
 

@@ -4,19 +4,25 @@ from decimal import Decimal
 from django.db.models import Count, Max, Q, Sum, Value
 from django.db.models.functions import Abs, Coalesce
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
-from rest_framework import filters, permissions, status, viewsets
+from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
+from rest_framework.views import APIView
 
+from .ai_categorization import suggest_category_via_ai
+from .ai_categorization import test_connection as test_ai_categorization_connection
 from .audit import record
 from .bank_sync import BankSyncError, get_provider, list_providers
+from .crypto import encrypt_json
 from .finance_serializers import (
     AccountSerializer,
+    AICategorizationSettingsSerializer,
     BankSyncInstitutionSerializer,
     BankSyncLinkResultSerializer,
     BankSyncProviderSerializer,
@@ -35,6 +41,7 @@ from .finance_serializers import (
     LedgerTransactionSerializer,
     PayeeSerializer,
     SavedReportSerializer,
+    SavingsGoalSerializer,
     ScheduledTransactionSerializer,
     SuggestedCategorySerializer,
     SyncConnectionAccountSerializer,
@@ -58,6 +65,7 @@ from .finance_services import (
 from .fx_rates import FxRateError, fetch_and_store_rates
 from .models import (
     Account,
+    AICategorizationSettings,
     AuditLog,
     BudgetFile,
     BudgetMonth,
@@ -72,6 +80,7 @@ from .models import (
     LedgerTransaction,
     Payee,
     SavedReport,
+    SavingsGoal,
     ScheduledTransaction,
     SyncConnection,
     SyncConnectionAccount,
@@ -218,6 +227,97 @@ class AccountViewSet(UserScopedModelViewSet):
         )
 
 
+class SavingsGoalViewSet(UserScopedModelViewSet):
+    serializer_class = SavingsGoalSerializer
+
+    def get_queryset(self):
+        return (
+            SavingsGoal.objects.filter(budget_file_q(self.request.user))
+            .select_related("account")
+            .order_by("-created_at", "-id")
+        )
+
+
+def _budget_file_from_request(request, *, write: bool):
+    """Resolve ?budget_file=<id> (GET) or {"budget_file": <id>} (POST) to a
+    BudgetFile this user may access, 404ing rather than leaking whether an
+    id merely exists versus belongs to someone else - the same shape every
+    other finance endpoint's tenant-scoped queryset already gives for free.
+    """
+    budget_file_id = request.query_params.get("budget_file") or request.data.get("budget_file")
+    if not budget_file_id:
+        raise ValidationError({"budget_file": "This field is required."})
+    return get_object_or_404(
+        BudgetFile.objects.filter(budget_file_q(request.user, write=write, prefix="pk")),
+        pk=budget_file_id,
+    )
+
+
+class AICategorizationSettingsView(generics.RetrieveUpdateAPIView):
+    """One row per budget file, created on first access - mirrors
+    NotificationPreferenceView's exact pattern (pft/views.py), scoped to a
+    budget file instead of a user since this holds a credential (see the
+    model's docstring). GET only needs read access so a viewer can see
+    whether it's on; PATCH needs write, checked explicitly since
+    RetrieveUpdateAPIView has no perform_update hook of its own to route
+    through UserScopedModelViewSet's version.
+    """
+
+    serializer_class = AICategorizationSettingsSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        budget_file = _budget_file_from_request(self.request, write=False)
+        settings_obj, _created = AICategorizationSettings.objects.get_or_create(
+            budget_file=budget_file
+        )
+        return settings_obj
+
+    def perform_update(self, serializer):
+        if not can_access(self.request.user, serializer.instance.budget_file, write=True):
+            raise PermissionDenied("Your role in this organization is read-only.")
+        serializer.save()
+
+
+class AICategorizationApiKeyView(APIView):
+    """Write-only: encrypts and stores (or clears, given an empty key) the
+    API key. Never returns it - the caller already knows what they just
+    typed. Mirrors bank sync's secret_data write path (pft/
+    bank_sync_simplefin.py), the same reasoning as AICategorizationSettings'
+    own docstring.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        budget_file = _budget_file_from_request(request, write=True)
+        settings_obj, _created = AICategorizationSettings.objects.get_or_create(
+            budget_file=budget_file
+        )
+        api_key = (request.data.get("api_key") or "").strip()
+        settings_obj.encrypted_api_key = encrypt_json({"api_key": api_key}) if api_key else ""
+        settings_obj.save(update_fields=["encrypted_api_key", "updated_at"])
+        return Response(AICategorizationSettingsSerializer(settings_obj).data)
+
+
+class AICategorizationTestView(APIView):
+    """Fire a real request now, for the settings UI's "test" button - same
+    reasoning as NotificationTestView (pft/views.py) and bank sync's own
+    actions for its own scoped throttle.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai_categorization"
+
+    def post(self, request):
+        budget_file = _budget_file_from_request(request, write=False)
+        settings_obj, _created = AICategorizationSettings.objects.get_or_create(
+            budget_file=budget_file
+        )
+        return Response(test_ai_categorization_connection(settings_obj))
+
+
 class CategoryGroupViewSet(UserScopedModelViewSet):
     serializer_class = CategoryGroupV2Serializer
 
@@ -260,6 +360,12 @@ class PayeeViewSet(UserScopedModelViewSet):
         Phase 1). Ties broken by whichever was used most recently, so a
         payee's habits can drift over time instead of getting stuck on
         whatever was most common historically.
+
+        Falls back to opt-in AI categorization (pft/ai_categorization.py,
+        ROADMAP.md Phase 3) only when this payee has no categorized history
+        at all - a real transaction history is always the better signal
+        when one exists, so AI never overrides or is even consulted once a
+        payee has a track record.
         """
         payee = self.get_object()
         row = (
@@ -272,11 +378,31 @@ class PayeeViewSet(UserScopedModelViewSet):
             .order_by("-count", "-last_used")
             .first()
         )
-        if not row:
-            return Response({"category": None, "category_name": ""})
-        return Response(
-            {"category": row["category_id"], "category_name": row["category__name"]}
-        )
+        if row:
+            return Response(
+                {
+                    "category": row["category_id"],
+                    "category_name": row["category__name"],
+                    "source": "history",
+                }
+            )
+
+        ai_settings = AICategorizationSettings.objects.filter(
+            budget_file=payee.budget_file, is_enabled=True
+        ).first()
+        if ai_settings:
+            candidates = list(
+                CategoryV2.objects.filter(
+                    budget_file=payee.budget_file, is_archived=False
+                ).values("id", "name")
+            )
+            match = suggest_category_via_ai(ai_settings, payee.name, candidates)
+            if match:
+                return Response(
+                    {"category": match["id"], "category_name": match["name"], "source": "ai"}
+                )
+
+        return Response({"category": None, "category_name": "", "source": None})
 
 
 class TagViewSet(UserScopedModelViewSet):

@@ -13,6 +13,8 @@
 * `custom` - Custom
 * `net_worth_series` - Net Worth Over Time
 * `cash_flow_sankey` - Cash Flow Sankey
+* `subscriptions` - Subscriptions
+* `debt_payoff` - Debt Payoff
  */
 export type ReportTypeEnum = typeof ReportTypeEnum[keyof typeof ReportTypeEnum];
 
@@ -25,4 +27,6 @@ export const ReportTypeEnum = {
   custom: 'custom',
   net_worth_series: 'net_worth_series',
   cash_flow_sankey: 'cash_flow_sankey',
+  subscriptions: 'subscriptions',
+  debt_payoff: 'debt_payoff',
 } as const;

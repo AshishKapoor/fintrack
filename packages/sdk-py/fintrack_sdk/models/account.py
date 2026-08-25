@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -32,6 +32,8 @@ class Account:
             * `liability` - Liability
         opening_balance (str | Unset):
         currency_code (str | Unset):
+        interest_rate (None | str | Unset): Annual percentage rate, e.g. 19.99 for 19.99% APR.
+        minimum_payment (None | str | Unset):
         is_archived (bool | Unset):
     """
 
@@ -44,6 +46,8 @@ class Account:
     type_: AccountTypeEnum | Unset = UNSET
     opening_balance: str | Unset = UNSET
     currency_code: str | Unset = UNSET
+    interest_rate: None | str | Unset = UNSET
+    minimum_payment: None | str | Unset = UNSET
     is_archived: bool | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -68,6 +72,18 @@ class Account:
 
         currency_code = self.currency_code
 
+        interest_rate: None | str | Unset
+        if isinstance(self.interest_rate, Unset):
+            interest_rate = UNSET
+        else:
+            interest_rate = self.interest_rate
+
+        minimum_payment: None | str | Unset
+        if isinstance(self.minimum_payment, Unset):
+            minimum_payment = UNSET
+        else:
+            minimum_payment = self.minimum_payment
+
         is_archived = self.is_archived
 
         field_dict: dict[str, Any] = {}
@@ -88,6 +104,10 @@ class Account:
             field_dict["opening_balance"] = opening_balance
         if currency_code is not UNSET:
             field_dict["currency_code"] = currency_code
+        if interest_rate is not UNSET:
+            field_dict["interest_rate"] = interest_rate
+        if minimum_payment is not UNSET:
+            field_dict["minimum_payment"] = minimum_payment
         if is_archived is not UNSET:
             field_dict["is_archived"] = is_archived
 
@@ -119,6 +139,24 @@ class Account:
 
         currency_code = d.pop("currency_code", UNSET)
 
+        def _parse_interest_rate(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        interest_rate = _parse_interest_rate(d.pop("interest_rate", UNSET))
+
+        def _parse_minimum_payment(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        minimum_payment = _parse_minimum_payment(d.pop("minimum_payment", UNSET))
+
         is_archived = d.pop("is_archived", UNSET)
 
         account = cls(
@@ -131,6 +169,8 @@ class Account:
             type_=type_,
             opening_balance=opening_balance,
             currency_code=currency_code,
+            interest_rate=interest_rate,
+            minimum_payment=minimum_payment,
             is_archived=is_archived,
         )
 

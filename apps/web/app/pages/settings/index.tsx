@@ -1,6 +1,7 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
 import { BackupManager } from '@/components/backup-manager'
 import { NotificationSettings } from '@/components/notification-settings'
+import { AiCategorizationSettings } from '@/components/ai-categorization-settings'
 import { WorkspaceSettings } from '@/components/workspace-settings'
 import { DeleteAccountDialog } from '@/components/delete-account-dialog'
 import { AnimateSpinner } from '@/components/spinner'
@@ -27,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea'
 import Typography from '@/components/ui/typography'
 import { useToast } from '@/hooks/use-toast'
 import { AxiosError } from 'axios'
-import { Bell, Building2, DatabaseBackup, Key, User } from 'lucide-react'
+import { Bell, Bot, Building2, DatabaseBackup, Key, User } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
@@ -194,6 +195,10 @@ export default function UserSettingsPage() {
             <TabsTrigger value='notifications'>
               <Bell className='mr-2 h-4 w-4' />
               {t('settings.tabs.notifications')}
+            </TabsTrigger>
+            <TabsTrigger value='ai-categorization'>
+              <Bot className='mr-2 h-4 w-4' />
+              {t('settings.tabs.aiCategorization')}
             </TabsTrigger>
             <TabsTrigger value='workspace'>
               <Building2 className='mr-2 h-4 w-4' />
@@ -421,6 +426,10 @@ export default function UserSettingsPage() {
 
           <TabsContent value='notifications' className='space-y-6'>
             <NotificationSettings email={profile.email} />
+          </TabsContent>
+
+          <TabsContent value='ai-categorization' className='space-y-6'>
+            <AiCategorizationSettings />
           </TabsContent>
 
           <TabsContent value='workspace' className='space-y-6'>

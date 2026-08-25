@@ -78,7 +78,11 @@ type AccountForm = {
   type: string
   opening_balance: string
   currency_code: string
+  interest_rate: string
+  minimum_payment: string
 }
+
+const DEBT_TYPES = new Set(['credit', 'liability'])
 
 export default function AccountsPage() {
   const { currency: homeCurrency } = useCurrency()
@@ -96,6 +100,8 @@ export default function AccountsPage() {
     type: 'checking',
     opening_balance: '0.00',
     currency_code: homeCurrency.code,
+    interest_rate: '',
+    minimum_payment: '',
   })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FinanceAccount | null>(null)
@@ -131,7 +137,14 @@ export default function AccountsPage() {
 
   const openCreate = () => {
     setEditingId(null)
-    setForm({ name: '', type: 'checking', opening_balance: '0.00', currency_code: homeCurrency.code })
+    setForm({
+      name: '',
+      type: 'checking',
+      opening_balance: '0.00',
+      currency_code: homeCurrency.code,
+      interest_rate: '',
+      minimum_payment: '',
+    })
     setFormOpen(true)
   }
 
@@ -142,6 +155,8 @@ export default function AccountsPage() {
       type: account.type,
       opening_balance: account.opening_balance,
       currency_code: account.currency_code || homeCurrency.code,
+      interest_rate: account.interest_rate ?? '',
+      minimum_payment: account.minimum_payment ?? '',
     })
     setFormOpen(true)
   }
@@ -153,11 +168,16 @@ export default function AccountsPage() {
     }
     setSaving(true)
     try {
+      const payload = {
+        ...form,
+        interest_rate: form.interest_rate.trim() || null,
+        minimum_payment: form.minimum_payment.trim() || null,
+      }
       if (editingId) {
-        await updateAccount(editingId, form)
+        await updateAccount(editingId, payload)
         toast.success('Account updated')
       } else {
-        await createAccount(form)
+        await createAccount(payload)
         toast.success('Account created')
       }
       setFormOpen(false)
@@ -465,6 +485,37 @@ export default function AccountsPage() {
                 </SelectContent>
               </Select>
             </div>
+            {DEBT_TYPES.has(form.type) && (
+              <>
+                <div className='space-y-1'>
+                  <Label htmlFor='account-interest-rate'>Interest rate (APR %)</Label>
+                  <Input
+                    id='account-interest-rate'
+                    type='number'
+                    step='0.01'
+                    min='0'
+                    placeholder='e.g. 19.99'
+                    value={form.interest_rate}
+                    onChange={(e) => setForm((prev) => ({ ...prev, interest_rate: e.target.value }))}
+                  />
+                </div>
+                <div className='space-y-1'>
+                  <Label htmlFor='account-minimum-payment'>Minimum payment</Label>
+                  <Input
+                    id='account-minimum-payment'
+                    type='number'
+                    step='0.01'
+                    min='0'
+                    placeholder='e.g. 25.00'
+                    value={form.minimum_payment}
+                    onChange={(e) => setForm((prev) => ({ ...prev, minimum_payment: e.target.value }))}
+                  />
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  Set both to include this account in debt payoff planning on the Insights page.
+                </p>
+              </>
+            )}
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setFormOpen(false)}>

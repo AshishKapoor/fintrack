@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class ProviderEnum(str, Enum):
+class SyncConnectionProviderEnum(str, Enum):
     GOCARDLESS = "gocardless"
     SIMPLEFIN = "simplefin"
 

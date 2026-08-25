@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.provider_enum import ProviderEnum
+from ..models.sync_connection_provider_enum import SyncConnectionProviderEnum
 from ..models.sync_connection_status_enum import SyncConnectionStatusEnum
 
 if TYPE_CHECKING:
@@ -24,7 +24,7 @@ class SyncConnection:
     Attributes:
         id (int):
         budget_file (int):
-        provider (ProviderEnum): * `gocardless` - GoCardless Bank Account Data
+        provider (SyncConnectionProviderEnum): * `gocardless` - GoCardless Bank Account Data
             * `simplefin` - SimpleFIN Bridge
         provider_label (str):
         status (SyncConnectionStatusEnum): * `pending` - Pending
@@ -41,7 +41,7 @@ class SyncConnection:
 
     id: int
     budget_file: int
-    provider: ProviderEnum
+    provider: SyncConnectionProviderEnum
     provider_label: str
     status: SyncConnectionStatusEnum
     institution_name: str
@@ -111,7 +111,7 @@ class SyncConnection:
 
         budget_file = d.pop("budget_file")
 
-        provider = ProviderEnum(d.pop("provider"))
+        provider = SyncConnectionProviderEnum(d.pop("provider"))
 
         provider_label = d.pop("provider_label")
 

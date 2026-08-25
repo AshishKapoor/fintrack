@@ -9,6 +9,7 @@ endpoint that leaked.
 """
 
 from datetime import date
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
@@ -16,6 +17,7 @@ from rest_framework.test import APITestCase
 
 from pft.models import (
     Account,
+    AICategorizationSettings,
     Budget,
     BudgetFile,
     Category,
@@ -24,6 +26,7 @@ from pft.models import (
     LedgerTransaction,
     NotificationPreference,
     Payee,
+    SavingsGoal,
     ScheduledTransaction,
     SyncConnection,
     SyncConnectionAccount,
@@ -66,6 +69,12 @@ class TenantFixture:
         )
         self.payee = Payee.objects.create(
             budget_file=self.budget_file, name=f"Payee {email}"
+        )
+        self.savings_goal = SavingsGoal.objects.create(
+            budget_file=self.budget_file,
+            account=self.account,
+            name=f"Goal {email}",
+            target_amount=Decimal("1000.00"),
         )
 
 
@@ -233,6 +242,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             "accounts": f"/api/v1/finance/accounts/{alice.account.id}/",
             "categories": f"/api/v1/finance/categories/{alice.category_v2.id}/",
             "payees": f"/api/v1/finance/payees/{alice.payee.id}/",
+            "savings-goals": f"/api/v1/finance/savings-goals/{alice.savings_goal.id}/",
         }
 
     def test_detail_endpoints_hide_other_tenants(self):
@@ -259,6 +269,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             "budget-files": (self.bob.budget_file.id, self.alice.budget_file.id),
             "accounts": (self.bob.account.id, self.alice.account.id),
             "payees": (self.bob.payee.id, self.alice.payee.id),
+            "savings-goals": (self.bob.savings_goal.id, self.alice.savings_goal.id),
         }
         for resource, (mine, theirs) in cases.items():
             with self.subTest(resource=resource):
@@ -340,6 +351,39 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
         )
         schedule.refresh_from_db()
         self.assertIsNone(schedule.last_run_at)
+
+    def test_cannot_create_a_savings_goal_targeting_another_tenants_account(self):
+        response = self.client.post(
+            "/api/v1/finance/savings-goals/",
+            {
+                "budget_file": self.bob.budget_file.id,
+                "account": self.alice.account.id,
+                "name": "Sneaky goal",
+                "target_amount": "500.00",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(SavingsGoal.objects.filter(name="Sneaky goal").exists())
+
+    def test_ai_categorization_settings_are_not_reachable_for_another_tenant(self):
+        for method, url in (
+            ("get", f"/api/v1/finance/ai-categorization/settings/?budget_file={self.alice.budget_file.id}"),
+            ("post", "/api/v1/finance/ai-categorization/set-api-key/"),
+            ("post", "/api/v1/finance/ai-categorization/test/"),
+        ):
+            with self.subTest(url=url):
+                if method == "get":
+                    response = self.client.get(url)
+                else:
+                    response = self.client.post(
+                        url, {"budget_file": self.alice.budget_file.id}, format="json"
+                    )
+                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertFalse(
+            AICategorizationSettings.objects.filter(budget_file=self.alice.budget_file).exists(),
+            msg="a 404 must not have side-effect-created a settings row for another tenant's budget file",
+        )
 
     def test_report_run_rejects_another_tenants_budget_file(self):
         response = self.client.post(

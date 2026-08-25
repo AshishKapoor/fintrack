@@ -5,8 +5,11 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
+from .notifications import is_safe_local_service_url, is_safe_outbound_url
+
 from .models import (
     Account,
+    AICategorizationSettings,
     BudgetFile,
     BudgetMonth,
     CategoryGroupV2,
@@ -20,6 +23,7 @@ from .models import (
     LedgerTransaction,
     Payee,
     SavedReport,
+    SavingsGoal,
     ScheduledTransaction,
     SyncConnection,
     SyncConnectionAccount,
@@ -86,6 +90,8 @@ class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
             "opening_balance",
             "currency_code",
             "current_balance",
+            "interest_rate",
+            "minimum_payment",
             "is_archived",
             "created_at",
             "updated_at",
@@ -107,6 +113,103 @@ class AccountSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
             )
             if budget_file is not None:
                 attrs["currency_code"] = budget_file.currency_code
+        return attrs
+
+
+class SavingsGoalSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+    account_name = serializers.CharField(source="account.name", read_only=True)
+    current_amount = serializers.SerializerMethodField()
+    progress_percent = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SavingsGoal
+        fields = [
+            "id",
+            "budget_file",
+            "account",
+            "account_name",
+            "name",
+            "target_amount",
+            "target_date",
+            "current_amount",
+            "progress_percent",
+            "is_archived",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at", "current_amount", "progress_percent"]
+
+    def get_current_amount(self, obj):
+        return str(obj.account.current_balance)
+
+    def get_progress_percent(self, obj):
+        # Not capped at 100 - a goal can be exceeded, and that's information
+        # worth keeping rather than silently discarding; only floored at 0,
+        # since negative progress toward a savings target isn't meaningful
+        # even if the account itself is temporarily overdrawn.
+        if obj.target_amount <= 0:
+            return None
+        percent = max(obj.account.current_balance / obj.target_amount * 100, Decimal("0"))
+        return float(percent.quantize(Decimal("0.1")))
+
+    def validate_target_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError(_("Target amount must be greater than zero."))
+        return value
+
+    def validate_budget_file(self, value):
+        self._validate_budget_file_owner(value)
+        return value
+
+    def validate(self, attrs):
+        account = attrs.get("account") or getattr(self.instance, "account", None)
+        budget_file = attrs.get("budget_file") or getattr(self.instance, "budget_file", None)
+        if account and budget_file and account.budget_file_id != budget_file.id:
+            raise serializers.ValidationError(
+                {"account": _("Account must belong to the same budget file as the goal.")}
+            )
+        return attrs
+
+
+class AICategorizationSettingsSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+    # encrypted_api_key never appears here - see the model's docstring and
+    # SyncConnectionSerializer's identical exclusion of secret_data. This is
+    # the only signal the frontend gets that a key is already stored.
+    has_api_key = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AICategorizationSettings
+        fields = [
+            "id",
+            "budget_file",
+            "is_enabled",
+            "provider",
+            "base_url",
+            "model_name",
+            "has_api_key",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["has_api_key", "created_at", "updated_at"]
+
+    def get_has_api_key(self, obj):
+        return bool(obj.encrypted_api_key)
+
+    def validate_budget_file(self, value):
+        self._validate_budget_file_owner(value)
+        return value
+
+    def validate(self, attrs):
+        base_url = attrs.get("base_url")
+        if not base_url:
+            return attrs
+        provider = attrs.get("provider") or getattr(self.instance, "provider", None)
+        is_ollama = provider == AICategorizationSettings.PROVIDER_OLLAMA
+        safe = is_safe_local_service_url(base_url) if is_ollama else is_safe_outbound_url(base_url)
+        if not safe:
+            raise serializers.ValidationError(
+                {"base_url": _("This URL can't be reached, or points at an unsafe address.")}
+            )
         return attrs
 
 
@@ -182,6 +285,17 @@ class SuggestedCategorySerializer(serializers.Serializer):
 
     category = serializers.IntegerField(allow_null=True)
     category_name = serializers.CharField(allow_blank=True)
+    # "history" (this payee's own past transactions), "ai" (opt-in fallback,
+    # pft/ai_categorization.py, only tried when there's no history yet), or
+    # null when neither found anything - see ROADMAP.md Phase 3's "opt-in AI
+    # categorization... privacy-framed": surfaced so the UI can be explicit
+    # about when a suggestion came from an LLM rather than blending it in.
+    # A plain CharField, not ChoiceField: this is a response-only value (the
+    # client never submits it), and drf-spectacular's generated component
+    # name for a same-shaped inline enum collided with another one at
+    # schema-build time - not worth fighting for a field with no request-side
+    # validation need anyway.
+    source = serializers.CharField(allow_null=True)
 
 
 class TagSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):

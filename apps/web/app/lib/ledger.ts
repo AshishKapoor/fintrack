@@ -251,6 +251,78 @@ export function useCashFlowSankey(startDate?: string, endDate?: string, topN = 8
   )
 }
 
+export interface DetectedSubscription {
+  payee_id: number
+  payee: string
+  cadence: 'weekly' | 'biweekly' | 'monthly' | 'quarterly' | 'yearly'
+  amount: string
+  monthly_equivalent: string
+  occurrences: number
+  last_charge_date: string
+  confidence: number
+}
+
+/**
+ * Recurring charges detected from transaction history (regular payee +
+ * interval + amount), independent of any user-declared ScheduledTransaction
+ * (see compute_subscriptions). Looks at the whole ledger, not a date range,
+ * so - like useNetWorthSeries - this is safe to call with no arguments.
+ */
+export function useSubscriptions() {
+  return useSWR(['report/subscriptions'], () =>
+    runReport<{ subscriptions: DetectedSubscription[]; total_monthly_equivalent: string }>({
+      report_type: 'subscriptions',
+    }),
+  )
+}
+
+export type DebtPayoffStrategy = 'snowball' | 'avalanche'
+
+export interface DebtPayoffScheduleMonth {
+  month: number
+  total_balance: string
+}
+
+export interface DebtPayoffOrderRow {
+  account_id: number
+  account: string
+  payoff_month: number | null
+  interest_paid: string
+}
+
+export interface DebtPayoffExcluded {
+  account_id: number
+  account: string
+  reason: 'missing_interest_rate_or_minimum_payment' | 'missing_fx_rate'
+}
+
+export interface DebtPayoffProjection {
+  strategy: DebtPayoffStrategy
+  extra_payment: string
+  currency_code: string
+  /** Null means minimum payments alone never clear the debt within the
+   * simulation's 50-year cap - a real answer, not a missing one. */
+  months_to_debt_free: number | null
+  total_interest_paid: string
+  payoff_order: DebtPayoffOrderRow[]
+  schedule: DebtPayoffScheduleMonth[]
+  excluded: DebtPayoffExcluded[]
+}
+
+/** A month-by-month snowball/avalanche projection across every credit/
+ * liability account with a balance, interest_rate and minimum_payment all
+ * set (see compute_debt_payoff_projection). Safe to call with no history -
+ * the whole ledger's current debt accounts are read fresh each time. */
+export function useDebtPayoff(strategy: DebtPayoffStrategy, extraPayment: string) {
+  return useSWR(['report/debt_payoff', strategy, extraPayment], () =>
+    runReport<DebtPayoffProjection>({
+      report_type: 'debt_payoff',
+      strategy,
+      extra_payment: extraPayment || '0',
+    }),
+  )
+}
+
 export interface SpendingTrendRow {
   year: number
   month: number

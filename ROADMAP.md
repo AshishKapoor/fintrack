@@ -58,10 +58,10 @@ Explicitly *not* first: Plaid. If it ever lands, it lands as another adapter, be
 *Goal: FinTrack tells you things about your money you didn't already know.*
 
 - [x] **Insights dashboard** — Sankey cash-flow diagram, net worth over time, month-over-month category comparisons
-- [ ] **Subscription detection** — surface recurring charges from payee recurrence heuristics and scheduled-transaction data ("you have 6 recurring charges totaling $84/mo")
-- [ ] **First-class savings goals** — goals as real objects with progress tracking, not just envelope goal fields
-- [ ] **Debt payoff planning** — snowball/avalanche projections and payoff timelines
-- [ ] **Opt-in AI categorization** — payee → category suggestions via bring-your-own-key or a local Ollama endpoint. Off by default, privacy-framed, never required.
+- [x] **Subscription detection** — surface recurring charges from payee recurrence heuristics and scheduled-transaction data ("you have 6 recurring charges totaling $84/mo")
+- [x] **First-class savings goals** — goals as real objects with progress tracking, not just envelope goal fields
+- [x] **Debt payoff planning** — snowball/avalanche projections and payoff timelines
+- [x] **Opt-in AI categorization** — payee → category suggestions via bring-your-own-key or a local Ollama endpoint. Off by default, privacy-framed, never required.
 
 ## Phase 4 — v1.0 hardening
 
@@ -94,7 +94,7 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
 |---|---|
 | Translator | The i18n pipeline is live (see [docs/i18n.md](docs/i18n.md)) — once Weblate is connected, translating is the fastest path to contributor status; until then, PRs extending `t()`/`gettext_lazy` coverage to a page not yet listed there are just as welcome |
 | Frontend dev | Extend i18n coverage page by page — the new `/insights` page's own strings included |
-| Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`), subscription detection heuristics (Phase 3) |
+| Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`), Phase 4 hardening (retiring the legacy flat API, pagination on the remaining list endpoints) |
 | Self-hosting enthusiast | Get FinTrack listed on [PikaPods](https://feedback.pikapods.com/) (upvote or help submit), stand up the actual public demo host, docs for reverse-proxy setups |
 | Designer | A demo GIF for the README, insights dashboard concepts |
 | Anyone | Try the demo, file honest bug reports, tell us where week-three fatigue sets in |
@@ -183,3 +183,46 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   it never activated in this app's recharts 2.15.2 + React 19 combination
   (confirmed live, pointer position verified via `elementFromPoint`), so
   Sankey node labels carry their amount directly instead of relying on it.
+- **2026-08-25** — Phase 3's remaining four items shipped: subscription
+  detection, first-class savings goals, debt payoff planning, and opt-in AI
+  categorization. Subscription detection (`compute_subscriptions`) scores
+  each payee's transaction history on two independent axes - cadence fit
+  (weekly/biweekly/monthly/quarterly/yearly, each with its own tolerance
+  window) and amount fit - and only calls something a subscription when both
+  clear a 0.7 confidence threshold with at least 3 occurrences, so a payee
+  that's merely frequent but irregular (a coffee shop) doesn't get flagged.
+  Savings goals (`SavingsGoal`) are account-anchored and compute progress
+  live from the account's current balance rather than caching it, so there's
+  nothing to invalidate when a backdated transaction changes history. Debt
+  payoff planning (`compute_debt_payoff_projection`) simulates snowball and
+  avalanche payoff month-by-month, targeting one debt at a time with its
+  minimum plus every already-paid-off debt's freed-up minimum plus any extra
+  payment; unlike its sibling report functions it deliberately *does* convert
+  each debt to the home currency (via `fx_rates.convert_amount`, priced as of
+  today) since debts must be summed and compared across currencies to pick a
+  target, whereas the other reports leave amounts unconverted by existing
+  precedent. AI categorization (`ai_categorization.py`) suggests a category
+  for a payee with no transaction history yet via an LLM the user configures
+  - OpenAI-compatible (bring your own key, encrypted at rest the same way
+  bank-sync credentials are) or a local Ollama endpoint - and only as a
+  fallback when there's no history-based suggestion, which always wins when
+  one exists. It never trusts a hallucinated category name (the response
+  must exactly match a real candidate, case-insensitively) and never raises
+  into the request path on a bad or unreachable provider. Ollama's use of
+  `localhost`/private addresses needed its own SSRF guard
+  (`is_safe_local_service_url`, a sibling of the existing
+  `is_safe_outbound_url`, not a parameter on it, to keep zero regression risk
+  to ntfy/webhook/bank-sync/fx-rate callers) that still blocks link-local
+  addresses - the class that covers cloud metadata endpoints - even though it
+  allows private and loopback ranges. Found and fixed along the way: an
+  early debt-payoff test wrongly assumed `payoff_order[0]` meant "the
+  strategy-targeted debt" when it actually means "the first debt paid off
+  chronologically"; a `ChoiceField` used for the suggested-category
+  response's `source` field collided with another schema component under
+  orval ("Duplicate schema names detected: 2x SuggestedCategorySource"),
+  fixed by switching to a plain `CharField` since the field is response-only;
+  and a Django migration created via `docker compose run` (ephemeral)
+  doesn't apply itself to the long-running dev database the way `manage.py
+  test`'s throwaway database does, which briefly looked like a missing-table
+  bug for the first of these features until `docker compose exec ... migrate`
+  was run separately.

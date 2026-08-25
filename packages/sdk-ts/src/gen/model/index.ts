@@ -6,6 +6,8 @@
  * OpenAPI spec version: 1.0.0
  */
 
+export * from './aICategorizationSettings';
+export * from './aICategorizationSettingsProviderEnum';
 export * from './account';
 export * from './accountTypeEnum';
 export * from './actionEnum';
@@ -45,6 +47,7 @@ export * from './paginatedBudgetList';
 export * from './paginatedCategoryList';
 export * from './paginatedLedgerTransactionList';
 export * from './paginatedTransactionList';
+export * from './patchedAICategorizationSettings';
 export * from './patchedAccount';
 export * from './patchedBudget';
 export * from './patchedBudgetFile';
@@ -61,6 +64,7 @@ export * from './patchedNotificationPreference';
 export * from './patchedOrganization';
 export * from './patchedPayee';
 export * from './patchedSavedReport';
+export * from './patchedSavingsGoal';
 export * from './patchedScheduledTransaction';
 export * from './patchedSyncConnection';
 export * from './patchedTag';
@@ -72,11 +76,13 @@ export * from './providerEnum';
 export * from './reportTypeEnum';
 export * from './roleEnum';
 export * from './savedReport';
+export * from './savingsGoal';
 export * from './scheduledTransaction';
 export * from './sourceTypeEnum';
 export * from './suggestedCategory';
 export * from './syncConnection';
 export * from './syncConnectionAccount';
+export * from './syncConnectionProviderEnum';
 export * from './syncConnectionStatusEnum';
 export * from './tag';
 export * from './tokenObtainPair';

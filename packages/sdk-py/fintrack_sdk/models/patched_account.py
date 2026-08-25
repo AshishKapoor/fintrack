@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -30,6 +30,8 @@ class PatchedAccount:
         opening_balance (str | Unset):
         currency_code (str | Unset):
         current_balance (str | Unset):
+        interest_rate (None | str | Unset): Annual percentage rate, e.g. 19.99 for 19.99% APR.
+        minimum_payment (None | str | Unset):
         is_archived (bool | Unset):
         created_at (datetime.datetime | Unset):
         updated_at (datetime.datetime | Unset):
@@ -42,6 +44,8 @@ class PatchedAccount:
     opening_balance: str | Unset = UNSET
     currency_code: str | Unset = UNSET
     current_balance: str | Unset = UNSET
+    interest_rate: None | str | Unset = UNSET
+    minimum_payment: None | str | Unset = UNSET
     is_archived: bool | Unset = UNSET
     created_at: datetime.datetime | Unset = UNSET
     updated_at: datetime.datetime | Unset = UNSET
@@ -63,6 +67,18 @@ class PatchedAccount:
         currency_code = self.currency_code
 
         current_balance = self.current_balance
+
+        interest_rate: None | str | Unset
+        if isinstance(self.interest_rate, Unset):
+            interest_rate = UNSET
+        else:
+            interest_rate = self.interest_rate
+
+        minimum_payment: None | str | Unset
+        if isinstance(self.minimum_payment, Unset):
+            minimum_payment = UNSET
+        else:
+            minimum_payment = self.minimum_payment
 
         is_archived = self.is_archived
 
@@ -91,6 +107,10 @@ class PatchedAccount:
             field_dict["currency_code"] = currency_code
         if current_balance is not UNSET:
             field_dict["current_balance"] = current_balance
+        if interest_rate is not UNSET:
+            field_dict["interest_rate"] = interest_rate
+        if minimum_payment is not UNSET:
+            field_dict["minimum_payment"] = minimum_payment
         if is_archived is not UNSET:
             field_dict["is_archived"] = is_archived
         if created_at is not UNSET:
@@ -122,6 +142,24 @@ class PatchedAccount:
 
         current_balance = d.pop("current_balance", UNSET)
 
+        def _parse_interest_rate(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        interest_rate = _parse_interest_rate(d.pop("interest_rate", UNSET))
+
+        def _parse_minimum_payment(data: object) -> None | str | Unset:
+            if data is None:
+                return data
+            if isinstance(data, Unset):
+                return data
+            return cast(None | str | Unset, data)
+
+        minimum_payment = _parse_minimum_payment(d.pop("minimum_payment", UNSET))
+
         is_archived = d.pop("is_archived", UNSET)
 
         _created_at = d.pop("created_at", UNSET)
@@ -146,6 +184,8 @@ class PatchedAccount:
             opening_balance=opening_balance,
             currency_code=currency_code,
             current_balance=current_balance,
+            interest_rate=interest_rate,
+            minimum_payment=minimum_payment,
             is_archived=is_archived,
             created_at=created_at,
             updated_at=updated_at,

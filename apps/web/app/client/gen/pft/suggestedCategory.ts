@@ -16,4 +16,6 @@ export interface SuggestedCategory {
   /** @nullable */
   category: number | null;
   category_name: string;
+  /** @nullable */
+  source: string | null;
 }

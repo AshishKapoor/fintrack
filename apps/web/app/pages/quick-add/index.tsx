@@ -52,6 +52,7 @@ export default function QuickAddPage() {
   const [categoryId, setCategoryId] = useState('')
   const [categoryTouched, setCategoryTouched] = useState(false)
   const [wasSuggested, setWasSuggested] = useState(false)
+  const [suggestionSource, setSuggestionSource] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
   const { data: categories } = useV1FinanceCategoriesList()
@@ -75,6 +76,7 @@ export default function QuickAddPage() {
       if (result.category && !categoryTouched) {
         setCategoryId(String(result.category))
         setWasSuggested(true)
+        setSuggestionSource(result.source ?? null)
       }
     })
     return () => {
@@ -101,6 +103,7 @@ export default function QuickAddPage() {
     setCategoryId('')
     setCategoryTouched(false)
     setWasSuggested(false)
+    setSuggestionSource(null)
     amountRef.current?.focus()
   }
 
@@ -194,7 +197,10 @@ export default function QuickAddPage() {
           onChange={(id, name) => {
             setPayeeId(id)
             setPayeeName(name ?? '')
-            if (!id) setWasSuggested(false)
+            if (!id) {
+              setWasSuggested(false)
+              setSuggestionSource(null)
+            }
           }}
         />
       </div>
@@ -221,7 +227,9 @@ export default function QuickAddPage() {
         </Select>
         {wasSuggested && categoryId && !categoryTouched && (
           <p className='text-xs text-muted-foreground'>
-            {t('quickAdd.categorySuggested', { payee: payeeName })}
+            {suggestionSource === 'ai'
+              ? t('quickAdd.categorySuggestedByAi')
+              : t('quickAdd.categorySuggested', { payee: payeeName })}
           </p>
         )}
       </div>

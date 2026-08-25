@@ -8,12 +8,12 @@ import xml.etree.ElementTree as ET
 import zipfile
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from xml.sax.saxutils import escape as xml_escape
 
 from django.db import transaction
-from django.db.models import Sum
-from django.db.models.functions import ExtractMonth, ExtractYear
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Abs, Coalesce, ExtractMonth, ExtractYear
 from django.utils import timezone
 
 from .fx_rates import convert_amount
@@ -430,6 +430,288 @@ def compute_cash_flow_sankey(
     }
 
 
+# (cadence label, target gap in days, tolerance in days)
+_SUBSCRIPTION_CADENCES = [
+    ("weekly", 7, 2),
+    ("biweekly", 14, 3),
+    ("monthly", 30, 4),
+    ("quarterly", 91, 7),
+    ("yearly", 365, 15),
+]
+_MONTHLY_EQUIVALENT_FACTOR = {
+    "weekly": Decimal("30") / Decimal("7"),
+    "biweekly": Decimal("30") / Decimal("14"),
+    "monthly": Decimal("1"),
+    "quarterly": Decimal("1") / Decimal("3"),
+    "yearly": Decimal("1") / Decimal("12"),
+}
+_SUBSCRIPTION_MIN_OCCURRENCES = 3
+_SUBSCRIPTION_CONFIDENCE_THRESHOLD = 0.7
+
+
+def compute_subscriptions(budget_file: BudgetFile):
+    """Detect likely recurring charges from transaction history - payee, a
+    roughly-regular interval, and a roughly-consistent amount - as opposed to
+    ScheduledTransaction, which only knows about recurrence a user declared
+    explicitly. Already-scheduled transactions are excluded so a real
+    ScheduledTransaction doesn't also get "discovered" and shown twice.
+
+    No FX conversion, matching compute_cash_flow/compute_spending_trends'
+    own precedent - amounts are native-currency, and a payee's charges are
+    expected to already share one currency in practice.
+    """
+    rows = (
+        LedgerTransaction.objects.filter(budget_file=budget_file, payee__isnull=False)
+        .exclude(source_type=LedgerTransaction.SOURCE_SCHEDULED)
+        .annotate(
+            # A ledger transaction has no amount column - see
+            # LedgerTransactionViewSet.get_queryset, whose exact derivation
+            # this mirrors: the category legs' magnitude, split-safe.
+            amount=Abs(
+                Coalesce(
+                    Sum("postings__amount", filter=Q(postings__category__isnull=False)),
+                    Value(Decimal("0.00")),
+                )
+            )
+        )
+        .filter(amount__gt=Decimal("0.00"))
+        .values("payee_id", "payee__name", "transaction_date", "amount")
+        .order_by("payee_id", "transaction_date")
+    )
+
+    by_payee: dict[int, dict] = {}
+    for row in rows:
+        entry = by_payee.setdefault(row["payee_id"], {"name": row["payee__name"], "rows": []})
+        entry["rows"].append((row["transaction_date"], row["amount"]))
+
+    subscriptions = []
+    for payee_id, entry in by_payee.items():
+        payee_rows = entry["rows"]
+        if len(payee_rows) < _SUBSCRIPTION_MIN_OCCURRENCES:
+            continue
+
+        dates = [item[0] for item in payee_rows]
+        amounts = sorted(item[1] for item in payee_rows)
+        gaps = [(dates[i + 1] - dates[i]).days for i in range(len(dates) - 1)]
+        if not gaps:
+            continue
+
+        best_cadence, best_gap_fit = None, 0.0
+        for cadence, target_days, tolerance in _SUBSCRIPTION_CADENCES:
+            matching = sum(1 for gap in gaps if abs(gap - target_days) <= tolerance)
+            gap_fit = matching / len(gaps)
+            if gap_fit > best_gap_fit:
+                best_cadence, best_gap_fit = cadence, gap_fit
+
+        median_amount = amounts[len(amounts) // 2]
+        # A price change shouldn't break detection - a fixed floor keeps the
+        # band from collapsing to nothing on a cheap, exactly-flat charge.
+        amount_tolerance = max(median_amount * Decimal("0.15"), Decimal("1.00"))
+        amount_matches = sum(1 for amount in amounts if abs(amount - median_amount) <= amount_tolerance)
+        amount_fit = amount_matches / len(amounts)
+
+        # Both dimensions must independently clear the bar - averaging them
+        # would let a payee with perfectly regular timing but wildly random
+        # amounts (or vice versa) slip through on the other one's strength.
+        if best_gap_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD or amount_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD:
+            continue
+
+        monthly_equivalent = (median_amount * _MONTHLY_EQUIVALENT_FACTOR[best_cadence]).quantize(
+            Decimal("0.01")
+        )
+        subscriptions.append(
+            {
+                "payee_id": payee_id,
+                "payee": entry["name"],
+                "cadence": best_cadence,
+                "amount": str(median_amount),
+                "monthly_equivalent": str(monthly_equivalent),
+                "occurrences": len(payee_rows),
+                "last_charge_date": dates[-1].isoformat(),
+                "confidence": round(min(best_gap_fit, amount_fit), 2),
+            }
+        )
+
+    subscriptions.sort(key=lambda item: Decimal(item["monthly_equivalent"]), reverse=True)
+    total_monthly_equivalent = sum(
+        (Decimal(item["monthly_equivalent"]) for item in subscriptions), Decimal("0.00")
+    )
+
+    return {
+        "type": "subscriptions",
+        "subscriptions": subscriptions,
+        "total_monthly_equivalent": str(total_monthly_equivalent),
+    }
+
+
+# 50 years - a backstop, not a realistic answer. If minimum payments don't
+# even cover a month's interest, balances grow forever; without a cap the
+# simulation would just never terminate.
+_DEBT_PAYOFF_MAX_MONTHS = 600
+
+
+def compute_debt_payoff_projection(
+    budget_file: BudgetFile, strategy: str = "avalanche", extra_payment: Decimal | None = None
+):
+    """A month-by-month snowball/avalanche payoff simulation across every
+    credit/liability account with a balance.
+
+    Every debt account is converted to the budget file's home currency (via
+    fx_rates.convert_amount, as of today - there is no historical lookback
+    question here the way there is for a past-dated report, since a
+    projection is inherently forward-looking from now) so balances can be
+    meaningfully summed and ranked against each other; an account missing a
+    rate is excluded with a reason rather than folded in as a wrong number,
+    matching account_balances' own precedent. interest_rate/minimum_payment
+    are both required per account for the same reason: a guessed 0% or $0
+    would silently understate real interest or imply no real obligation.
+
+    Every month, every open debt accrues interest and gets at least its
+    minimum payment; extra_payment plus the now-freed minimum payments of
+    already-paid-off debts all go to the single highest-priority debt
+    (snowball: smallest balance first; avalanche: highest rate first) until
+    it's paid off, then the next.
+    """
+    if strategy not in ("snowball", "avalanche"):
+        raise ValueError("strategy must be 'snowball' or 'avalanche'.")
+    extra_payment = extra_payment if extra_payment is not None else Decimal("0.00")
+
+    today = timezone.now().date()
+    home_currency = budget_file.currency_code
+
+    debts = []
+    excluded = []
+    accounts = Account.objects.filter(
+        budget_file=budget_file,
+        is_archived=False,
+        type__in=[Account.TYPE_CREDIT, Account.TYPE_LIABILITY],
+    ).order_by("id")
+    for account in accounts:
+        native_balance = abs(account.current_balance)
+        if native_balance <= 0:
+            continue
+        if account.interest_rate is None or account.minimum_payment is None:
+            excluded.append(
+                {
+                    "account_id": account.id,
+                    "account": account.name,
+                    "reason": "missing_interest_rate_or_minimum_payment",
+                }
+            )
+            continue
+        converted_balance = convert_amount(
+            native_balance, account.effective_currency_code, home_currency, as_of=today
+        )
+        converted_minimum = convert_amount(
+            account.minimum_payment, account.effective_currency_code, home_currency, as_of=today
+        )
+        if converted_balance is None or converted_minimum is None:
+            excluded.append(
+                {"account_id": account.id, "account": account.name, "reason": "missing_fx_rate"}
+            )
+            continue
+        debts.append(
+            {
+                "account_id": account.id,
+                "account": account.name,
+                "balance": converted_balance,
+                "rate": account.interest_rate,
+                "minimum_payment": converted_minimum,
+            }
+        )
+
+    if strategy == "snowball":
+        debts.sort(key=lambda d: (d["balance"], d["account"]))
+    else:
+        debts.sort(key=lambda d: (-d["rate"], d["account"]))
+
+    if not debts:
+        return {
+            "type": "debt_payoff",
+            "strategy": strategy,
+            "extra_payment": str(extra_payment),
+            "currency_code": home_currency,
+            "months_to_debt_free": 0,
+            "total_interest_paid": "0.00",
+            "payoff_order": [],
+            "schedule": [],
+            "excluded": excluded,
+        }
+
+    remaining = {d["account_id"]: d["balance"] for d in debts}
+    monthly_rate = {d["account_id"]: d["rate"] / Decimal("100") / Decimal("12") for d in debts}
+    minimum_payment = {d["account_id"]: d["minimum_payment"] for d in debts}
+    interest_paid = {d["account_id"]: Decimal("0.00") for d in debts}
+    payoff_month: dict[int, int] = {}
+
+    schedule = []
+    total_interest = Decimal("0.00")
+    month = 0
+    while any(balance > 0 for balance in remaining.values()) and month < _DEBT_PAYOFF_MAX_MONTHS:
+        month += 1
+        freed_up_minimums = sum(
+            (minimum_payment[d["account_id"]] for d in debts if remaining[d["account_id"]] <= 0),
+            Decimal("0.00"),
+        )
+        available_extra = extra_payment + freed_up_minimums
+        target_id = next(
+            (d["account_id"] for d in debts if remaining[d["account_id"]] > 0), None
+        )
+
+        for d in debts:
+            acc_id = d["account_id"]
+            if remaining[acc_id] <= 0:
+                continue
+            interest = (remaining[acc_id] * monthly_rate[acc_id]).quantize(Decimal("0.01"))
+            remaining[acc_id] += interest
+            total_interest += interest
+            interest_paid[acc_id] += interest
+
+            payment = minimum_payment[acc_id]
+            if acc_id == target_id:
+                payment += available_extra
+            payment = min(payment, remaining[acc_id])
+            remaining[acc_id] -= payment
+
+            if remaining[acc_id] <= 0 and acc_id not in payoff_month:
+                payoff_month[acc_id] = month
+
+        schedule.append(
+            {
+                "month": month,
+                "total_balance": str(
+                    sum(remaining.values(), Decimal("0.00")).quantize(Decimal("0.01"))
+                ),
+            }
+        )
+
+    all_paid_off = all(balance <= 0 for balance in remaining.values())
+    payoff_order = [
+        {
+            "account_id": d["account_id"],
+            "account": d["account"],
+            "payoff_month": payoff_month.get(d["account_id"]),
+            "interest_paid": str(interest_paid[d["account_id"]].quantize(Decimal("0.01"))),
+        }
+        for d in sorted(debts, key=lambda d: payoff_month.get(d["account_id"], _DEBT_PAYOFF_MAX_MONTHS + 1))
+    ]
+
+    return {
+        "type": "debt_payoff",
+        "strategy": strategy,
+        "extra_payment": str(extra_payment),
+        "currency_code": home_currency,
+        # None means the minimum payments alone can't ever clear the debt at
+        # this interest rate within the simulation's cap - not "unknown", a
+        # real answer worth surfacing plainly rather than a misleading number.
+        "months_to_debt_free": month if all_paid_off else None,
+        "total_interest_paid": str(total_interest.quantize(Decimal("0.01"))),
+        "payoff_order": payoff_order,
+        "schedule": schedule,
+        "excluded": excluded,
+    }
+
+
 def _report_date(value, field_name):
     """Parse a report date, turning malformed input into a clear ValueError."""
     try:
@@ -485,6 +767,27 @@ def run_report(budget_file: BudgetFile, payload: dict):
     if report_type == SavedReport.TYPE_CASH_FLOW_SANKEY:
         top_n = payload.get("top_n", 8)
         return compute_cash_flow_sankey(budget_file, start_date, end_date, top_n=top_n)
+
+    if report_type == SavedReport.TYPE_SUBSCRIPTIONS:
+        # Detection wants the whole ledger's history, not the ad-hoc
+        # start/end window every other branch above defaults to - a
+        # subscription's regularity can only be seen across many months.
+        return compute_subscriptions(budget_file)
+
+    if report_type == SavedReport.TYPE_DEBT_PAYOFF:
+        strategy = payload.get("strategy", "avalanche")
+        if strategy not in ("snowball", "avalanche"):
+            raise ValueError("strategy must be 'snowball' or 'avalanche'.")
+        raw_extra = payload.get("extra_payment", "0")
+        try:
+            extra_payment = Decimal(str(raw_extra))
+        except InvalidOperation as exc:
+            raise ValueError("extra_payment must be a number.") from exc
+        if extra_payment < 0:
+            raise ValueError("extra_payment cannot be negative.")
+        return compute_debt_payoff_projection(
+            budget_file, strategy=strategy, extra_payment=extra_payment
+        )
 
     group_by = payload.get("group_by", "category")
     queryset = LedgerPosting.objects.filter(

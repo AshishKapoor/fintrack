@@ -6,6 +6,8 @@ import { DatePickerWithRange } from '@/components/date-range-picker'
 import { CategoryTrendsChart } from '@/components/insights/category-trends-chart'
 import { NetWorthOverTimeChart } from '@/components/insights/net-worth-over-time-chart'
 import { CashFlowSankeyChart } from '@/components/insights/cash-flow-sankey-chart'
+import { SubscriptionsPanel } from '@/components/insights/subscriptions-panel'
+import { DebtPayoffPanel } from '@/components/insights/debt-payoff-panel'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Typography from '@/components/ui/typography'
 
@@ -25,6 +27,26 @@ export default function InsightsPage() {
         </CardHeader>
         <CardContent>
           <NetWorthOverTimeChart />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Debt payoff plan</CardTitle>
+          <CardDescription>Snowball or avalanche - how fast your debts clear, and what it costs in interest.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DebtPayoffPanel />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Subscriptions</CardTitle>
+          <CardDescription>Recurring charges detected from your transaction history.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubscriptionsPanel />
         </CardContent>
       </Card>
 

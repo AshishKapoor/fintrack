@@ -19,6 +19,17 @@ export interface PatchedAccount {
   currency_code?: string;
   /** @pattern ^-?\d{0,12}(?:\.\d{0,2})?$ */
   readonly current_balance?: string;
+  /**
+   * Annual percentage rate, e.g. 19.99 for 19.99% APR.
+   * @nullable
+   * @pattern ^-?\d{0,3}(?:\.\d{0,2})?$
+   */
+  interest_rate?: string | null;
+  /**
+   * @nullable
+   * @pattern ^-?\d{0,12}(?:\.\d{0,2})?$
+   */
+  minimum_payment?: string | null;
   is_archived?: boolean;
   readonly created_at?: string;
   readonly updated_at?: string;

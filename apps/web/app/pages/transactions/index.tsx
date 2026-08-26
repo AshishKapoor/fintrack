@@ -93,14 +93,20 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
+  // Also has to run when ?new=1 arrives on a navigation that does not remount
+  // this page. Triggering the palette's action while already on /transactions
+  // only changes the search params, so the initializer above never re-runs and
+  // the dialog would otherwise stay shut. Depends on searchParams for exactly
+  // that case; deleting the param on the way through keeps it idempotent, and
+  // makes the setState a no-op when the initializer already opened the dialog.
   useEffect(() => {
     if (searchParams.get('new') === '1') {
+      setShowAddTransaction(true)
       const next = new URLSearchParams(searchParams)
       next.delete('new')
       setSearchParams(next, { replace: true })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [searchParams, setSearchParams])
 
   // Debounced so typing does not fire a request per keystroke.
   useEffect(() => {

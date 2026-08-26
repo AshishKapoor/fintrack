@@ -5130,7 +5130,7 @@ components:
           type: string
           maxLength: 100
         type:
-          $ref: '#/components/schemas/TypeF1eEnum'
+          $ref: '#/components/schemas/Type005Enum'
         user:
           type: integer
           readOnly: true
@@ -5671,9 +5671,12 @@ components:
         webhook_enabled:
           type: boolean
         webhook_url:
-          type: string
-          format: uri
-          maxLength: 500
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
         budget_alerts_enabled:
           type: boolean
         budget_alert_threshold:
@@ -6001,7 +6004,7 @@ components:
           type: string
           maxLength: 100
         type:
-          $ref: '#/components/schemas/TypeF1eEnum'
+          $ref: '#/components/schemas/Type005Enum'
         user:
           type: integer
           readOnly: true
@@ -6273,9 +6276,12 @@ components:
         webhook_enabled:
           type: boolean
         webhook_url:
-          type: string
-          format: uri
-          maxLength: 500
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 500
+          - type: string
+            maxLength: 0
         budget_alerts_enabled:
           type: boolean
         budget_alert_threshold:
@@ -6516,7 +6522,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
         type:
-          $ref: '#/components/schemas/TypeF1eEnum'
+          $ref: '#/components/schemas/Type005Enum'
         category:
           type: integer
           nullable: true
@@ -7008,7 +7014,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
         type:
-          $ref: '#/components/schemas/TypeF1eEnum'
+          $ref: '#/components/schemas/Type005Enum'
         category:
           type: integer
           nullable: true
@@ -7065,7 +7071,7 @@ components:
       - id
       - name
       - updated_at
-    TypeF1eEnum:
+    Type005Enum:
       enum:
       - income
       - expense

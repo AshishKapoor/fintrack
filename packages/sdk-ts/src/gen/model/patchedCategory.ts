@@ -5,13 +5,13 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
-import type { TypeF1eEnum } from './typeF1eEnum';
+import type { Type005Enum } from './type005Enum';
 
 export interface PatchedCategory {
   readonly id?: number;
   /** @maxLength 100 */
   name?: string;
-  type?: TypeF1eEnum;
+  type?: Type005Enum;
   /** @nullable */
   readonly user?: number | null;
 }

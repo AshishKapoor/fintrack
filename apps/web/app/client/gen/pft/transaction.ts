@@ -5,7 +5,7 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
-import type { TypeF1eEnum } from './typeF1eEnum';
+import type { Type005Enum } from './type005Enum';
 
 export interface Transaction {
   readonly id: number;
@@ -14,7 +14,7 @@ export interface Transaction {
   title: string;
   /** @pattern ^-?\d{0,10}(?:\.\d{0,2})?$ */
   amount: string;
-  type: TypeF1eEnum;
+  type: Type005Enum;
   /** @nullable */
   category?: number | null;
   transaction_date: string;

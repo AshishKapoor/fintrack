@@ -7,7 +7,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.type_f1e_enum import TypeF1EEnum
+from ..models.type_005_enum import Type005Enum
 
 T = TypeVar("T", bound="Category")
 
@@ -18,14 +18,14 @@ class Category:
     Attributes:
         id (int):
         name (str):
-        type_ (TypeF1EEnum): * `income` - Income
+        type_ (Type005Enum): * `income` - Income
             * `expense` - Expense
         user (int | None):
     """
 
     id: int
     name: str
-    type_: TypeF1EEnum
+    type_: Type005Enum
     user: int | None
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -59,7 +59,7 @@ class Category:
 
         name = d.pop("name")
 
-        type_ = TypeF1EEnum(d.pop("type"))
+        type_ = Type005Enum(d.pop("type"))
 
         def _parse_user(data: object) -> int | None:
             if data is None:

@@ -1,5 +1,4 @@
 import json
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -8,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.ai_categorization import suggest_category_via_ai
-from pft.models import AICategorizationSettings, Account, BudgetFile, CategoryV2, Payee
+from pft.models import Account, AICategorizationSettings, BudgetFile, CategoryV2, Payee
 from pft.notifications import is_safe_local_service_url
 
 User = get_user_model()

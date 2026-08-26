@@ -7,7 +7,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.type_f1e_enum import TypeF1EEnum
+from ..models.type_005_enum import Type005Enum
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="PatchedCategory")
@@ -19,14 +19,14 @@ class PatchedCategory:
     Attributes:
         id (int | Unset):
         name (str | Unset):
-        type_ (TypeF1EEnum | Unset): * `income` - Income
+        type_ (Type005Enum | Unset): * `income` - Income
             * `expense` - Expense
         user (int | None | Unset):
     """
 
     id: int | Unset = UNSET
     name: str | Unset = UNSET
-    type_: TypeF1EEnum | Unset = UNSET
+    type_: Type005Enum | Unset = UNSET
     user: int | None | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
@@ -67,11 +67,11 @@ class PatchedCategory:
         name = d.pop("name", UNSET)
 
         _type_ = d.pop("type", UNSET)
-        type_: TypeF1EEnum | Unset
+        type_: Type005Enum | Unset
         if isinstance(_type_, Unset):
             type_ = UNSET
         else:
-            type_ = TypeF1EEnum(_type_)
+            type_ = Type005Enum(_type_)
 
         def _parse_user(data: object) -> int | None | Unset:
             if data is None:

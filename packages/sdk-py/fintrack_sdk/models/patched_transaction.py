@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.type_f1e_enum import TypeF1EEnum
+from ..models.type_005_enum import Type005Enum
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="PatchedTransaction")
@@ -22,7 +22,7 @@ class PatchedTransaction:
         user (int | Unset):
         title (str | Unset):
         amount (str | Unset):
-        type_ (TypeF1EEnum | Unset): * `income` - Income
+        type_ (Type005Enum | Unset): * `income` - Income
             * `expense` - Expense
         category (int | None | Unset):
         transaction_date (datetime.date | Unset):
@@ -34,7 +34,7 @@ class PatchedTransaction:
     user: int | Unset = UNSET
     title: str | Unset = UNSET
     amount: str | Unset = UNSET
-    type_: TypeF1EEnum | Unset = UNSET
+    type_: Type005Enum | Unset = UNSET
     category: int | None | Unset = UNSET
     transaction_date: datetime.date | Unset = UNSET
     created_at: datetime.datetime | Unset = UNSET
@@ -108,11 +108,11 @@ class PatchedTransaction:
         amount = d.pop("amount", UNSET)
 
         _type_ = d.pop("type", UNSET)
-        type_: TypeF1EEnum | Unset
+        type_: Type005Enum | Unset
         if isinstance(_type_, Unset):
             type_ = UNSET
         else:
-            type_ = TypeF1EEnum(_type_)
+            type_ = Type005Enum(_type_)
 
         def _parse_category(data: object) -> int | None | Unset:
             if data is None:

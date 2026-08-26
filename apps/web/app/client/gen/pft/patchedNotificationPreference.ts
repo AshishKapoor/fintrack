@@ -5,6 +5,7 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
+import type { PatchedNotificationPreferenceWebhookUrl } from './patchedNotificationPreferenceWebhookUrl';
 
 export interface PatchedNotificationPreference {
   readonly id?: number;
@@ -15,8 +16,7 @@ export interface PatchedNotificationPreference {
   /** @maxLength 120 */
   ntfy_topic?: string;
   webhook_enabled?: boolean;
-  /** @maxLength 500 */
-  webhook_url?: string;
+  webhook_url?: PatchedNotificationPreferenceWebhookUrl;
   budget_alerts_enabled?: boolean;
   /**
    * @minimum 0

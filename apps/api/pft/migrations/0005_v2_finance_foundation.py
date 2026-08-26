@@ -847,7 +847,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="ledgerposting",
             constraint=models.CheckConstraint(
-                check=(
+                condition=(
                     (Q(("account__isnull", False), ("category__isnull", True)))
                     | (Q(("account__isnull", True), ("category__isnull", False)))
                 ),

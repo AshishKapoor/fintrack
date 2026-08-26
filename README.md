@@ -10,7 +10,7 @@ no subscriptions, no third-party services, no vendor lock-in.
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-5.x-092e20.svg)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-6.x-092e20.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![GitHub stars](https://img.shields.io/github/stars/AshishKapoor/fintrack?style=social)](https://github.com/AshishKapoor/fintrack/stargazers)
 
@@ -94,7 +94,7 @@ worth trying.
 | Layer | Technology |
 | --- | --- |
 | Frontend | [React 19](https://react.dev/), [Vite](https://vitejs.dev/), [TailwindCSS](https://tailwindcss.com/), [SWR](https://swr.vercel.app/), [pnpm](https://pnpm.io/) |
-| Backend | [Django 5](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
+| Backend | [Django 6](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
 | Background jobs | [Celery](https://docs.celeryq.dev/) + [Redis](https://redis.io/) (imports/exports; falls back to inline without a broker) |
 | Database | [PostgreSQL](https://www.postgresql.org/) |
 | SDKs | [`@fintrack/sdk`](packages/sdk-ts) (TypeScript) and [`fintrack-sdk`](packages/sdk-py) (Python), generated from the OpenAPI schema |

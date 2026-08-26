@@ -1,6 +1,6 @@
 # FinTrack API
 
-Django 5 + Django REST Framework backend: JWT auth (SimpleJWT), a double-entry
+Django 6 + Django REST Framework backend: JWT auth (SimpleJWT), a double-entry
 ledger with envelope budgeting, shared workspaces with roles, imports/exports
 on Celery, and an OpenAPI schema that drives every generated client.
 

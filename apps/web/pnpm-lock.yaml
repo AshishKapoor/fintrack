@@ -129,8 +129,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.1
       i18next-http-backend:
-        specifier: ^3.0.2
-        version: 3.0.6
+        specifier: ^4.0.1
+        version: 4.0.1
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -2684,9 +2684,6 @@ packages:
     resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
     engines: {node: '>=18'}
 
-  cross-fetch@4.1.0:
-    resolution: {integrity: sha512-uKm5PU+MHTootlWEY+mZ4vvXoCn4fLQxT9dSc1sXVMSFkINTJVN8cAQROpwcKm8bJ/c7rgZVIBWzH5T78sNZZw==}
-
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
@@ -2972,6 +2969,7 @@ packages:
   eslint@9.24.0:
     resolution: {integrity: sha512-eh/jxIEJyZrvbWRe4XuVclLPDYSYYYgLy5zXGGxD6j8zjSAxFEzI2fL/8xNq6O2yKqVt+eF2YhV+hxjV6UKXwQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -3290,8 +3288,9 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
-  i18next-http-backend@3.0.6:
-    resolution: {integrity: sha512-mBOqy8993jtqAoj6XaI1XeC/8/9v6EPS+681ziegrPvTB0DoaCY7PpTS0SpY56qLMoS4OI1TZEM2Zf59zNh05w==}
+  i18next-http-backend@4.0.1:
+    resolution: {integrity: sha512-O+7MwPCJIKCu68vho8JtD1HF8QHyMPzoChIDFfYCrpaDqX6oq3RqASujnpKEdnNCEOb+kLMOHTNTcGKpj7B1BA==}
+    engines: {node: '>=18'}
 
   i18next-resources-for-ts@2.1.0:
     resolution: {integrity: sha512-n5UexwEVt0OoIAhG2MWpSnAVJW1U8mQrQTmXyxc5DMAx+NLhcLZhSMJo/FnUsA5JQ3obTYqTgB7YIuZKWpDgow==}
@@ -7260,12 +7259,6 @@ snapshots:
 
   cookie@1.1.1: {}
 
-  cross-fetch@4.1.0:
-    dependencies:
-      node-fetch: 2.7.0
-    transitivePeerDependencies:
-      - encoding
-
   cross-spawn@7.0.6:
     dependencies:
       path-key: 3.1.1
@@ -8016,11 +8009,7 @@ snapshots:
       - react-native
       - typescript
 
-  i18next-http-backend@3.0.6:
-    dependencies:
-      cross-fetch: 4.1.0
-    transitivePeerDependencies:
-      - encoding
+  i18next-http-backend@4.0.1: {}
 
   i18next-resources-for-ts@2.1.0:
     dependencies:

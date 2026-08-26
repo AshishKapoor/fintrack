@@ -5,8 +5,6 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .notifications import is_safe_local_service_url, is_safe_outbound_url
-
 from .models import (
     Account,
     AICategorizationSettings,
@@ -31,6 +29,7 @@ from .models import (
     TransactionEvent,
     TransactionRule,
 )
+from .notifications import is_safe_local_service_url, is_safe_outbound_url
 
 
 class UserOwnedBudgetFileMixin:

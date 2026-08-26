@@ -330,7 +330,7 @@ def compute_spending_trends(budget_file: BudgetFile, start_date: date, end_date:
     }
 
 
-def compute_cash_flow_sankey(
+def compute_cash_flow_sankey(  # noqa: C901 - top-N bucketing either side of the hub
     budget_file: BudgetFile, start_date: date, end_date: date, top_n: int = 8
 ):
     """A cash-flow Sankey: top income categories -> one hub -> top expense
@@ -550,7 +550,7 @@ def compute_subscriptions(budget_file: BudgetFile):
 _DEBT_PAYOFF_MAX_MONTHS = 600
 
 
-def compute_debt_payoff_projection(
+def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation loop
     budget_file: BudgetFile, strategy: str = "avalanche", extra_payment: Decimal | None = None
 ):
     """A month-by-month snowball/avalanche payoff simulation across every
@@ -720,7 +720,7 @@ def _report_date(value, field_name):
         raise ValueError(f"{field_name} must be a date in YYYY-MM-DD format.") from exc
 
 
-def run_report(budget_file: BudgetFile, payload: dict):
+def run_report(budget_file: BudgetFile, payload: dict):  # noqa: C901 - report_type dispatch
     report_type = payload.get("report_type", SavedReport.TYPE_CUSTOM)
 
     start_date_value = payload.get("start_date")

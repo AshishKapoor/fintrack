@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class TypeF1EEnum(str, Enum):
+class Type005Enum(str, Enum):
     EXPENSE = "expense"
     INCOME = "income"
 

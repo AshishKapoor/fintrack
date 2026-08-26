@@ -554,7 +554,7 @@ class LedgerPosting(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="ledger_posting_exactly_one_target",
-                check=(
+                condition=(
                     (Q(account__isnull=False) & Q(category__isnull=True))
                     | (Q(account__isnull=True) & Q(category__isnull=False))
                 ),
@@ -902,12 +902,12 @@ class NotificationPreference(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="notification_budget_alert_threshold_range",
-                check=Q(budget_alert_threshold__gte=1)
+                condition=Q(budget_alert_threshold__gte=1)
                 & Q(budget_alert_threshold__lte=100),
             ),
             models.CheckConstraint(
                 name="notification_reminder_days_before_range",
-                check=Q(reminder_days_before__gte=0)
+                condition=Q(reminder_days_before__gte=0)
                 & Q(reminder_days_before__lte=30),
             ),
         ]

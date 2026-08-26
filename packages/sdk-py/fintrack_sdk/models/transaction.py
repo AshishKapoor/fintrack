@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.type_f1e_enum import TypeF1EEnum
+from ..models.type_005_enum import Type005Enum
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="Transaction")
@@ -22,7 +22,7 @@ class Transaction:
         user (int):
         title (str):
         amount (str):
-        type_ (TypeF1EEnum): * `income` - Income
+        type_ (Type005Enum): * `income` - Income
             * `expense` - Expense
         transaction_date (datetime.date):
         created_at (datetime.datetime):
@@ -34,7 +34,7 @@ class Transaction:
     user: int
     title: str
     amount: str
-    type_: TypeF1EEnum
+    type_: Type005Enum
     transaction_date: datetime.date
     created_at: datetime.datetime
     updated_at: datetime.datetime
@@ -94,7 +94,7 @@ class Transaction:
 
         amount = d.pop("amount")
 
-        type_ = TypeF1EEnum(d.pop("type"))
+        type_ = Type005Enum(d.pop("type"))
 
         transaction_date = datetime.date.fromisoformat(d.pop("transaction_date"))
 

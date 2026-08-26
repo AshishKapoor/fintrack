@@ -10,11 +10,11 @@
  * * `income` - Income
 * `expense` - Expense
  */
-export type TypeF1eEnum = typeof TypeF1eEnum[keyof typeof TypeF1eEnum];
+export type Type005Enum = typeof Type005Enum[keyof typeof Type005Enum];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const TypeF1eEnum = {
+export const Type005Enum = {
   income: 'income',
   expense: 'expense',
 } as const;

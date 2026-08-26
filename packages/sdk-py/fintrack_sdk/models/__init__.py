@@ -84,7 +84,7 @@ from .token_obtain_pair import TokenObtainPair
 from .token_refresh import TokenRefresh
 from .transaction import Transaction
 from .transaction_rule import TransactionRule
-from .type_f1e_enum import TypeF1EEnum
+from .type_005_enum import Type005Enum
 from .user_profile import UserProfile
 from .user_registration import UserRegistration
 
@@ -171,7 +171,7 @@ __all__ = (
     "TokenRefresh",
     "Transaction",
     "TransactionRule",
-    "TypeF1EEnum",
+    "Type005Enum",
     "UserProfile",
     "UserRegistration",
 )

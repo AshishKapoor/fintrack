@@ -184,7 +184,7 @@ export function InlineTransactionRow({
               setDraft((d) => ({ ...d, kind: value as TransactionKind, categoryId: '' }))
             }
           >
-            <SelectTrigger className='w-28 shrink-0'>
+            <SelectTrigger aria-label={t('transactions.kind')} className='w-28 shrink-0'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

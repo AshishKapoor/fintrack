@@ -10,7 +10,10 @@ import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  SegmentedControl,
+  SegmentedControlItem,
+} from '@/components/ui/segmented-control'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCurrency, useCurrency } from '@/context/currency-context'
 import { useDebtPayoff, type DebtPayoffStrategy } from '@/lib/ledger'
@@ -54,13 +57,15 @@ export function DebtPayoffPanel() {
     <div className='space-y-4'>
       <div className='flex flex-wrap items-end gap-4'>
         <div className='space-y-1.5'>
-          <Label>Strategy</Label>
-          <Tabs value={strategy} onValueChange={(value) => setStrategy(value as DebtPayoffStrategy)}>
-            <TabsList>
-              <TabsTrigger value='avalanche'>Avalanche</TabsTrigger>
-              <TabsTrigger value='snowball'>Snowball</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <Label id='debt-strategy-label'>Strategy</Label>
+          <SegmentedControl
+            aria-labelledby='debt-strategy-label'
+            value={strategy}
+            onValueChange={(value) => setStrategy(value as DebtPayoffStrategy)}
+          >
+            <SegmentedControlItem value='avalanche'>Avalanche</SegmentedControlItem>
+            <SegmentedControlItem value='snowball'>Snowball</SegmentedControlItem>
+          </SegmentedControl>
         </div>
         <div className='space-y-1.5'>
           <Label htmlFor='debt-extra-payment'>Extra payment / month</Label>

@@ -175,9 +175,9 @@ export default function ReportsPage() {
         <CardContent className='space-y-4'>
           <div className='grid gap-4 md:grid-cols-4'>
             <div className='space-y-2'>
-              <Label>Type</Label>
+              <Label htmlFor='report-type'>Type</Label>
               <Select value={reportType} onValueChange={(value) => setReportType(value as SavedReport['report_type'])}>
-                <SelectTrigger>
+                <SelectTrigger id='report-type'>
                   <SelectValue placeholder='Report type' />
                 </SelectTrigger>
                 <SelectContent>
@@ -192,26 +192,41 @@ export default function ReportsPage() {
             {reportType !== 'net_worth' ? (
               <>
                 <div className='space-y-2'>
-                  <Label>Start date</Label>
-                  <Input type='date' value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                  <Label htmlFor='report-start-date'>Start date</Label>
+                  <Input
+                    id='report-start-date'
+                    type='date'
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
                 </div>
                 <div className='space-y-2'>
-                  <Label>End date</Label>
-                  <Input type='date' value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                  <Label htmlFor='report-end-date'>End date</Label>
+                  <Input
+                    id='report-end-date'
+                    type='date'
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
                 </div>
               </>
             ) : (
               <div className='space-y-2'>
-                <Label>As of</Label>
-                <Input type='date' value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                <Label htmlFor='report-as-of'>As of</Label>
+                <Input
+                  id='report-as-of'
+                  type='date'
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
               </div>
             )}
 
             {reportType === 'custom' && (
               <div className='space-y-2'>
-                <Label>Group by</Label>
+                <Label htmlFor='report-group-by'>Group by</Label>
                 <Select value={groupBy} onValueChange={(value) => setGroupBy(value as 'category' | 'month')}>
-                  <SelectTrigger>
+                  <SelectTrigger id='report-group-by'>
                     <SelectValue placeholder='Group by' />
                   </SelectTrigger>
                   <SelectContent>
@@ -225,12 +240,17 @@ export default function ReportsPage() {
 
           <div className='flex flex-wrap items-end gap-3'>
             <div className='flex-1 min-w-[220px] space-y-2'>
-              <Label>Save as report</Label>
-              <Input value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder='e.g. Monthly Cash Flow' />
+              <Label htmlFor='report-save-name'>Save as report</Label>
+              <Input
+                id='report-save-name'
+                value={saveName}
+                onChange={(e) => setSaveName(e.target.value)}
+                placeholder='e.g. Monthly Cash Flow'
+              />
             </div>
             <div className='flex items-center gap-2 pb-1'>
-              <Switch checked={pinOnSave} onCheckedChange={setPinOnSave} />
-              <Label>Pin on save</Label>
+              <Switch id='report-pin-on-save' checked={pinOnSave} onCheckedChange={setPinOnSave} />
+              <Label htmlFor='report-pin-on-save'>Pin on save</Label>
             </div>
             <Button variant='outline' onClick={() => void handleSaveReport()}>
               <Plus className='mr-2 h-4 w-4' />

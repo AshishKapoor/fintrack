@@ -260,7 +260,7 @@ export default function TransactionsPage() {
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
           >
-            <SelectTrigger className='w-[180px]'>
+            <SelectTrigger aria-label='Sort by' className='w-[180px]'>
               <SelectValue placeholder='Sort by' />
             </SelectTrigger>
             <SelectContent>
@@ -274,6 +274,7 @@ export default function TransactionsPage() {
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='icon' className='h-9 w-9'>
                 <Download className='h-4 w-4' />
+                <span className='sr-only'>Export transactions</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>

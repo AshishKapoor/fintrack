@@ -318,7 +318,10 @@ jobs:
           exit 1
 
       # Drives the real stack through the browser: register, sign in, add a
-      # transaction, see it listed and summed on the dashboard.
+      # transaction, see it listed and summed on the dashboard. Includes
+      # accessibility.spec.ts, which runs axe over every page and both modal
+      # surfaces - that is the accessibility gate, so it is deliberately not a
+      # separate optional job.
       - name: Run Playwright
         working-directory: apps/web
         run: pnpm exec playwright test

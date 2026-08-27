@@ -351,6 +351,34 @@ Data fetching is SWR keyed on URL-ish strings. Note that global revalidation is
 switched off in `main.tsx`, so data refreshes on explicit mutation rather than
 on focus or reconnect.
 
+## Accessibility
+
+Radix supplies the interactive primitives - roles, focus management, keyboard
+behaviour - so the parts most projects get wrong are correct by construction.
+What Radix cannot know is anything about *this* app, and that is where the
+failures were: an icon-only export button with no name, `<Label>` elements
+floating free of the controls they described (one pointed at `phone`, the
+input was `phone_number`), and a `Tabs` used as a segmented control, whose
+triggers advertised `aria-controls` panels that were never rendered.
+
+`apps/web/e2e/accessibility.spec.ts` runs axe over every page and both modal
+surfaces at WCAG 2.1 A/AA, as part of the normal Playwright job rather than an
+optional extra. Two things it does that are easy to get wrong:
+
+- It waits for animations to finish before scanning. Mid-fade, axe composites a
+  half-transparent element against what is behind it and reports contrast
+  failures no user ever sees.
+- It scans modals scoped to `[role="dialog"]`, because a modal makes the page
+  behind it inert.
+
+`SegmentedControl` (`components/ui/segmented-control.tsx`) exists because of
+the third failure above: use `Tabs` when there are real panels, and this when
+the selection just changes what the surrounding component renders.
+
+axe catches roughly a third of WCAG failures, so a green run is not a claim
+that the app is accessible - it is a claim that nothing automatically
+detectable regressed, which is the part CI can actually hold true.
+
 ## Authentication
 
 - `POST /api/token/` → `{access, refresh}`. Rate limited.
@@ -445,8 +473,8 @@ apps/api/pft/tests/
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright
-end-to-end suite (`apps/web/e2e/`) that drives the real Docker stack through
-nginx — login, transactions, budgets, import, backup/restore, notification
+end-to-end suite (`apps/web/e2e/`), including `accessibility.spec.ts`'s axe
+pass, that drives the real Docker stack through nginx — login, transactions, budgets, import, backup/restore, notification
 preferences, keyboard-first register entry (splits, the inline row), quick
 add, accounts (per-currency CRUD), the bank sync connect dialog as far as it
 goes without a live provider, and a two-browser shared-workspace scenario.

@@ -12,7 +12,8 @@ import {
   CommandList,
 } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useV1FinancePayeesList, v1FinancePayeesCreate } from '@/client/gen/pft/v1/v1'
+import { v1FinancePayeesCreate } from '@/client/gen/pft/v1/v1'
+import { useAllPayees } from '@/lib/finance-lists'
 import { cn } from '@/lib/utils'
 
 /**
@@ -35,7 +36,7 @@ export function PayeeCombobox({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
-  const { data: payees, mutate } = useV1FinancePayeesList()
+  const { data: payees, mutate } = useAllPayees()
 
   const scoped = (payees ?? []).filter(
     (payee) => !budgetFileId || payee.budget_file === budgetFileId,

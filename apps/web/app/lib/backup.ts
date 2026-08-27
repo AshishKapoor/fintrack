@@ -16,6 +16,7 @@ import {
   v1FinanceTransactionsList,
 } from '@/client/gen/pft/v1/v1'
 import { decryptJson, encryptJson, type EncryptedPayload } from '@/lib/crypto'
+import { fetchAllPages } from '@/lib/paginated'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import { getOrCreateCurrentBudgetMonth, upsertEnvelopeAssignment } from '@/lib/ledger'
 
@@ -61,27 +62,22 @@ export interface BackupArchive {
   budgets: { year: number; month: number; category: number; assigned_amount: string }[]
 }
 
-async function fetchAllTransactions() {
-  const rows = []
-  for (let page = 1; page < 1000; page += 1) {
-    const response = await v1FinanceTransactionsList({ page, page_size: 500 })
-    rows.push(...response.results)
-    if (!response.next) break
-  }
-  return rows
-}
+
 
 /** Serialise the whole ledger into a plain archive object. */
 export async function collectArchive(): Promise<BackupArchive> {
+  // Every one of these walks `next` to the end. A backup that quietly stopped
+  // at the first page would be the worst possible place for pagination to go
+  // unnoticed: it restores cleanly and is simply missing most of the ledger.
   const [groups, categories, accounts, payees, transactions, months, assignments] =
     await Promise.all([
-      v1FinanceCategoryGroupsList(),
-      v1FinanceCategoriesList(),
-      v1FinanceAccountsList(),
-      v1FinancePayeesList(),
-      fetchAllTransactions(),
-      v1FinanceBudgetMonthsList(),
-      v1FinanceEnvelopeAssignmentsList(),
+      fetchAllPages((params) => v1FinanceCategoryGroupsList(params)),
+      fetchAllPages((params) => v1FinanceCategoriesList(params)),
+      fetchAllPages((params) => v1FinanceAccountsList(params)),
+      fetchAllPages((params) => v1FinancePayeesList(params)),
+      fetchAllPages((params) => v1FinanceTransactionsList(params)),
+      fetchAllPages((params) => v1FinanceBudgetMonthsList(params)),
+      fetchAllPages((params) => v1FinanceEnvelopeAssignmentsList(params)),
     ])
 
   const monthById = new Map(months.map((m) => [m.id, m]))
@@ -148,7 +144,7 @@ export async function createBackup(passphrase: string): Promise<EncryptedBackupB
 }
 
 export async function listBackups(): Promise<EncryptedBackupBundle[]> {
-  return v1FinanceBackupsList()
+  return fetchAllPages((params) => v1FinanceBackupsList(params))
 }
 
 export async function decryptBackup(
@@ -186,7 +182,7 @@ export async function restoreArchive(archive: BackupArchive): Promise<RestoreRes
 
   // Category groups by name.
   const groupIdMap = new Map<number, number>()
-  const existingGroups = await v1FinanceCategoryGroupsList()
+  const existingGroups = await fetchAllPages((params) => v1FinanceCategoryGroupsList(params))
   for (const group of archive.category_groups) {
     const found = existingGroups.find((g) => g.name === group.name)
     if (found) {
@@ -203,7 +199,7 @@ export async function restoreArchive(archive: BackupArchive): Promise<RestoreRes
 
   // Categories by name.
   const categoryIdMap = new Map<number, number>()
-  const existingCategories = await v1FinanceCategoriesList()
+  const existingCategories = await fetchAllPages((params) => v1FinanceCategoriesList(params))
   for (const category of archive.categories) {
     const found = existingCategories.find((c) => c.name === category.name)
     if (found) {
@@ -221,7 +217,7 @@ export async function restoreArchive(archive: BackupArchive): Promise<RestoreRes
 
   // Accounts by name.
   const accountIdMap = new Map<number, number>()
-  const existingAccounts = await v1FinanceAccountsList()
+  const existingAccounts = await fetchAllPages((params) => v1FinanceAccountsList(params))
   for (const account of archive.accounts) {
     const found = existingAccounts.find((a) => a.name === account.name)
     if (found) {
@@ -239,7 +235,7 @@ export async function restoreArchive(archive: BackupArchive): Promise<RestoreRes
 
   // Payees by name.
   const payeeIdMap = new Map<number, number>()
-  const existingPayees = await v1FinancePayeesList()
+  const existingPayees = await fetchAllPages((params) => v1FinancePayeesList(params))
   for (const payee of archive.payees) {
     const found = existingPayees.find((p) => p.name === payee.name)
     if (found) {
@@ -252,7 +248,9 @@ export async function restoreArchive(archive: BackupArchive): Promise<RestoreRes
 
   // Transactions, deduplicated by match_key across restore runs.
   const existingKeys = new Set(
-    (await fetchAllTransactions()).map((t) => t.match_key).filter(Boolean),
+    (await fetchAllPages((params) => v1FinanceTransactionsList(params)))
+      .map((t) => t.match_key)
+      .filter(Boolean),
   )
   let created = 0
   let skipped = 0

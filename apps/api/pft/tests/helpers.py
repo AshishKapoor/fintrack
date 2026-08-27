@@ -23,3 +23,15 @@ def personal_budget_file(user) -> BudgetFile:
     budget_file = default_budget_file(user, organization)
     assert budget_file is not None, f"{user}'s personal workspace has no budget file"
     return budget_file
+
+
+def rows(response):
+    """The `results` of a list response.
+
+    Every list endpoint paginates (pft/pagination.py), so a list response is
+    the envelope `{count, next, previous, results}`. Tests that care about
+    *what* came back say `rows(response)`; the ones that care about the
+    envelope itself are in test_pagination.py and read `response.data`
+    directly.
+    """
+    return response.data["results"]

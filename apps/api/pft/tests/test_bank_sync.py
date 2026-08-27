@@ -26,7 +26,7 @@ from pft.models import (
     SyncConnectionAccount,
     TransactionRule,
 )
-from pft.tests.helpers import personal_budget_file
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -645,7 +645,7 @@ class SyncConnectionApiTests(APITestCase):
 
         list_response = self.client.get("/api/v1/finance/sync-connections/")
         self.assertEqual(
-            [row["id"] for row in list_response.data], []
+            [row["id"] for row in rows(list_response)], []
         )
 
         detail_response = self.client.get(

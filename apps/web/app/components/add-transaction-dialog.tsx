@@ -1,5 +1,7 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -29,7 +31,7 @@ import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { PayeeCombobox } from '@/components/payee-combobox'
 import { SplitPostingsEditor } from '@/components/split-postings-editor'
-import { useV1FinanceCategoriesList, v1FinanceTransactionsCreate } from '@/client/gen/pft/v1/v1'
+import { v1FinanceTransactionsCreate } from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFile, getDefaultBudgetFileId } from '@/lib/finance-client'
 import {
   buildSplitPostings,
@@ -62,7 +64,7 @@ export function AddTransactionDialog({
   // Native finance categories through the generated SDK: the classification
   // field is `kind`, and ids are Category ids. No adapter, no /me round-trip
   // (the old create path fetched the user only to send an id the API ignored).
-  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const { data: categories, isLoading: isLoadingCategories } = useAllCategories()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 

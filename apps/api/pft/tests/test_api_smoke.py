@@ -159,7 +159,7 @@ class CoreFinanceSmokeTests(APITestCase):
             f"/api/v1/finance/categories/?budget_file={self.budget_file.id}"
         )
         self.assertEqual(categories_response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(categories_response.data), 11)
+        self.assertGreaterEqual(categories_response.data["count"], 11)
 
         transaction_response = self._create_transaction(
             "Flight Ticket", "640.00", "2026-03-01"

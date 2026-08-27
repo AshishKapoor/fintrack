@@ -17,7 +17,7 @@ from pft.fx_rates import (
     has_any_rates,
 )
 from pft.models import Account, FxRate
-from pft.tests.helpers import personal_budget_file
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -221,8 +221,8 @@ class FxRateApiTests(APITestCase):
 
         response = self.client.get("/api/v1/finance/fx-rates/?currency_code=usd")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["currency_code"], "USD")
+        self.assertEqual(len(rows(response)), 1)
+        self.assertEqual(rows(response)[0]["currency_code"], "USD")
 
     @patch("pft.finance_views.fetch_and_store_rates", return_value=5)
     def test_sync_action_returns_stored_count(self, _mock_fetch):

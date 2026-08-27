@@ -5,7 +5,6 @@ from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import generics, permissions, status
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
@@ -47,10 +46,6 @@ REFRESH_COOKIE_HEADER_PARAMETER = OpenApiParameter(
         "even without this header."
     ),
 )
-
-
-class CustomPagination(PageNumberPagination):
-    page_size = 100
 
 
 def blacklist_all_refresh_tokens(user):

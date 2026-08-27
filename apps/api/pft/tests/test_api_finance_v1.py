@@ -13,7 +13,7 @@ from pft.models import (
     LedgerPosting,
     LedgerTransaction,
 )
-from pft.tests.helpers import personal_budget_file
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -58,9 +58,10 @@ class FinanceApiV1Tests(APITestCase):
             f"/api/v1/finance/accounts/?budget_file={self.budget_file.id}"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.account.id)
-        self.assertEqual(response.data[0]["current_balance"], "0.00")
+        accounts = rows(response)
+        self.assertEqual(len(accounts), 1)
+        self.assertEqual(accounts[0]["id"], self.account.id)
+        self.assertEqual(accounts[0]["current_balance"], "0.00")
 
     def test_create_balanced_ledger_transaction(self):
         payload = {

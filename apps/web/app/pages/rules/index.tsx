@@ -1,10 +1,11 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import { useEffect, useMemo, useState } from 'react'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
 import {
   createScheduledTransaction,
   createTransactionRule,
@@ -157,7 +158,7 @@ export default function RulesAndRecurringPage() {
 
   const [loading, setLoading] = useState(false)
 
-  const { data: categoriesData } = useV1FinanceCategoriesList()
+  const { data: categoriesData } = useAllCategories()
   // Native ledger category rows: the classification field is `kind`.
   const categories = useMemo(() => categoriesData ?? [], [categoriesData])
 

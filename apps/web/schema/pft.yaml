@@ -176,6 +176,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -185,9 +198,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Account'
+                $ref: '#/components/schemas/PaginatedAccountList'
           description: ''
     post:
       operationId: v1_finance_accounts_create
@@ -442,6 +453,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -451,9 +475,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EncryptedBackupBundle'
+                $ref: '#/components/schemas/PaginatedEncryptedBackupBundleList'
           description: ''
     post:
       operationId: v1_finance_backups_create
@@ -624,6 +646,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -633,9 +668,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BudgetFile'
+                $ref: '#/components/schemas/PaginatedBudgetFileList'
           description: ''
     post:
       operationId: v1_finance_budget_files_create
@@ -845,6 +878,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -854,9 +900,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BudgetMonth'
+                $ref: '#/components/schemas/PaginatedBudgetMonthList'
           description: ''
     post:
       operationId: v1_finance_budget_months_create
@@ -1132,6 +1176,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1141,9 +1198,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Category'
+                $ref: '#/components/schemas/PaginatedCategoryList'
           description: ''
     post:
       operationId: v1_finance_categories_create
@@ -1293,6 +1348,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1302,9 +1370,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CategoryGroup'
+                $ref: '#/components/schemas/PaginatedCategoryGroupList'
           description: ''
     post:
       operationId: v1_finance_category_groups_create
@@ -1454,6 +1520,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1463,9 +1542,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EnvelopeAssignment'
+                $ref: '#/components/schemas/PaginatedEnvelopeAssignmentList'
           description: ''
     post:
       operationId: v1_finance_envelope_assignments_create
@@ -1615,6 +1692,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1624,9 +1714,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ExportJob'
+                $ref: '#/components/schemas/PaginatedExportJobList'
           description: ''
     post:
       operationId: v1_finance_exports_create
@@ -1799,6 +1887,19 @@ paths:
       description: |-
         Daily ECB reference rates (frankfurter.app) - shared reference data,
         not scoped to any one budget file. See pft/fx_rates.py.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1808,9 +1909,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/FxRate'
+                $ref: '#/components/schemas/PaginatedFxRateList'
           description: ''
   /api/v1/finance/fx-rates/{id}/:
     get:
@@ -1864,6 +1963,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -1873,9 +1985,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ImportJob'
+                $ref: '#/components/schemas/PaginatedImportJobList'
           description: ''
     post:
       operationId: v1_finance_imports_create
@@ -2091,6 +2201,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2100,9 +2223,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Payee'
+                $ref: '#/components/schemas/PaginatedPayeeList'
           description: ''
     post:
       operationId: v1_finance_payees_create
@@ -2284,6 +2405,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2293,9 +2427,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/LedgerPostingRead'
+                $ref: '#/components/schemas/PaginatedLedgerPostingReadList'
           description: ''
   /api/v1/finance/postings/{id}/:
     get:
@@ -2334,6 +2466,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2343,9 +2488,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SavedReport'
+                $ref: '#/components/schemas/PaginatedSavedReportList'
           description: ''
     post:
       operationId: v1_finance_reports_create
@@ -2555,6 +2698,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2564,9 +2720,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/TransactionRule'
+                $ref: '#/components/schemas/PaginatedTransactionRuleList'
           description: ''
     post:
       operationId: v1_finance_rules_create
@@ -2743,6 +2897,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2752,9 +2919,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SavingsGoal'
+                $ref: '#/components/schemas/PaginatedSavingsGoalList'
           description: ''
     post:
       operationId: v1_finance_savings_goals_create
@@ -2904,6 +3069,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -2913,9 +3091,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/ScheduledTransaction'
+                $ref: '#/components/schemas/PaginatedScheduledTransactionList'
           description: ''
     post:
       operationId: v1_finance_scheduled_transactions_create
@@ -3092,6 +3268,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -3101,9 +3290,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SyncConnectionAccount'
+                $ref: '#/components/schemas/PaginatedSyncConnectionAccountList'
           description: ''
     post:
       operationId: v1_finance_sync_connection_accounts_create
@@ -3222,6 +3409,19 @@ paths:
         that does not include any of these, so bank sync needs no separate demo
         guard - the same "guarded by construction" property notifications and
         imports already get for free.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -3231,9 +3431,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SyncConnection'
+                $ref: '#/components/schemas/PaginatedSyncConnectionList'
           description: ''
     post:
       operationId: v1_finance_sync_connections_create
@@ -3519,6 +3717,19 @@ paths:
         that does not include any of these, so bank sync needs no separate demo
         guard - the same "guarded by construction" property notifications and
         imports already get for free.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -3528,9 +3739,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BankSyncInstitution'
+                $ref: '#/components/schemas/PaginatedBankSyncInstitutionList'
           description: ''
   /api/v1/finance/sync-connections/providers/:
     get:
@@ -3545,6 +3754,19 @@ paths:
         that does not include any of these, so bank sync needs no separate demo
         guard - the same "guarded by construction" property notifications and
         imports already get for free.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -3554,9 +3776,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BankSyncProvider'
+                $ref: '#/components/schemas/PaginatedBankSyncProviderList'
           description: ''
   /api/v1/finance/tags/:
     get:
@@ -3568,6 +3788,19 @@ paths:
         file admits writes for this user (viewers are read-only). Every subclass
         remains responsible for scoping its own get_queryset() through
         tenancy.budget_file_q - see ARCHITECTURE.md.
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -3577,9 +3810,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Tag'
+                $ref: '#/components/schemas/PaginatedTagList'
           description: ''
     post:
       operationId: v1_finance_tags_create
@@ -4056,6 +4287,19 @@ paths:
   /api/v1/orgs/:
     get:
       operationId: v1_orgs_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - v1
       security:
@@ -4065,9 +4309,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Organization'
+                $ref: '#/components/schemas/PaginatedOrganizationList'
           description: ''
     post:
       operationId: v1_orgs_create
@@ -5241,6 +5483,29 @@ components:
       - my_role
       - name
       - personal
+    PaginatedAccountList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
     PaginatedAuditLogList:
       type: object
       required:
@@ -5264,6 +5529,282 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditLog'
+    PaginatedBankSyncInstitutionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankSyncInstitution'
+    PaginatedBankSyncProviderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BankSyncProvider'
+    PaginatedBudgetFileList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetFile'
+    PaginatedBudgetMonthList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BudgetMonth'
+    PaginatedCategoryGroupList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CategoryGroup'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedEncryptedBackupBundleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EncryptedBackupBundle'
+    PaginatedEnvelopeAssignmentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/EnvelopeAssignment'
+    PaginatedExportJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExportJob'
+    PaginatedFxRateList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/FxRate'
+    PaginatedImportJobList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ImportJob'
+    PaginatedLedgerPostingReadList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/LedgerPostingRead'
     PaginatedLedgerTransactionList:
       type: object
       required:
@@ -5287,6 +5828,213 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LedgerTransaction'
+    PaginatedOrganizationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Organization'
+    PaginatedPayeeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payee'
+    PaginatedSavedReportList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavedReport'
+    PaginatedSavingsGoalList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavingsGoal'
+    PaginatedScheduledTransactionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledTransaction'
+    PaginatedSyncConnectionAccountList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncConnectionAccount'
+    PaginatedSyncConnectionList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncConnection'
+    PaginatedTagList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+    PaginatedTransactionRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionRule'
     PatchedAICategorizationSettings:
       type: object
       properties:

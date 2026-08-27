@@ -1,5 +1,7 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import { useState } from 'react'
 import { ArrowDownIcon, ArrowUpIcon, Edit, FolderIcon, Plus, Trash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -25,7 +27,6 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import Typography from '@/components/ui/typography'
 import {
-  useV1FinanceCategoriesList,
   v1FinanceCategoriesCreate,
   v1FinanceCategoriesDestroy,
   v1FinanceCategoriesUpdate,
@@ -45,7 +46,7 @@ export default function CategoriesPage() {
     type: 'income' | 'expense'
   } | null>(null)
 
-  const { data: categories, isLoading, mutate: refreshCategories } = useV1FinanceCategoriesList()
+  const { data: categories, isLoading, mutate: refreshCategories } = useAllCategories()
 
   // Native ledger categories: the classification field is `kind`. Adapt to the
   // page's existing `type` vocabulary at the boundary.

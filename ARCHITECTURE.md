@@ -176,6 +176,23 @@ invalidation. The old read-legacy/write-finance adapter is gone.
    `summary` is left alone - that records what the system called the thing at
    the time).
 
+### Pagination
+
+Every list endpoint paginates, through a single `DEFAULT_PAGINATION_CLASS`
+(`pft/pagination.py`) rather than a `pagination_class` per viewset - set
+per-viewset, a new resource ships unpaginated by omission, which is how all
+but two of them were returning unbounded arrays. A list response is always
+`{count, next, previous, results}`, 50 rows at a time, `?page_size=` up to 500.
+
+The frontend consequence is in `apps/web/app/lib/paginated.ts`. Most lists here
+are pickers and dashboards that need the *whole* set, so `fetchAllPages` /
+`useAllPages` walk `next` to the end; a category dropdown showing 50 of 63 is
+worse than a slow one, because nothing tells the user the rest exist. The
+transaction register, where the user is genuinely paging, uses the
+page-at-a-time hook directly. The encrypted backup path
+(`apps/web/app/lib/backup.ts`) walks every list it reads - a backup that
+stopped at page one would restore cleanly and be missing most of the ledger.
+
 ## Request lifecycle
 
 ```
@@ -423,7 +440,8 @@ apps/api/pft/tests/
 ├── test_database_url_config.py DATABASE_URL parsing
 ├── test_legacy_api_retirement.py  migration 0017's carry-over into the ledger
 ├── test_budget_file_ownership.py  organization ownership, per-person defaults
-└── test_budget_file_contract_migration.py  migrations 0019-0021 against real rows
+├── test_budget_file_contract_migration.py  migrations 0019-0021 against real rows
+└── test_pagination.py        every list route paginates, and `count` respects tenancy
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright

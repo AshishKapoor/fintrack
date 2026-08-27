@@ -12,7 +12,6 @@ from django.http import HttpResponse
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.pagination import PageNumberPagination
 
 from .models import AuditLog, Membership
 
@@ -33,16 +32,9 @@ class AuditLogSerializer(serializers.ModelSerializer):
         ]
 
 
-class AuditLogPagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = "page_size"
-    max_page_size = 500
-
-
 class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = AuditLogSerializer
     permission_classes = [permissions.IsAuthenticated]
-    pagination_class = AuditLogPagination
 
     def get_queryset(self):
         # Managers only: the audit log names people and actions, which is

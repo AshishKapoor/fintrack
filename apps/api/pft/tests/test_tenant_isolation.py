@@ -28,7 +28,7 @@ from pft.models import (
     SyncConnection,
     SyncConnectionAccount,
 )
-from pft.tests.helpers import personal_budget_file
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -112,7 +112,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             with self.subTest(resource=resource):
                 response = self.client.get(f"/api/v1/finance/{resource}/")
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
-                returned = {row["id"] for row in response.data}
+                returned = {row["id"] for row in rows(response)}
                 self.assertIn(mine, returned)
                 self.assertNotIn(theirs, returned)
 
@@ -480,7 +480,7 @@ class BankSyncIsolationTests(TenantIsolationTestCase):
         )
         response = self.client.get("/api/v1/finance/sync-connections/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        returned_ids = {row["id"] for row in response.data}
+        returned_ids = {row["id"] for row in rows(response)}
         self.assertNotIn(self.alice_connection.id, returned_ids)
 
     def test_cannot_map_another_tenants_linked_account(self):

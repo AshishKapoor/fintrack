@@ -1,4 +1,5 @@
-import { useV1FinanceCategoriesList, useV1FinanceTransactionsList } from '@/client/gen/pft/v1/v1'
+import { useAllCategories } from '@/lib/finance-lists'
+import { useV1FinanceTransactionsList } from '@/client/gen/pft/v1/v1'
 import { useCashFlow } from '@/lib/ledger'
 import { BudgetProgress } from '@/components/budget-progress'
 import { Overview } from '@/components/overview'
@@ -80,7 +81,7 @@ export default function DashboardPage() {
   }
   const hasPreviousRange = Boolean(prevStartParam && prevEndParam)
 
-  const { isLoading: isLoadingCategories, data: categories } = useV1FinanceCategoriesList()
+  const { isLoading: isLoadingCategories, data: categories } = useAllCategories()
   // Range totals computed server-side over the whole ledger. The old client
   // summed a transaction list, which - once the endpoint became paginated -
   // silently summed only the first page.

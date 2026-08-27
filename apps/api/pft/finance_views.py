@@ -10,7 +10,6 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -427,15 +426,8 @@ class TagViewSet(UserScopedModelViewSet):
         return queryset
 
 
-class LedgerTransactionPagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = "page_size"
-    max_page_size = 500
-
-
 class LedgerTransactionViewSet(UserScopedModelViewSet):
     serializer_class = LedgerTransactionSerializer
-    pagination_class = LedgerTransactionPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["memo", "payee__name", "match_key"]
     # `amount` is annotated below: a ledger transaction has no amount column,

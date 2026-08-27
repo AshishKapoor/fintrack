@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile, Category, FxRate, LedgerTransaction, Payee
+from pft.models import Account, Category, FxRate, LedgerTransaction, Payee
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -26,7 +27,7 @@ class NetWorthSeriesTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.assertEqual(self.budget_file.currency_code, "USD")
         self.cash = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.cash.opening_balance = Decimal("0.00")
@@ -188,7 +189,7 @@ class CashFlowSankeyTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
 
     def _category(self, name):
@@ -318,7 +319,7 @@ class SubscriptionDetectionTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.expense_category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE

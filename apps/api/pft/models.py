@@ -82,8 +82,8 @@ class Organization(models.Model):
     Every user gets a personal organization on signup; budget files belong to
     an organization, and access flows through Membership. `personal` marks the
     auto-created org so the UI can label it and management endpoints can refuse
-    to delete it. This is the expand phase of the user->organization move:
-    BudgetFile.user stays in place until v1.0.0 (see ARCHITECTURE.md).
+    to delete it. The user->organization move is complete as of migration
+    0019: BudgetFile has no `user` column at all any more.
     """
 
     name = models.CharField(max_length=120)
@@ -124,6 +124,18 @@ class Membership(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
     role = models.CharField(max_length=12, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    # Which of the workspace's budget files this person opens by default. A
+    # per-person choice, so it belongs on the membership: when it lived on
+    # BudgetFile.is_default, one member picking a default silently changed
+    # everyone else's. SET_NULL rather than CASCADE - deleting a file must not
+    # evict the member from the workspace.
+    default_budget_file = models.ForeignKey(
+        "BudgetFile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -213,38 +225,39 @@ class AuditLog(models.Model):
 
 
 class BudgetFile(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="budget_files"
-    )
-    # Nullable during the expand phase; every row is backfilled to its owner's
-    # personal organization by migration 0007, and new rows always set it.
+    """A workspace's set of books. The tenant root for everything financial.
+
+    Owned by an `Organization`, never by a user: access is decided entirely by
+    Membership (see pft/tenancy.py). `created_by` is provenance only - it is
+    nullable and SET_NULL so deleting the person who first made the file does
+    not take a shared workspace's books with them.
+
+    Which file a person lands in is *their* choice, not the file's property,
+    so it lives on `Membership.default_budget_file` rather than a flag here.
+    """
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
         related_name="budget_files",
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="created_budget_files",
     )
     name = models.CharField(max_length=120)
     currency_code = models.CharField(max_length=3, default="USD")
-    is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [
-            # One default per user per workspace: the same user legitimately
-            # holds a default file in their personal org AND in each shared org.
-            models.UniqueConstraint(
-                fields=["user", "organization"],
-                condition=Q(is_default=True),
-                name="unique_default_budget_file_per_user_org",
-            )
-        ]
         ordering = ["id"]
 
     def __str__(self):
-        return f"{self.name} ({self.user.email})"
+        return f"{self.name} ({self.organization.name})"
 
 
 class Account(models.Model):

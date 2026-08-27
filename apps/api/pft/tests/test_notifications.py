@@ -19,7 +19,6 @@ from rest_framework.test import APITestCase
 
 from pft.models import (
     Account,
-    BudgetFile,
     BudgetMonth,
     Category,
     EnvelopeAssignment,
@@ -45,6 +44,7 @@ from pft.tasks import (
     send_scheduled_transaction_reminders_task,
     send_weekly_digest_task,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -237,7 +237,7 @@ class NotificationPreferenceModelTests(TestCase):
 class BudgetThresholdTriggerTests(TestCase):
     def setUp(self):
         self.user = _make_user("threshold@example.com", email_enabled=True, budget_alert_threshold=80)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE
@@ -324,7 +324,7 @@ class ScheduledReminderTriggerTests(TestCase):
         self.user = _make_user(
             "reminder@example.com", email_enabled=True, reminder_days_before=2
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE
@@ -398,7 +398,7 @@ class ScheduledReminderTriggerTests(TestCase):
 class WeeklyDigestTriggerTests(TestCase):
     def setUp(self):
         self.user = _make_user("digest@example.com", email_enabled=True, weekly_digest_enabled=True)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE

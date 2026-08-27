@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import BudgetFile, Invitation, Membership, Organization
+from pft.models import Invitation, Membership, Organization
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -25,7 +26,7 @@ class PersonalOrganizationTests(APITestCase):
 
     def test_budget_file_joins_the_personal_org(self):
         user = make_user("solo2@example.com")
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         self.assertIsNotNone(budget_file.organization)
         self.assertTrue(budget_file.organization.personal)
 

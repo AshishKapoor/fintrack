@@ -57,11 +57,13 @@ Everything below describes the one surface that remains.
 ### `/api/v1/finance/*` — the double-entry ledger
 
 The tenant root is
-`BudgetFile` (a user can have several; exactly one is the default):
+`BudgetFile`, which belongs to an `Organization` - never to a user. A person
+reaches one through their `Membership`, and their membership also records
+which file they open by default:
 
 ```
-User
- └── BudgetFile                    (currency, is_default)
+Organization
+ └── BudgetFile                    (organization-owned; currency)
       ├── Account                  (checking / savings / cash / credit / asset / liability, own currency_code)
       ├── CategoryGroup
       │    └── Category            (income / expense)
@@ -205,12 +207,28 @@ personal case) or by an `Organization`. Membership carries a role:
 `Membership`. Manager-visible activity is recorded via `pft/audit.py` and
 served read-only (with CSV export) at `/api/v1/audit-log/`.
 
+`Membership.default_budget_file` records which of the workspace's files that
+person lands in. It is a property of the person, not of the file: it used to
+be `BudgetFile.is_default`, where one member calling `set-default` cleared the
+flag on every file they could see, so in a shared workspace their choice moved
+everyone else's - and their own, in their other workspaces. The API still
+exposes it as `is_default` on a budget file; the value is computed per caller
+(`BudgetFileSerializer.to_representation`), so two members legitimately see
+different values for the same row.
+
+`BudgetFile.created_by` is provenance only, nullable and `SET_NULL`. Access
+never consults it. The column it replaced was `user`, `ON DELETE CASCADE`,
+which meant the person who first created a shared workspace's budget file
+destroyed that workspace's books by closing their own account. What does clean
+up now is `pft/signals.py`: deleting a user deletes the organizations they
+were the last member of, which cascades into the files those held.
+
 ### Tenant scoping: one Q object, used everywhere
 
 All finance querysets are scoped through `pft/tenancy.py`:
 
 ```python
-# read access: personal files + files in any org you belong to
+# read access: files in any org you belong to
 Account.objects.filter(budget_file_q(request.user))
 
 # write access: viewer role is excluded
@@ -359,7 +377,12 @@ out (`database_config_from_env()`, `app/settings/base.py`). See
 abandoned SaaS direction and `0003` deletes all nine — 240 lines that net to
 zero, kept only because rewriting history is not worth it. `0005` creates the
 entire finance domain and backfills existing v1 rows into it, marking them with
-`match_key="v1-<id>"`. `0017` retires the flat models, carrying anything
+`match_key="v1-<id>"`. `0007` is the expand half of the user->organization
+move (nullable `BudgetFile.organization`, backfilled); `0019`-`0021` are the
+contract half - and they are three migrations rather than one because Postgres
+refuses DDL on a table with pending deferred trigger events, so a backfill and
+an `ALTER`/`CREATE INDEX` on the same table cannot share a transaction. `0017`
+retires the flat models, carrying anything
 written through them *after* `0005` ran into the ledger as `legacy:<id>` -
 both stamps are checked, so a pre-`0005` row is not carried twice. `0018`
 renames `CategoryV2`/`CategoryGroupV2`, which is why it has to come after
@@ -398,7 +421,9 @@ apps/api/pft/tests/
 ├── test_demo_mode.py         read-only demo enforcement and the reset task
 ├── test_prune_finance_jobs.py  import/export payload pruning
 ├── test_database_url_config.py DATABASE_URL parsing
-└── test_legacy_api_retirement.py  migration 0017's carry-over into the ledger
+├── test_legacy_api_retirement.py  migration 0017's carry-over into the ledger
+├── test_budget_file_ownership.py  organization ownership, per-person defaults
+└── test_budget_file_contract_migration.py  migrations 0019-0021 against real rows
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright

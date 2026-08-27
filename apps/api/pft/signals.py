@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from .models import (
@@ -42,16 +42,16 @@ def create_personal_workspace(sender, instance, created, **kwargs):
         organization = Organization.objects.create(
             name=f"{instance.email}'s space", personal=True
         )
-        Membership.objects.create(
+        membership = Membership.objects.create(
             organization=organization, user=instance, role=Membership.ROLE_OWNER
         )
 
-        BudgetFile.objects.create(
-            user=instance,
+        membership.default_budget_file = BudgetFile.objects.create(
             organization=organization,
+            created_by=instance,
             name="Primary Budget",
-            is_default=True,
         )
+        membership.save(update_fields=["default_budget_file"])
 
 
 @receiver(post_save, sender=BudgetFile)
@@ -97,3 +97,36 @@ def seed_budget_file_defaults(sender, instance, created, **kwargs):
             for name in DEFAULT_EXPENSE_CATEGORIES
         ]
     )
+
+
+@receiver(pre_delete, sender=User)
+def delete_organizations_left_with_no_members(sender, instance, **kwargs):
+    """Take a user's workspaces with them when nobody else is left in one.
+
+    Budget files hang off `Organization`, not off a user, so deleting a user
+    no longer cascades into their books - `created_by` is SET_NULL by design,
+    otherwise the person who first created a shared workspace's file could
+    delete everyone's data by closing their own account.
+
+    That leaves the opposite hole: their personal workspace, and any shared one
+    where they were the last member, would survive with no member able to reach
+    it. This closes it. Runs pre_delete so the membership rows are still there
+    to count.
+    """
+    organization_ids = list(
+        Membership.objects.filter(user=instance).values_list(
+            "organization_id", flat=True
+        )
+    )
+    if not organization_ids:
+        return
+
+    abandoned = [
+        organization_id
+        for organization_id in organization_ids
+        if not Membership.objects.filter(organization_id=organization_id)
+        .exclude(user=instance)
+        .exists()
+    ]
+    if abandoned:
+        Organization.objects.filter(id__in=abandoned).delete()

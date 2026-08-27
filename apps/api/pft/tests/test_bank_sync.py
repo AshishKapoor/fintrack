@@ -21,12 +21,12 @@ from pft.bank_sync import (
 from pft.crypto import decrypt_json, encrypt_json
 from pft.models import (
     Account,
-    BudgetFile,
     LedgerTransaction,
     SyncConnection,
     SyncConnectionAccount,
     TransactionRule,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -65,7 +65,7 @@ class IngestTransactionsTests(TestCase):
         self.user = User.objects.create_user(
             email="sync@example.com", username="sync@example.com", password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.connection = SyncConnection.objects.create(
             budget_file=self.budget_file,
@@ -154,7 +154,7 @@ class SyncConnectionOrchestrationTests(TestCase):
         self.user = User.objects.create_user(
             email="orch@example.com", username="orch@example.com", password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.connection = SyncConnection.objects.create(
             budget_file=self.budget_file,
@@ -225,7 +225,7 @@ class GoCardlessProviderTests(TestCase):
         self.user = User.objects.create_user(
             email="gc@example.com", username="gc@example.com", password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.connection = SyncConnection.objects.create(
             budget_file=self.budget_file, provider=SyncConnection.PROVIDER_GOCARDLESS
         )
@@ -351,7 +351,7 @@ class SimpleFinProviderTests(TestCase):
         self.user = User.objects.create_user(
             email="sf@example.com", username="sf@example.com", password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.connection = SyncConnection.objects.create(
             budget_file=self.budget_file, provider=SyncConnection.PROVIDER_SIMPLEFIN
         )
@@ -449,7 +449,7 @@ class SyncConnectionApiTests(APITestCase):
             email="api-sync@example.com", username="api-sync@example.com", password="StrongPass123!"
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
 
         self.other_user = User.objects.create_user(

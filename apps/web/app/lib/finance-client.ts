@@ -11,8 +11,16 @@ export interface BudgetFile {
   id: number
   name: string
   currency_code: string
+  /**
+   * Whether THIS viewer opens this file by default. Read from the caller's own
+   * Membership, not a column on the file - in a shared workspace two people
+   * see different values for the same row, which is the point (it used to be
+   * one flag on the file, so one member choosing a default moved everyone
+   * else's). Sending it on create or update records the caller's choice.
+   */
   is_default: boolean
-  organization?: number | null
+  /** Always set: the workspace that owns the file. */
+  organization: number
 }
 
 export interface FinanceAccount {

@@ -13,6 +13,7 @@ from pft.models import (
     LedgerPosting,
     LedgerTransaction,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -26,7 +27,7 @@ class FinanceApiV1Tests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.expense_category = Category.objects.filter(
             budget_file=self.budget_file,
@@ -38,7 +39,12 @@ class FinanceApiV1Tests(APITestCase):
         ).first()
 
     def test_user_bootstrap_creates_default_finance_objects(self):
-        self.assertEqual(BudgetFile.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(
+            BudgetFile.objects.filter(
+                organization=self.budget_file.organization
+            ).count(),
+            1,
+        )
         self.assertEqual(
             Account.objects.filter(budget_file=self.budget_file).count(), 1
         )

@@ -9,7 +9,6 @@ from django.utils import timezone
 
 from pft.models import (
     Account,
-    BudgetFile,
     BudgetMonth,
     Category,
     EnvelopeAssignment,
@@ -17,6 +16,7 @@ from pft.models import (
     LedgerTransaction,
     Payee,
 )
+from pft.tenancy import default_budget_file, personal_organization
 
 # Deterministic so repeated runs and screenshots look the same.
 SEED = 20260812
@@ -127,7 +127,7 @@ class Command(BaseCommand):
     def _prepare_accounts(self, user):
         # The post_save signal already created a default budget file, a Cash
         # account and the standard category set.
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = default_budget_file(user, personal_organization(user))
         checking = Account.objects.filter(budget_file=budget_file).first()
         checking.opening_balance = Decimal("1800.00")
         checking.save(update_fields=["opening_balance", "updated_at"])

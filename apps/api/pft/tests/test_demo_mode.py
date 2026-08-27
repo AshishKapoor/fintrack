@@ -10,7 +10,8 @@ from django.test import override_settings
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile
+from pft.models import Account
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 PASSWORD = "StrongPass123!"
@@ -24,7 +25,7 @@ class DemoModeTests(APITestCase):
             username="demo-visitor@example.com",
             password=PASSWORD,
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.client.force_authenticate(user=self.user)
 

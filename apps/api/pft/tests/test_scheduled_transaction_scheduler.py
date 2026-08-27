@@ -16,12 +16,12 @@ from django.test import TestCase
 from pft.finance_services import materialize_due_scheduled_transactions
 from pft.models import (
     Account,
-    BudgetFile,
     Category,
     LedgerTransaction,
     ScheduledTransaction,
 )
 from pft.tasks import materialize_due_scheduled_transactions_task
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -66,7 +66,7 @@ def _unbalanced_schedule(budget_file, *, name, next_run_date, account):
 class MaterializeDueScheduledTransactionsTests(TestCase):
     def setUp(self):
         self.user = _make_user("scheduler-user@example.com")
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE
@@ -192,7 +192,7 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
 
     def _tenant(self, email):
         user = _make_user(email)
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         account = Account.objects.get(budget_file=budget_file, name="Cash")
         category = Category.objects.filter(
             budget_file=budget_file, kind=Category.KIND_EXPENSE

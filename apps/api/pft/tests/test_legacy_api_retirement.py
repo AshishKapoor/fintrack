@@ -18,6 +18,8 @@ from django.test import TestCase, TransactionTestCase
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from pft.tests.helpers import personal_budget_file
+
 User = get_user_model()
 
 PASSWORD = "StrongPass123!"
@@ -61,8 +63,7 @@ class SignupNoLongerSeedsLegacyRowsTests(TestCase):
             email="fresh@example.com", username="fresh@example.com", password=PASSWORD
         )
 
-        budget_file = user.budget_files.get(is_default=True)
-        self.assertIsNotNone(budget_file.organization)
+        budget_file = personal_budget_file(user)
         self.assertEqual(budget_file.accounts.count(), 1)
         self.assertEqual(budget_file.category_groups.count(), 2)
         self.assertEqual(budget_file.categories.count(), 10)

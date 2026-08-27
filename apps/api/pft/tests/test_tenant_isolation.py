@@ -18,7 +18,6 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     AICategorizationSettings,
-    BudgetFile,
     Category,
     LedgerPosting,
     LedgerTransaction,
@@ -29,6 +28,7 @@ from pft.models import (
     SyncConnection,
     SyncConnectionAccount,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -40,7 +40,7 @@ class TenantFixture:
         self.user = User.objects.create_user(
             email=email, username=email, password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE

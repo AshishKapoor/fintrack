@@ -26,7 +26,8 @@ from hypothesis.extra.django import TestCase as HypothesisTestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from pft.models import Account, BudgetFile, Category, LedgerPosting, LedgerTransaction
+from pft.models import Account, Category, LedgerPosting, LedgerTransaction
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -46,7 +47,7 @@ class DatabaseInvariantTests(TransactionTestCase):
 
     def setUp(self):
         self.user = make_user("invariant@example.com")
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE
@@ -125,7 +126,7 @@ class LedgerPropertyTests(HypothesisTestCase):
     @classmethod
     def setUpTestData(cls):
         cls.user = make_user("property@example.com")
-        cls.budget_file = BudgetFile.objects.get(user=cls.user, is_default=True)
+        cls.budget_file = personal_budget_file(cls.user)
         cls.account = Account.objects.get(budget_file=cls.budget_file, name="Cash")
         cls.category = Category.objects.filter(
             budget_file=cls.budget_file, kind=Category.KIND_EXPENSE

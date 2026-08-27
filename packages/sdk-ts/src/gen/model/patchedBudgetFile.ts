@@ -13,8 +13,7 @@ export interface PatchedBudgetFile {
   /** @maxLength 3 */
   currency_code?: string;
   is_default?: boolean;
-  /** @nullable */
-  organization?: number | null;
+  organization?: number;
   readonly created_at?: string;
   readonly updated_at?: string;
 }

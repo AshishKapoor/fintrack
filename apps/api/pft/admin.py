@@ -87,9 +87,9 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(BudgetFile)
 class BudgetFileAdmin(admin.ModelAdmin):
-    list_display = ("name", "user", "currency_code", "is_default", "created_at")
-    list_filter = ("is_default", "currency_code")
-    search_fields = ("name", "user__email")
+    list_display = ("name", "organization", "currency_code", "created_by", "created_at")
+    list_filter = ("currency_code",)
+    search_fields = ("name", "organization__name", "created_by__email")
 
 
 @admin.register(Account)
@@ -103,7 +103,7 @@ class AccountAdmin(admin.ModelAdmin):
         "is_archived",
     )
     list_filter = ("type", "currency_code", "is_archived")
-    search_fields = ("name", "budget_file__name", "budget_file__user__email")
+    search_fields = ("name", "budget_file__name", "budget_file__organization__name")
 
 
 @admin.register(SavingsGoal)
@@ -117,7 +117,7 @@ class SavingsGoalAdmin(admin.ModelAdmin):
         "is_archived",
     )
     list_filter = ("is_archived",)
-    search_fields = ("name", "budget_file__name", "budget_file__user__email")
+    search_fields = ("name", "budget_file__name", "budget_file__organization__name")
 
 
 @admin.register(AICategorizationSettings)
@@ -125,7 +125,7 @@ class AICategorizationSettingsAdmin(admin.ModelAdmin):
     # encrypted_api_key deliberately excluded - same reasoning as SyncConnection.
     list_display = ("budget_file", "is_enabled", "provider", "base_url", "updated_at")
     list_filter = ("is_enabled", "provider")
-    search_fields = ("budget_file__name", "budget_file__user__email")
+    search_fields = ("budget_file__name", "budget_file__organization__name")
 
 
 @admin.register(CategoryGroup)
@@ -283,7 +283,7 @@ class SyncConnectionAdmin(admin.ModelAdmin):
     search_fields = (
         "institution_name",
         "budget_file__name",
-        "budget_file__user__email",
+        "budget_file__organization__name",
     )
     readonly_fields = ("last_error",)
     # The live credential (a GoCardless requisition token, a SimpleFIN access

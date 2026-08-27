@@ -13,7 +13,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile, Category, LedgerPosting, LedgerTransaction
+from pft.models import Account, Category, LedgerPosting, LedgerTransaction
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -43,7 +44,7 @@ class AuthSmokeTests(APITestCase):
 
         # Signup bootstraps a personal workspace with one seeded budget file:
         # a Cash account, two groups, and the standard ten categories.
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         self.assertIsNotNone(budget_file.organization)
         self.assertEqual(Account.objects.filter(budget_file=budget_file).count(), 1)
 
@@ -104,7 +105,7 @@ class CoreFinanceSmokeTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.expense_category = Category.objects.filter(
             budget_file=self.budget_file, kind=Category.KIND_EXPENSE

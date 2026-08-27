@@ -13,6 +13,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.models import BudgetFile, LedgerTransaction
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -35,7 +36,7 @@ class DeleteAccountTests(APITestCase):
             password=PASSWORD,
         )
 
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.ledger_transaction = LedgerTransaction.objects.create(
             budget_file=self.budget_file,
             transaction_date=date(2026, 3, 10),
@@ -83,7 +84,7 @@ class DeleteAccountTests(APITestCase):
         )
 
     def test_leaves_other_accounts_untouched(self):
-        other_budget_file = BudgetFile.objects.get(user=self.other, is_default=True)
+        other_budget_file = personal_budget_file(self.other)
 
         self.client.post(
             URL, {"password": PASSWORD, "confirmation": "DELETE"}, format="json"

@@ -166,8 +166,15 @@ languages and extending coverage of existing ones are welcome.
 
 ## Good first issues
 
-Look for the `good first issue` label. If none are open and you want somewhere to
-start, these are all real and self-contained:
+Start with the
+[`good first issue`](https://github.com/AshishKapoor/fintrack/labels/good%20first%20issue)
+label. Every issue carrying it names a file path and an acceptance criterion,
+so you should never have to guess what "done" means; if one does not, that is a
+bug in the issue and saying so is a useful contribution too. The
+[`help wanted`](https://github.com/AshishKapoor/fintrack/labels/help%20wanted)
+label is the next step up: bigger, but with guidance available on the thread.
+
+If nothing there appeals, these are real and self-contained:
 
 - Audit `apps/web/app/components/ui/` for shadcn components nothing imports and
   remove them.
@@ -176,3 +183,17 @@ start, these are all real and self-contained:
 - Pick any page or dialog not yet listed in [docs/i18n.md](docs/i18n.md)'s
   "what it does" section and wire its strings through `t()` /
   `gettext_lazy`.
+- Extend `apps/web/e2e/accessibility.spec.ts` to a surface it does not cover
+  yet - the import wizard, the bank-sync dialog, the backup flow - and fix
+  whatever axe reports.
+
+Claim one by commenting on it. If it turns out to be bigger than it looked, say
+so on the thread rather than disappearing: mis-sized issues are the maintainer's
+mistake to fix, not yours to absorb.
+
+## Releases
+
+Monthly, in the first week. [RELEASING.md](RELEASING.md) has the checklist and
+the versioning rules; [CHANGELOG.md](CHANGELOG.md) is where the notes live, and
+a PR that changes behaviour a self-hoster would notice should add a line to its
+"Unreleased" section.

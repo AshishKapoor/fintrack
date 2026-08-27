@@ -320,6 +320,9 @@ Contributions, issues, and feature requests are welcome! Please read the
 | [docs/demo.md](docs/demo.md) | Running a public, read-only demo instance |
 | [SECURITY.md](SECURITY.md) | Hardening checklist, private reporting, known limitations |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
+| [SUPPORT.md](SUPPORT.md) | Where to ask what — Discussions, issues, security reports |
+| [CHANGELOG.md](CHANGELOG.md) | What changed per release, and what an upgrade needs |
+| [RELEASING.md](RELEASING.md) | The monthly release cadence and its checklist |
 | [docs/adr/](docs/adr/) | Architecture decision records, including [licensing](docs/adr/0001-licensing.md) |
 
 ---

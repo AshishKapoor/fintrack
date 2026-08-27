@@ -16,11 +16,10 @@ ROOT = Path(__file__).resolve().parents[1]
 MATRIX_PATH = ROOT / "docs/feature-audit/feature-matrix.json"
 REPORT_PATH = ROOT / "docs/feature-audit/parity-report.md"
 SCHEMA_PATH = ROOT / "apps/web/schema/pft.yaml"
-ROUTERS_PATH = ROOT / "apps/api/pft/routers.py"
 FINANCE_ROUTERS_PATH = ROOT / "apps/api/pft/finance_routers.py"
-VIEWS_PATH = ROOT / "apps/api/pft/views.py"
 FINANCE_VIEWS_PATH = ROOT / "apps/api/pft/finance_views.py"
 PFT_URLS_PATH = ROOT / "apps/api/pft/urls.py"
+FINANCE_URLS_PATH = ROOT / "apps/api/pft/finance_urls.py"
 APP_URLS_PATH = ROOT / "apps/api/app/urls.py"
 ORG_VIEWS_PATH = ROOT / "apps/api/pft/org_views.py"
 AUDIT_VIEWS_PATH = ROOT / "apps/api/pft/audit_views.py"
@@ -232,16 +231,10 @@ def extract_backend_endpoints() -> set[str]:
         if path_value.startswith("api/"):
             endpoints.add("/" + path_value)
 
-    _register_router(
-        endpoints,
-        ROUTERS_PATH.read_text(encoding="utf-8"),
-        "/api/v1",
-        VIEWS_PATH.read_text(encoding="utf-8"),
-    )
-
-    # The finance domain mounts 16 more resources under /api/v1/finance/, each
-    # with its own @action routes. Omitting this file was why the parity report
-    # reported PASS while the entire API the UI calls was undocumented.
+    # The finance domain mounts every money-shaped resource under
+    # /api/v1/finance/, each with its own @action routes. Omitting this file
+    # was why the parity report reported PASS while the entire API the UI
+    # calls was undocumented.
     _register_router(
         endpoints,
         FINANCE_ROUTERS_PATH.read_text(encoding="utf-8"),
@@ -251,17 +244,16 @@ def extract_backend_endpoints() -> set[str]:
 
     pft_urls = PFT_URLS_PATH.read_text(encoding="utf-8")
 
-    # pft/urls.py registers a *second* DefaultRouter (org_router, for
-    # OrganizationViewSet/AuditLogViewSet) rather than adding it to
-    # pft/routers.py's router - REGISTER_RE matches "router.register(" as a
-    # substring, so it already finds "org_router.register(" fine, but nothing
-    # ever called _register_router with this file before now, so
-    # /api/v1/orgs/* and /api/v1/audit-log/* always reported as schema-only.
+    # pft/urls.py holds the router for the non-finance resources
+    # (OrganizationViewSet/AuditLogViewSet). Nothing called _register_router
+    # with this file before it was added, so /api/v1/orgs/* and
+    # /api/v1/audit-log/* always reported as schema-only.
     _register_router(
         endpoints,
         pft_urls,
         "/api/v1",
-        ORG_VIEWS_PATH.read_text(encoding="utf-8") + AUDIT_VIEWS_PATH.read_text(encoding="utf-8"),
+        ORG_VIEWS_PATH.read_text(encoding="utf-8")
+        + AUDIT_VIEWS_PATH.read_text(encoding="utf-8"),
     )
 
     # \s* (not a literal '"') between path( and the string: change-password's
@@ -270,6 +262,17 @@ def extract_backend_endpoints() -> set[str]:
         path_value = match.group(1)
         if path_value and path_value != "":
             endpoints.add(f"/api/v1/{path_value}")
+
+    # finance_urls.py mounts the router above *and* a few plain path() views
+    # (the AI categorization settings/key/test endpoints). Only the router half
+    # was ever scanned, so those three reported as schema-only from the day
+    # they shipped.
+    for match in re.finditer(
+        r'path\(\s*"([^"]+)"', FINANCE_URLS_PATH.read_text(encoding="utf-8")
+    ):
+        path_value = match.group(1)
+        if path_value:
+            endpoints.add(f"/api/v1/finance/{path_value}")
 
     filtered = {
         endpoint

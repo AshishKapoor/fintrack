@@ -22,16 +22,19 @@ docs/             Self-hosting guide, ADRs, blog, feature audit artifacts
 scripts/          Repo tooling
 ```
 
-The backend has two API surfaces that both exist today:
+The backend has two route prefixes:
 
-- `/api/v1/*` - auth, profile, workspaces, audit log, plus the deprecated flat
-  `Transaction`/`Category`/`Budget` model (removal planned for `v1.0.0`).
+- `/api/v1/*` - auth, profile, workspaces, audit log.
 - `/api/v1/finance/*` - a double-entry ledger with envelope budgeting, rules,
-  scheduled transactions, reports, imports, exports and backups.
+  scheduled transactions, reports, imports, exports and backups. Every model
+  that represents money lives here.
 
 The web app talks to the finance API directly through the generated client in
-`apps/web/app/client/gen/`. New features belong on the finance surface; the
-legacy endpoints are maintained, not extended.
+`apps/web/app/client/gen/`. New data features belong on the finance surface.
+
+(A flat `Transaction`/`Category`/`Budget` model used to sit alongside the
+ledger under `/api/v1/*`. Migration `0017` retired it and carried its rows into
+the ledger - see ARCHITECTURE.md.)
 
 ## Getting set up
 

@@ -14,11 +14,11 @@
 * `asset` - Asset
 * `liability` - Liability
  */
-export type AccountTypeEnum = typeof AccountTypeEnum[keyof typeof AccountTypeEnum];
+export type TypeEnum = typeof TypeEnum[keyof typeof TypeEnum];
 
 
 // eslint-disable-next-line @typescript-eslint/no-redeclare
-export const AccountTypeEnum = {
+export const TypeEnum = {
   checking: 'checking',
   savings: 'savings',
   cash: 'cash',

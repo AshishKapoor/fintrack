@@ -1,14 +1,11 @@
-from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
 from .models import (
     Account,
     AICategorizationSettings,
-    Budget,
     BudgetFile,
     BudgetMonth,
-    Category,
     CategoryGroupV2,
     CategoryV2,
     EncryptedBackupBundle,
@@ -28,33 +25,10 @@ from .models import (
     SyncConnection,
     SyncConnectionAccount,
     Tag,
-    Transaction,
     TransactionEvent,
     TransactionRule,
     User,
 )
-
-
-class TransactionAdminForm(forms.ModelForm):
-    amount = forms.DecimalField(max_digits=12, decimal_places=2)
-
-    class Meta:
-        model = Transaction
-        fields = "__all__"
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            self.fields["amount"].initial = self.instance.amount
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        amount = self.cleaned_data.get("amount")
-        if amount is not None:
-            instance.amount = str(amount)
-        if commit:
-            instance.save()
-        return instance
 
 
 @admin.register(User)
@@ -106,20 +80,8 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
-@admin.register(Transaction)
-class TransactionAdmin(admin.ModelAdmin):
-    form = TransactionAdminForm
-    list_display = ("title", "amount", "type", "user", "category", "transaction_date")
-    search_fields = ("title", "user__email")
-    list_filter = ("type", "category", "user")
-
-
-admin.site.register(Category)
-admin.site.register(Budget)
-
-
 # --- Finance (double-entry ledger) domain ------------------------------------
-# These 16 models had no admin at all, so a self-hoster could not inspect or
+# These models had no admin at all, so a self-hoster could not inspect or
 # repair their own ledger without a Django shell.
 
 
@@ -146,7 +108,14 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(SavingsGoal)
 class SavingsGoalAdmin(admin.ModelAdmin):
-    list_display = ("name", "budget_file", "account", "target_amount", "target_date", "is_archived")
+    list_display = (
+        "name",
+        "budget_file",
+        "account",
+        "target_amount",
+        "target_date",
+        "is_archived",
+    )
     list_filter = ("is_archived",)
     search_fields = ("name", "budget_file__name", "budget_file__user__email")
 
@@ -311,7 +280,11 @@ class SyncConnectionAdmin(admin.ModelAdmin):
         "last_synced_at",
     )
     list_filter = ("provider", "status")
-    search_fields = ("institution_name", "budget_file__name", "budget_file__user__email")
+    search_fields = (
+        "institution_name",
+        "budget_file__name",
+        "budget_file__user__email",
+    )
     readonly_fields = ("last_error",)
     # The live credential (a GoCardless requisition token, a SimpleFIN access
     # URL) - encrypted at rest (pft/crypto.py), but there is no reason for it

@@ -12,7 +12,7 @@ from django.core.cache import cache
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import BudgetFile, LedgerTransaction, Transaction
+from pft.models import BudgetFile, LedgerTransaction
 
 User = get_user_model()
 
@@ -35,13 +35,6 @@ class DeleteAccountTests(APITestCase):
             password=PASSWORD,
         )
 
-        self.transaction = Transaction.objects.create(
-            user=self.user,
-            title="Coffee",
-            amount="4.50",
-            type="expense",
-            transaction_date=date(2026, 3, 10),
-        )
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.ledger_transaction = LedgerTransaction.objects.create(
             budget_file=self.budget_file,
@@ -84,7 +77,6 @@ class DeleteAccountTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
         self.assertFalse(User.objects.filter(pk=self.user.pk).exists())
-        self.assertFalse(Transaction.objects.filter(pk=self.transaction.pk).exists())
         self.assertFalse(BudgetFile.objects.filter(pk=self.budget_file.pk).exists())
         self.assertFalse(
             LedgerTransaction.objects.filter(pk=self.ledger_transaction.pk).exists()

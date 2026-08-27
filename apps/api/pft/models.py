@@ -76,62 +76,6 @@ class User(AbstractUser):
         return self.email
 
 
-# CATEGORY MODEL
-class Category(models.Model):
-    TYPE_CHOICES = (
-        ("income", "Income"),
-        ("expense", "Expense"),
-    )
-
-    name = models.CharField(max_length=100)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.type})"
-
-
-# TRANSACTION MODEL
-class Transaction(models.Model):
-    TYPE_CHOICES = (
-        ("income", "Income"),
-        ("expense", "Expense"),
-    )
-
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="transactions"
-    )
-    title = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL, null=True, related_name="transactions"
-    )
-    transaction_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.amount} ({self.type})"
-
-
-# BUDGET MODEL (Optional Feature)
-class Budget(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="budgets")
-    category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name="budgets"
-    )
-    month = models.PositiveSmallIntegerField()  # 1 to 12
-    year = models.PositiveIntegerField()
-    amount_limit = models.DecimalField(max_digits=12, decimal_places=2)
-
-    class Meta:
-        unique_together = ("user", "category", "month", "year")  # prevent duplicates
-
-    def __str__(self):
-        return f"{self.user.username} - {self.category.name} - {self.month}/{self.year}"
-
-
 class Organization(models.Model):
     """The tenancy boundary.
 
@@ -340,7 +284,10 @@ class Account(models.Model):
     # account missing either: a 0% default would silently understate real
     # interest, and a $0 minimum would silently imply "no obligation".
     interest_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True,
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Annual percentage rate, e.g. 19.99 for 19.99% APR.",
     )
     minimum_payment = models.DecimalField(
@@ -1185,7 +1132,8 @@ class SavingsGoal(models.Model):
         ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["budget_file", "name"], name="unique_savings_goal_name_per_budget_file"
+                fields=["budget_file", "name"],
+                name="unique_savings_goal_name_per_budget_file",
             )
         ]
 

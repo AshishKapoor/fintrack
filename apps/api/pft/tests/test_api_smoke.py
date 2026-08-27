@@ -1,13 +1,30 @@
-from datetime import date
+"""The fast smoke suite - `make test-api`.
+
+Deliberately shallow and broad: auth, signup bootstrap, and one pass through
+the ledger's create/read/update/delete path. Depth lives in the per-feature
+modules next door. This exercises /api/v1/finance/* only; the flat
+/api/v1/{transactions,categories,budgets} resources it used to cover were
+retired in migration 0017 (see test_legacy_api_retirement.py).
+"""
+
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Category, Transaction
+from pft.models import Account, BudgetFile, CategoryV2, LedgerPosting, LedgerTransaction
 
 User = get_user_model()
+
+DEFAULT_INCOME_CATEGORIES = {"Salary", "Freelance", "Business", "Investments", "Bonus"}
+DEFAULT_EXPENSE_CATEGORIES = {
+    "Housing",
+    "Groceries",
+    "Transportation",
+    "Utilities",
+    "Entertainment",
+}
 
 
 class AuthSmokeTests(APITestCase):
@@ -23,26 +40,30 @@ class AuthSmokeTests(APITestCase):
         self.assertTrue(User.objects.filter(email="new-user@example.com").exists())
 
         user = User.objects.get(email="new-user@example.com")
-        user_categories = Category.objects.filter(user=user)
-        self.assertEqual(user_categories.count(), 10)
-        self.assertEqual(user_categories.filter(type="income").count(), 5)
-        self.assertEqual(user_categories.filter(type="expense").count(), 5)
 
-        expected_income = {"Salary", "Freelance", "Business", "Investments", "Bonus"}
-        expected_expense = {
-            "Housing",
-            "Groceries",
-            "Transportation",
-            "Utilities",
-            "Entertainment",
-        }
+        # Signup bootstraps a personal workspace with one seeded budget file:
+        # a Cash account, two groups, and the standard ten categories.
+        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        self.assertIsNotNone(budget_file.organization)
+        self.assertEqual(Account.objects.filter(budget_file=budget_file).count(), 1)
+
+        categories = CategoryV2.objects.filter(budget_file=budget_file)
+        self.assertEqual(categories.count(), 10)
         self.assertSetEqual(
-            set(user_categories.filter(type="income").values_list("name", flat=True)),
-            expected_income,
+            set(
+                categories.filter(kind=CategoryV2.KIND_INCOME).values_list(
+                    "name", flat=True
+                )
+            ),
+            DEFAULT_INCOME_CATEGORIES,
         )
         self.assertSetEqual(
-            set(user_categories.filter(type="expense").values_list("name", flat=True)),
-            expected_expense,
+            set(
+                categories.filter(kind=CategoryV2.KIND_EXPENSE).values_list(
+                    "name", flat=True
+                )
+            ),
+            DEFAULT_EXPENSE_CATEGORIES,
         )
 
     def test_token_obtain_and_refresh(self):
@@ -82,147 +103,199 @@ class CoreFinanceSmokeTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.expense_category = Category.objects.filter(
-            user=self.user, type="expense"
+
+        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
+        self.expense_category = CategoryV2.objects.filter(
+            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
         ).first()
 
-    def _create_transaction(self, title: str, amount: str, transaction_date: str):
-        payload = {
-            "user": self.user.id,
-            "title": title,
-            "amount": amount,
-            "type": "expense",
-            "category": self.expense_category.id,
-            "transaction_date": transaction_date,
-        }
-        return self.client.post("/api/v1/transactions/", payload, format="json")
+    def _postings(self, amount: str, category_id: int | None = None):
+        """The two legs of a simple expense: money out of the account, into a
+        category. The signs mirror apps/web/app/lib/ledger.ts.
+        """
+        magnitude = Decimal(amount)
+        return [
+            {
+                "account": self.account.id,
+                "category": None,
+                "amount": f"{-magnitude:.2f}",
+                "sort_order": 0,
+            },
+            {
+                "account": None,
+                "category": category_id or self.expense_category.id,
+                "amount": f"{magnitude:.2f}",
+                "sort_order": 1,
+            },
+        ]
+
+    def _create_transaction(self, memo: str, amount: str, transaction_date: str):
+        return self.client.post(
+            "/api/v1/finance/transactions/",
+            {
+                "budget_file": self.budget_file.id,
+                "transaction_date": transaction_date,
+                "memo": memo,
+                "postings": self._postings(amount),
+            },
+            format="json",
+        )
 
     def test_category_transaction_and_budget_flows(self):
-        category_payload = {"name": "Travel", "type": "expense"}
         category_response = self.client.post(
-            "/api/v1/categories/", category_payload, format="json"
+            "/api/v1/finance/categories/",
+            {
+                "budget_file": self.budget_file.id,
+                "name": "Travel",
+                "kind": CategoryV2.KIND_EXPENSE,
+            },
+            format="json",
         )
         self.assertEqual(category_response.status_code, status.HTTP_201_CREATED)
 
-        categories_response = self.client.get("/api/v1/categories/")
+        categories_response = self.client.get(
+            f"/api/v1/finance/categories/?budget_file={self.budget_file.id}"
+        )
         self.assertEqual(categories_response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(categories_response.data["count"], 3)
+        self.assertGreaterEqual(len(categories_response.data), 11)
 
         transaction_response = self._create_transaction(
             "Flight Ticket", "640.00", "2026-03-01"
         )
         self.assertEqual(transaction_response.status_code, status.HTTP_201_CREATED)
-
         transaction_id = transaction_response.data["id"]
-        update_payload = {
-            "user": self.user.id,
-            "title": "Flight Ticket (Updated)",
-            "amount": "700.00",
-            "type": "expense",
-            "category": self.expense_category.id,
-            "transaction_date": "2026-03-02",
-        }
+        self.assertEqual(
+            LedgerPosting.objects.filter(transaction_id=transaction_id).count(), 2
+        )
+
         update_response = self.client.put(
-            f"/api/v1/transactions/{transaction_id}/",
-            update_payload,
+            f"/api/v1/finance/transactions/{transaction_id}/",
+            {
+                "budget_file": self.budget_file.id,
+                "transaction_date": "2026-03-02",
+                "memo": "Flight Ticket (Updated)",
+                "postings": self._postings("700.00"),
+            },
             format="json",
         )
         self.assertEqual(update_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(update_response.data["title"], "Flight Ticket (Updated)")
+        self.assertEqual(update_response.data["memo"], "Flight Ticket (Updated)")
 
-        filtered_transactions_response = self.client.get(
-            "/api/v1/transactions/?start_date=2026-03-01&end_date=2026-03-31"
+        filtered = self.client.get(
+            f"/api/v1/finance/transactions/?budget_file={self.budget_file.id}"
+            "&start_date=2026-03-01&end_date=2026-03-31"
         )
-        self.assertEqual(filtered_transactions_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(filtered_transactions_response.data["count"], 1)
+        self.assertEqual(filtered.status_code, status.HTTP_200_OK)
+        self.assertEqual(filtered.data["count"], 1)
 
-        budget_payload = {
-            "category": self.expense_category.id,
-            "month": 3,
-            "year": 2026,
-            "amount_limit": "1000.00",
-        }
-        budget_create_response = self.client.post(
-            "/api/v1/budgets/", budget_payload, format="json"
-        )
-        self.assertEqual(budget_create_response.status_code, status.HTTP_201_CREATED)
-
-        budget_update_payload = {
-            "category": self.expense_category.id,
-            "month": 3,
-            "year": 2026,
-            "amount_limit": "1500.00",
-        }
-        budget_update_response = self.client.post(
-            "/api/v1/budgets/",
-            budget_update_payload,
+        budget_month_response = self.client.post(
+            "/api/v1/finance/budget-months/",
+            {
+                "budget_file": self.budget_file.id,
+                "year": 2026,
+                "month": 3,
+                "mode": "envelope",
+            },
             format="json",
         )
-        self.assertEqual(budget_update_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(budget_update_response.data["amount_limit"], "1500.00")
+        self.assertEqual(budget_month_response.status_code, status.HTTP_201_CREATED)
 
-        delete_response = self.client.delete(f"/api/v1/transactions/{transaction_id}/")
+        assignment_response = self.client.post(
+            "/api/v1/finance/envelope-assignments/",
+            {
+                "budget_month": budget_month_response.data["id"],
+                "category": self.expense_category.id,
+                "assigned_amount": "1000.00",
+            },
+            format="json",
+        )
+        self.assertEqual(assignment_response.status_code, status.HTTP_201_CREATED)
+
+        delete_response = self.client.delete(
+            f"/api/v1/finance/transactions/{transaction_id}/"
+        )
         self.assertEqual(delete_response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(LedgerTransaction.objects.filter(pk=transaction_id).exists())
 
     def test_transactions_filter_search_ordering_and_pagination(self):
         self._create_transaction("Coffee", "100.00", "2026-03-10")
         self._create_transaction("Groceries", "900.00", "2026-03-11")
         self._create_transaction("Travel", "300.00", "2026-02-11")
 
-        filtered_response = self.client.get(
-            "/api/v1/transactions/?start_date=2026-03-01&end_date=2026-03-31"
-        )
-        self.assertEqual(filtered_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(filtered_response.data["count"], 2)
+        base = f"/api/v1/finance/transactions/?budget_file={self.budget_file.id}"
 
-        search_response = self.client.get("/api/v1/transactions/?search=Coffee")
-        self.assertEqual(search_response.status_code, status.HTTP_200_OK)
-        self.assertEqual(search_response.data["count"], 1)
-        self.assertEqual(search_response.data["results"][0]["title"], "Coffee")
+        filtered = self.client.get(f"{base}&start_date=2026-03-01&end_date=2026-03-31")
+        self.assertEqual(filtered.status_code, status.HTTP_200_OK)
+        self.assertEqual(filtered.data["count"], 2)
 
-        ordered_response = self.client.get("/api/v1/transactions/?ordering=amount")
-        self.assertEqual(ordered_response.status_code, status.HTTP_200_OK)
-        amounts = [Decimal(item["amount"]) for item in ordered_response.data["results"]]
-        self.assertEqual(amounts, sorted(amounts))
+        search = self.client.get(f"{base}&search=Coffee")
+        self.assertEqual(search.status_code, status.HTTP_200_OK)
+        self.assertEqual(search.data["count"], 1)
+        self.assertEqual(search.data["results"][0]["memo"], "Coffee")
 
-        # Create enough data for multi-page verification with page_size=100.
-        bulk_transactions = [
-            Transaction(
-                user=self.user,
-                title=f"Bulk Item {index}",
-                amount=Decimal("1.00"),
-                type="expense",
-                category=self.expense_category,
-                transaction_date=date(2026, 3, 12),
+        ordered = self.client.get(f"{base}&ordering=transaction_date")
+        self.assertEqual(ordered.status_code, status.HTTP_200_OK)
+        dates = [row["transaction_date"] for row in ordered.data["results"]]
+        self.assertEqual(dates, sorted(dates))
+
+        # Enough rows to cross a page boundary (LedgerTransactionPagination
+        # serves 50 per page). Built directly rather than through the API:
+        # this asserts pagination, not the create path, and 55 round trips
+        # would dominate the smoke suite's runtime.
+        for index in range(55):
+            transaction = LedgerTransaction.objects.create(
+                budget_file=self.budget_file,
+                transaction_date="2026-03-12",
+                memo=f"Bulk Item {index}",
             )
-            for index in range(105)
-        ]
-        Transaction.objects.bulk_create(bulk_transactions)
+            LedgerPosting.objects.bulk_create(
+                [
+                    LedgerPosting(
+                        transaction=transaction,
+                        account=self.account,
+                        amount=Decimal("-1.00"),
+                        sort_order=0,
+                    ),
+                    LedgerPosting(
+                        transaction=transaction,
+                        category=self.expense_category,
+                        amount=Decimal("1.00"),
+                        sort_order=1,
+                    ),
+                ]
+            )
 
-        page_1 = self.client.get("/api/v1/transactions/?page=1")
-        page_2 = self.client.get("/api/v1/transactions/?page=2")
+        page_1 = self.client.get(f"{base}&page=1")
+        page_2 = self.client.get(f"{base}&page=2")
 
         self.assertEqual(page_1.status_code, status.HTTP_200_OK)
         self.assertEqual(page_2.status_code, status.HTTP_200_OK)
-        self.assertEqual(page_1.data["count"], 108)
+        self.assertEqual(page_1.data["count"], 58)
         self.assertIsNotNone(page_1.data["next"])
-        self.assertEqual(len(page_1.data["results"]), 100)
+        self.assertEqual(len(page_1.data["results"]), 50)
         self.assertEqual(len(page_2.data["results"]), 8)
         self.assertIsNotNone(page_2.data["previous"])
 
-    def test_transaction_create_allows_null_category(self):
-        payload = {
-            "user": self.user.id,
-            "title": "Uncategorized expense",
-            "amount": "42.00",
-            "type": "expense",
-            "category": None,
-            "transaction_date": "2026-03-10",
-        }
-
-        response = self.client.post("/api/v1/transactions/", payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIsNone(response.data["category"])
+    def test_unbalanced_postings_are_rejected(self):
+        response = self.client.post(
+            "/api/v1/finance/transactions/",
+            {
+                "budget_file": self.budget_file.id,
+                "transaction_date": "2026-03-10",
+                "memo": "Broken",
+                "postings": [
+                    {"account": self.account.id, "amount": "-10.00", "sort_order": 0},
+                    {
+                        "category": self.expense_category.id,
+                        "amount": "5.00",
+                        "sort_order": 1,
+                    },
+                ],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_profile_and_password_update_flows(self):
         profile_payload = {

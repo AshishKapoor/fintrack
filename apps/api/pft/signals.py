@@ -5,7 +5,6 @@ from django.dispatch import receiver
 from .models import (
     Account,
     BudgetFile,
-    Category,
     CategoryGroupV2,
     CategoryV2,
     Membership,
@@ -32,25 +31,14 @@ DEFAULT_EXPENSE_CATEGORIES = [
 
 
 @receiver(post_save, sender=User)
-def create_default_categories(sender, instance, created, **kwargs):
-    """
-    Signal to create default categories for new users
+def create_personal_workspace(sender, instance, created, **kwargs):
+    """Give every new user a personal workspace with a budget file in it.
+
+    The budget file's own post_save seeds it (accounts, groups, categories),
+    so this stays about tenancy: an organization, the owner membership, and
+    one file to land in.
     """
     if created:
-        categories_to_create = []
-
-        for name in DEFAULT_INCOME_CATEGORIES:
-            categories_to_create.append(
-                Category(name=name, type="income", user=instance)
-            )
-
-        for name in DEFAULT_EXPENSE_CATEGORIES:
-            categories_to_create.append(
-                Category(name=name, type="expense", user=instance)
-            )
-
-        Category.objects.bulk_create(categories_to_create)
-
         organization = Organization.objects.create(
             name=f"{instance.email}'s space", personal=True
         )

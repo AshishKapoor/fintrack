@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.account_type_enum import AccountTypeEnum
+from ..models.type_enum import TypeEnum
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="Account")
@@ -24,7 +24,7 @@ class Account:
         current_balance (str):
         created_at (datetime.datetime):
         updated_at (datetime.datetime):
-        type_ (AccountTypeEnum | Unset): * `checking` - Checking
+        type_ (TypeEnum | Unset): * `checking` - Checking
             * `savings` - Savings
             * `cash` - Cash
             * `credit` - Credit Card
@@ -43,7 +43,7 @@ class Account:
     current_balance: str
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    type_: AccountTypeEnum | Unset = UNSET
+    type_: TypeEnum | Unset = UNSET
     opening_balance: str | Unset = UNSET
     currency_code: str | Unset = UNSET
     interest_rate: None | str | Unset = UNSET
@@ -129,11 +129,11 @@ class Account:
         updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
 
         _type_ = d.pop("type", UNSET)
-        type_: AccountTypeEnum | Unset
+        type_: TypeEnum | Unset
         if isinstance(_type_, Unset):
             type_ = UNSET
         else:
-            type_ = AccountTypeEnum(_type_)
+            type_ = TypeEnum(_type_)
 
         opening_balance = d.pop("opening_balance", UNSET)
 

@@ -42,5 +42,7 @@ pnpm run generate && pnpm run build
 ## Versioning
 
 The SDK follows the API: breaking API changes land in a new SDK major. The
-legacy `/api/v1/{transactions,categories,budgets}` operations are deprecated
-upstream and disappear in FinTrack `v1.0.0`.
+flat `/api/v1/{transactions,categories,budgets}` operations were deprecated
+upstream and have now been removed; use `/api/v1/finance/*` instead. FinTrack's
+own migration `0017` carries any rows those endpoints wrote into the ledger, so
+data recorded through an older SDK is still there.

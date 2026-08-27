@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .models import Budget, Category, NotificationPreference, Transaction
+from .models import NotificationPreference
 from .notifications import is_safe_outbound_url
 
 User = get_user_model()
@@ -54,7 +54,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             data["username"] = data["email"]
 
         if data["password"] != data.pop("confirm_password"):
-            raise serializers.ValidationError({"password": _("Passwords do not match.")})
+            raise serializers.ValidationError(
+                {"password": _("Passwords do not match.")}
+            )
         if len(data["password"]) < 8:
             raise serializers.ValidationError(
                 {"password": _("Password must be at least 8 characters long.")}
@@ -63,124 +65,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return User.objects.create_user(**validated_data)
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    def validate_name(self, value):
-        user = self.context["request"].user
-        # A category name must be unique per user. Exclude the instance being
-        # updated, otherwise every PATCH that keeps the same name is rejected.
-        queryset = Category.objects.filter(user=user, name=value)
-        if self.instance is not None:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError(
-                _("A category with this name already exists.")
-            )
-        return value
-
-    class Meta:
-        model = Category
-        fields = "__all__"
-        read_only_fields = ["user"]
-
-
-class TransactionSerializer(serializers.ModelSerializer):
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-
-    class Meta:
-        model = Transaction
-        fields = [
-            "id",
-            "user",
-            "title",
-            "amount",
-            "type",
-            "category",
-            "transaction_date",
-            "created_at",
-            "updated_at",
-        ]
-        # `user` is owned by the view (perform_create/perform_update), never by
-        # the client. Leaving it writable let one user reassign a transaction to
-        # another account, and made `user` a required field on create.
-        read_only_fields = ["user", "created_at", "updated_at"]
-        extra_kwargs = {
-            "category": {"required": False, "allow_null": True},
-        }
-
-    def validate_category(self, value):
-        """Reject categories that belong to somebody else."""
-        if value is None:
-            return value
-        user = self.context["request"].user
-        if value.user_id is not None and value.user_id != user.id:
-            raise serializers.ValidationError(_("Unknown category."))
-        return value
-
-    def to_representation(self, instance):
-        # Ensure amount is always serialized as Decimal
-        ret = super().to_representation(instance)
-        ret["amount"] = str(instance.amount)
-        return ret
-
-    def create(self, validated_data):
-        amount = validated_data.pop("amount", None)
-        transaction = Transaction(**validated_data)
-        if amount is not None:
-            transaction.amount = str(amount)
-        transaction.save()
-        return transaction
-
-    def update(self, instance, validated_data):
-        amount = validated_data.pop("amount", None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if amount is not None:
-            instance.amount = str(amount)
-        instance.save()
-        return instance
-
-
-class BudgetSerializer(serializers.ModelSerializer):
-    def validate_category(self, value):
-        """Reject categories that belong to somebody else."""
-        if value is None:
-            return value
-        user = self.context["request"].user
-        if value.user_id is not None and value.user_id != user.id:
-            raise serializers.ValidationError(_("Unknown category."))
-        return value
-
-    def validate(self, data):
-        user = self.context["request"].user
-        # Check if budget already exists for this user, category, month, and year
-        try:
-            existing_budget = Budget.objects.get(
-                user=user,
-                category=data["category"],
-                month=data["month"],
-                year=data["year"],
-            )
-
-            # If this is an update operation for this exact budget, allow it
-            if self.instance and self.instance.id == existing_budget.id:
-                return data
-
-            # For POST requests, update the existing budget instead of creating a new one
-            if not self.instance:
-                self.instance = existing_budget
-
-            return data
-        except Budget.DoesNotExist:
-            # No existing budget, so we can create a new one
-            return data
-
-    class Meta:
-        model = Budget
-        fields = "__all__"
-        # Set by the view, never by the client.
-        read_only_fields = ["user"]
 
 
 class NotificationPreferenceSerializer(serializers.ModelSerializer):

@@ -4,7 +4,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.utils.translation import gettext_lazy as _
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import filters, generics, permissions, status, viewsets
+from rest_framework import generics, permissions, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -25,18 +25,10 @@ from .auth_cookies import (
     set_refresh_cookie,
     wants_refresh_cookie,
 )
-from .models import (
-    Budget,
-    Category,
-    NotificationPreference,
-    Transaction,
-)
+from .models import NotificationPreference
 from .notifications import send_test_notification
 from .serializers import (
-    BudgetSerializer,
-    CategorySerializer,
     NotificationPreferenceSerializer,
-    TransactionSerializer,
     UserProfileSerializer,
     UserRegistrationSerializer,
 )
@@ -59,33 +51,6 @@ REFRESH_COOKIE_HEADER_PARAMETER = OpenApiParameter(
 
 class CustomPagination(PageNumberPagination):
     page_size = 100
-
-
-# The flat /api/v1/{transactions,categories,budgets} resources predate the
-# double-entry ledger at /api/v1/finance/*. Both are live, both are seeded on
-# signup, and nothing keeps them in sync - see ARCHITECTURE.md. The ledger is
-# the one being kept, so these announce themselves as deprecated to anything
-# scripting against them, per RFC 9745. No Sunset header (RFC 8594) is sent
-# because removal is tied to the v1.0.0 release, not a calendar date.
-LEGACY_SUNSET_VERSION = "v1.0.0"
-LEGACY_SUCCESSOR = "/api/v1/finance/"
-# RFC 9745 Deprecation value: @<unix-timestamp> of when the deprecation
-# took effect (2026-08-12T00:00:00Z, the day these headers shipped).
-LEGACY_DEPRECATED_AT = "@1786492800"
-
-
-class DeprecatedLegacyEndpointMixin:
-    """Attach deprecation headers to the flat v1 resources."""
-
-    def finalize_response(self, request, response, *args, **kwargs):
-        response = super().finalize_response(request, response, *args, **kwargs)
-        response["Deprecation"] = LEGACY_DEPRECATED_AT
-        response["Link"] = f'<{LEGACY_SUCCESSOR}>; rel="successor-version"'
-        response["Warning"] = (
-            f'299 - "This endpoint is deprecated and will be removed in '
-            f'{LEGACY_SUNSET_VERSION}. Use {LEGACY_SUCCESSOR} instead."'
-        )
-        return response
 
 
 def blacklist_all_refresh_tokens(user):
@@ -213,117 +178,6 @@ class LogoutView(APIView):
         return response
 
 
-# CATEGORY VIEWSET
-@extend_schema(
-    deprecated=True,
-    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
-)
-class CategoryViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
-    serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = CustomPagination
-
-    def get_queryset(self):
-        owned = Category.objects.filter(user=self.request.user)
-
-        # Global categories (user IS NULL) are shared by every account, so they
-        # are readable by all but writable by none: including them in the
-        # write queryset let any user edit or delete them for everybody.
-        if self.request.method not in permissions.SAFE_METHODS:
-            return owned.order_by("name", "id")
-
-        return (owned | Category.objects.filter(user__isnull=True)).order_by(
-            "name", "id"
-        )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(user=self.request.user)
-
-
-# TRANSACTION VIEWSET
-@extend_schema(
-    deprecated=True,
-    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
-)
-class TransactionViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
-    serializer_class = TransactionSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = CustomPagination
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["title", "category__name"]
-    ordering_fields = [
-        "transaction_date",
-        "amount",
-        "created_at",
-        "updated_at",
-        "title",
-    ]
-    ordering = ["-transaction_date", "-id"]
-
-    def get_queryset(self):
-        queryset = Transaction.objects.filter(user=self.request.user).order_by(
-            "-transaction_date", "-id"
-        )
-
-        # Date range filtering
-        start_date = self.request.query_params.get("start_date")
-        end_date = self.request.query_params.get("end_date")
-
-        if start_date:
-            queryset = queryset.filter(transaction_date__gte=start_date)
-        if end_date:
-            queryset = queryset.filter(transaction_date__lte=end_date)
-
-        return queryset
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(user=self.request.user)
-
-
-# BUDGET VIEWSET
-@extend_schema(
-    deprecated=True,
-    description=f"Deprecated legacy resource; use {LEGACY_SUCCESSOR} instead.",
-)
-class BudgetViewSet(DeprecatedLegacyEndpointMixin, viewsets.ModelViewSet):
-    serializer_class = BudgetSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = CustomPagination
-
-    def get_queryset(self):
-        return Budget.objects.filter(user=self.request.user).order_by(
-            "-year", "-month", "id"
-        )
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def perform_update(self, serializer):
-        serializer.save(user=self.request.user)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        # If an existing budget was found in validation, update it
-        if serializer.instance:
-            serializer.update(serializer.instance, serializer.validated_data)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        # Otherwise create a new budget
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
-
-
 class RegisterUserAPIView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
     permission_classes = [AllowAny]
@@ -418,7 +272,10 @@ class DeleteAccountView(APIView):
 
         if confirmation != self.CONFIRMATION:
             return Response(
-                {"error": _("Type %(confirmation)s to confirm.") % {"confirmation": self.CONFIRMATION}},
+                {
+                    "error": _("Type %(confirmation)s to confirm.")
+                    % {"confirmation": self.CONFIRMATION}
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

@@ -37,27 +37,26 @@ explained in full below.
 - `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 
-## The two API surfaces
+## The API surface
 
 This is the part worth reading before changing anything.
 
-### `/api/v1/*` — the original flat model
+FinTrack shipped two parallel data models for most of its life: a flat
+`Category`/`Transaction`/`Budget` trio owned directly by a user, and the
+double-entry ledger under `/api/v1/finance/*`. Both were live, both were seeded
+on signup, and nothing kept them in sync. The flat one could not represent a
+transfer between two accounts without double-counting and had no concept of an
+account balance, so the ledger is the one that was kept. **Migration `0017`
+retired the flat models and their endpoints**, carrying any rows they still
+held into the ledger first (`Transaction` → a balanced `LedgerTransaction`,
+`Budget` → an `EnvelopeAssignment`), stamped `match_key="legacy:<pk>"` so the
+provenance survives in the database.
 
-Three models, each owned directly by a user:
-
-| Model | Meaning |
-|---|---|
-| `Category` | a name plus `income`/`expense`. `user` may be NULL, meaning a global category shared by everyone (readable by all, writable by none). |
-| `Transaction` | a single signed amount with a title, type and date. |
-| `Budget` | a spending limit for one category in one month/year. |
-
-Simple, and adequate for "track what I spent". It cannot represent a transfer
-between two accounts without double-counting, and it has no concept of an
-account balance.
+Everything below describes the one surface that remains.
 
 ### `/api/v1/finance/*` — the double-entry ledger
 
-Added later, this is a proper accounting model. The tenant root is
+The tenant root is
 `BudgetFile` (a user can have several; exactly one is the default):
 
 ```
@@ -144,12 +143,13 @@ triangulates through EUR at read time. `finance_services.account_balances`/
 currency, returning `None` (never a guessed number) for a pair with no rate
 fetched yet.
 
-### How the two relate
+### How the pieces connect
 
-Both are live and routed at the same time. On signup, `pft/signals.py` seeds
-**both** trees: the ten legacy `Category` rows *and* a default `BudgetFile`, a
-"Cash" account, two category groups and ten `CategoryV2` rows. Nothing keeps
-them in sync afterwards.
+On signup, `pft/signals.py` creates the user's personal `Organization`, their
+owner `Membership`, and one default `BudgetFile`. The budget file's own
+`post_save` seeds it - a "Cash" account, two category groups and ten
+`CategoryV2` rows - so a workspace created later gets the same treatment
+without duplicating the logic.
 
 The web app talks to the finance API **directly**. The generated orval client
 in `apps/web/app/client/gen/` (tracked in git, regenerated with `pnpm orval`,
@@ -158,30 +158,15 @@ guarded by a CI diff gate) provides the typed calls, and
 top: building balanced postings from form input, display helpers, and SWR
 invalidation. The old read-legacy/write-finance adapter is gone.
 
-### Where this is going
-
-The ledger model is the one to keep.
-
-`/api/v1/{transactions,categories,budgets}` are **deprecated**. They keep
-working, but every response now carries deprecation headers naming the
-successor, so anything scripting against them finds out before they are removed:
-
-```http
-Deprecation: @1786492800
-Link: </api/v1/finance/>; rel="successor-version"
-Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
-```
-
-The remaining steps:
+### Where this went
 
 1. ~~Move the UI onto `/api/v1/finance/*` directly~~ — done; the adapter is
    deleted and the UI runs on the generated client.
-2. Remove the legacy endpoints and models in `v1.0.0`.
-3. Rename `CategoryV2` and `CategoryGroupV2` — the "V2" suffix is an accident of
-   history that is currently baked into the public schema.
-
-Until then, when you add a feature: **add it to the finance domain.** The legacy
-endpoints are maintained, not extended.
+2. ~~Remove the legacy endpoints and models~~ — done in migration `0017`
+   (ROADMAP.md Phase 4). They spent a release announcing themselves with RFC
+   9745 `Deprecation`/`Link`/`Warning` headers before being dropped.
+3. ~~Rename `CategoryV2` and `CategoryGroupV2`~~ — the "V2" suffix was an
+   accident of history baked into the public schema; see below.
 
 ## Request lifecycle
 

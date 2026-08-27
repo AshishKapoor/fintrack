@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class AccountTypeEnum(str, Enum):
+class TypeEnum(str, Enum):
     ASSET = "asset"
     CASH = "cash"
     CHECKING = "checking"

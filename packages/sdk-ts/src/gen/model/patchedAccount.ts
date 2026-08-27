@@ -5,14 +5,14 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
-import type { AccountTypeEnum } from './accountTypeEnum';
+import type { TypeEnum } from './typeEnum';
 
 export interface PatchedAccount {
   readonly id?: number;
   budget_file?: number;
   /** @maxLength 120 */
   name?: string;
-  type?: AccountTypeEnum;
+  type?: TypeEnum;
   /** @pattern ^-?\d{0,12}(?:\.\d{0,2})?$ */
   opening_balance?: string;
   /** @maxLength 3 */

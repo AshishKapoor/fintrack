@@ -13,8 +13,8 @@ from .bank_sync_provider import BankSyncProvider
 from .bank_sync_result import BankSyncResult
 from .budget_file import BudgetFile
 from .budget_month import BudgetMonth
-from .category_group_v2 import CategoryGroupV2
-from .category_v2 import CategoryV2
+from .category import Category
+from .category_group import CategoryGroup
 from .department_enum import DepartmentEnum
 from .encrypted_backup_bundle import EncryptedBackupBundle
 from .envelope_assignment import EnvelopeAssignment
@@ -41,8 +41,8 @@ from .patched_account import PatchedAccount
 from .patched_ai_categorization_settings import PatchedAICategorizationSettings
 from .patched_budget_file import PatchedBudgetFile
 from .patched_budget_month import PatchedBudgetMonth
-from .patched_category_group_v2 import PatchedCategoryGroupV2
-from .patched_category_v2 import PatchedCategoryV2
+from .patched_category import PatchedCategory
+from .patched_category_group import PatchedCategoryGroup
 from .patched_encrypted_backup_bundle import PatchedEncryptedBackupBundle
 from .patched_envelope_assignment import PatchedEnvelopeAssignment
 from .patched_export_job import PatchedExportJob
@@ -90,8 +90,8 @@ __all__ = (
     "BankSyncResult",
     "BudgetFile",
     "BudgetMonth",
-    "CategoryGroupV2",
-    "CategoryV2",
+    "Category",
+    "CategoryGroup",
     "DepartmentEnum",
     "EncryptedBackupBundle",
     "EnvelopeAssignment",
@@ -118,8 +118,8 @@ __all__ = (
     "PatchedAccount",
     "PatchedBudgetFile",
     "PatchedBudgetMonth",
-    "PatchedCategoryGroupV2",
-    "PatchedCategoryV2",
+    "PatchedCategory",
+    "PatchedCategoryGroup",
     "PatchedEncryptedBackupBundle",
     "PatchedEnvelopeAssignment",
     "PatchedExportJob",

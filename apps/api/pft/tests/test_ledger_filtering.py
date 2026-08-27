@@ -15,7 +15,7 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     BudgetFile,
-    CategoryV2,
+    Category,
     LedgerPosting,
     LedgerTransaction,
 )
@@ -35,11 +35,11 @@ class LedgerFilteringTests(APITestCase):
 
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.expense_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.expense_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
-        self.income_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_INCOME
+        self.income_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_INCOME
         ).first()
 
         self.small_expense = self.make_transaction(

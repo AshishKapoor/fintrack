@@ -1143,7 +1143,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CategoryV2'
+                  $ref: '#/components/schemas/Category'
           description: ''
     post:
       operationId: v1_finance_categories_create
@@ -1160,7 +1160,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryV2'
+              $ref: '#/components/schemas/Category'
         required: true
       security:
       - jwtAuth: []
@@ -1169,7 +1169,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryV2'
+                $ref: '#/components/schemas/Category'
           description: ''
   /api/v1/finance/categories/{id}/:
     get:
@@ -1196,7 +1196,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryV2'
+                $ref: '#/components/schemas/Category'
           description: ''
     put:
       operationId: v1_finance_categories_update
@@ -1219,7 +1219,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryV2'
+              $ref: '#/components/schemas/Category'
         required: true
       security:
       - jwtAuth: []
@@ -1228,7 +1228,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryV2'
+                $ref: '#/components/schemas/Category'
           description: ''
     patch:
       operationId: v1_finance_categories_partial_update
@@ -1251,7 +1251,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedCategoryV2'
+              $ref: '#/components/schemas/PatchedCategory'
       security:
       - jwtAuth: []
       responses:
@@ -1259,7 +1259,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryV2'
+                $ref: '#/components/schemas/Category'
           description: ''
     delete:
       operationId: v1_finance_categories_destroy
@@ -1304,7 +1304,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CategoryGroupV2'
+                  $ref: '#/components/schemas/CategoryGroup'
           description: ''
     post:
       operationId: v1_finance_category_groups_create
@@ -1321,7 +1321,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
+              $ref: '#/components/schemas/CategoryGroup'
         required: true
       security:
       - jwtAuth: []
@@ -1330,7 +1330,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryGroupV2'
+                $ref: '#/components/schemas/CategoryGroup'
           description: ''
   /api/v1/finance/category-groups/{id}/:
     get:
@@ -1357,7 +1357,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryGroupV2'
+                $ref: '#/components/schemas/CategoryGroup'
           description: ''
     put:
       operationId: v1_finance_category_groups_update
@@ -1380,7 +1380,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryGroupV2'
+              $ref: '#/components/schemas/CategoryGroup'
         required: true
       security:
       - jwtAuth: []
@@ -1389,7 +1389,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryGroupV2'
+                $ref: '#/components/schemas/CategoryGroup'
           description: ''
     patch:
       operationId: v1_finance_category_groups_partial_update
@@ -1412,7 +1412,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedCategoryGroupV2'
+              $ref: '#/components/schemas/PatchedCategoryGroup'
       security:
       - jwtAuth: []
       responses:
@@ -1420,7 +1420,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CategoryGroupV2'
+                $ref: '#/components/schemas/CategoryGroup'
           description: ''
     delete:
       operationId: v1_finance_category_groups_destroy
@@ -4654,36 +4654,7 @@ components:
       - month
       - updated_at
       - year
-    CategoryGroupV2:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        budget_file:
-          type: integer
-        name:
-          type: string
-          maxLength: 120
-        sort_order:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - budget_file
-      - created_at
-      - id
-      - name
-      - updated_at
-    CategoryV2:
+    Category:
       type: object
       properties:
         id:
@@ -4703,6 +4674,35 @@ components:
           type: boolean
         notes_md:
           type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - budget_file
+      - created_at
+      - id
+      - name
+      - updated_at
+    CategoryGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        name:
+          type: string
+          maxLength: 120
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
         created_at:
           type: string
           format: date-time
@@ -5416,30 +5416,7 @@ components:
           type: string
           format: date-time
           readOnly: true
-    PatchedCategoryGroupV2:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        budget_file:
-          type: integer
-        name:
-          type: string
-          maxLength: 120
-        sort_order:
-          type: integer
-          maximum: 2147483647
-          minimum: 0
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-    PatchedCategoryV2:
+    PatchedCategory:
       type: object
       properties:
         id:
@@ -5459,6 +5436,29 @@ components:
           type: boolean
         notes_md:
           type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCategoryGroup:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        budget_file:
+          type: integer
+        name:
+          type: string
+          maxLength: 120
+        sort_order:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
         created_at:
           type: string
           format: date-time

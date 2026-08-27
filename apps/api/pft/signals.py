@@ -5,8 +5,8 @@ from django.dispatch import receiver
 from .models import (
     Account,
     BudgetFile,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     Membership,
     Organization,
 )
@@ -71,28 +71,28 @@ def seed_budget_file_defaults(sender, instance, created, **kwargs):
         type=Account.TYPE_CHECKING,
         currency_code=instance.currency_code,
     )
-    income_group = CategoryGroupV2.objects.create(
+    income_group = CategoryGroup.objects.create(
         budget_file=instance, name="Income", sort_order=0
     )
-    expense_group = CategoryGroupV2.objects.create(
+    expense_group = CategoryGroup.objects.create(
         budget_file=instance, name="Expenses", sort_order=1
     )
-    CategoryV2.objects.bulk_create(
+    Category.objects.bulk_create(
         [
-            CategoryV2(
+            Category(
                 budget_file=instance,
                 group=income_group,
                 name=name,
-                kind=CategoryV2.KIND_INCOME,
+                kind=Category.KIND_INCOME,
             )
             for name in DEFAULT_INCOME_CATEGORIES
         ]
         + [
-            CategoryV2(
+            Category(
                 budget_file=instance,
                 group=expense_group,
                 name=name,
-                kind=CategoryV2.KIND_EXPENSE,
+                kind=Category.KIND_EXPENSE,
             )
             for name in DEFAULT_EXPENSE_CATEGORIES
         ]

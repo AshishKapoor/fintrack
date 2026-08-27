@@ -11,11 +11,11 @@ from typing_extensions import Self
 from ..models.kind_enum import KindEnum
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="CategoryV2")
+T = TypeVar("T", bound="Category")
 
 
 @_attrs_define
-class CategoryV2:
+class Category:
     """
     Attributes:
         id (int):
@@ -121,7 +121,7 @@ class CategoryV2:
 
         notes_md = d.pop("notes_md", UNSET)
 
-        category_v2 = cls(
+        category = cls(
             id=id,
             budget_file=budget_file,
             name=name,
@@ -133,8 +133,8 @@ class CategoryV2:
             notes_md=notes_md,
         )
 
-        category_v2.additional_properties = d
-        return category_v2
+        category.additional_properties = d
+        return category
 
     @property
     def additional_keys(self) -> list[str]:

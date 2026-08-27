@@ -7,7 +7,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.ai_categorization import suggest_category_via_ai
-from pft.models import Account, AICategorizationSettings, BudgetFile, CategoryV2, Payee
+from pft.models import Account, AICategorizationSettings, BudgetFile, Category, Payee
 from pft.notifications import is_safe_local_service_url
 
 User = get_user_model()
@@ -243,8 +243,8 @@ class SuggestedCategoryAiFallbackTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.groceries = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE, name="Groceries"
+        self.groceries = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE, name="Groceries"
         ).first()
         self.payee = Payee.objects.create(budget_file=self.budget_file, name="New Payee")
 

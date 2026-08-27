@@ -63,8 +63,8 @@ The tenant root is
 User
  └── BudgetFile                    (currency, is_default)
       ├── Account                  (checking / savings / cash / credit / asset / liability, own currency_code)
-      ├── CategoryGroupV2
-      │    └── CategoryV2          (income / expense)
+      ├── CategoryGroup
+      │    └── Category            (income / expense)
       ├── Payee, Tag
       ├── LedgerTransaction        (date, payee, memo, cleared, source_type)
       │    └── LedgerPosting       (amount, and exactly one of account XOR category)
@@ -148,7 +148,7 @@ fetched yet.
 On signup, `pft/signals.py` creates the user's personal `Organization`, their
 owner `Membership`, and one default `BudgetFile`. The budget file's own
 `post_save` seeds it - a "Cash" account, two category groups and ten
-`CategoryV2` rows - so a workspace created later gets the same treatment
+`Category` rows - so a workspace created later gets the same treatment
 without duplicating the logic.
 
 The web app talks to the finance API **directly**. The generated orval client
@@ -165,8 +165,14 @@ invalidation. The old read-legacy/write-finance adapter is gone.
 2. ~~Remove the legacy endpoints and models~~ — done in migration `0017`
    (ROADMAP.md Phase 4). They spent a release announcing themselves with RFC
    9745 `Deprecation`/`Link`/`Warning` headers before being dropped.
-3. ~~Rename `CategoryV2` and `CategoryGroupV2`~~ — the "V2" suffix was an
-   accident of history baked into the public schema; see below.
+3. ~~Rename `CategoryV2` and `CategoryGroupV2`~~ — done in migration `0018`.
+   The "V2" suffix existed only to distinguish them from the flat `Category`
+   model, so it stopped meaning anything the moment `0017` dropped that model.
+   `RenameModel` renames the tables in place; nothing is copied. Old
+   `AuditLog.entity_type` values are rewritten to match, so filtering the
+   audit log by `Category` still finds pre-rename history (the human-readable
+   `summary` is left alone - that records what the system called the thing at
+   the time).
 
 ## Request lifecycle
 
@@ -353,9 +359,17 @@ out (`database_config_from_env()`, `app/settings/base.py`). See
 abandoned SaaS direction and `0003` deletes all nine — 240 lines that net to
 zero, kept only because rewriting history is not worth it. `0005` creates the
 entire finance domain and backfills existing v1 rows into it, marking them with
-`match_key="v1-<id>"`.
+`match_key="v1-<id>"`. `0017` retires the flat models, carrying anything
+written through them *after* `0005` ran into the ledger as `legacy:<id>` -
+both stamps are checked, so a pre-`0005` row is not carried twice. `0018`
+renames `CategoryV2`/`CategoryGroupV2`, which is why it has to come after
+`0017` frees up the `pft_category` table name.
 
-Migrations are not reversible: the data migrations have no-op reverse functions.
+Data migrations have no-op reverse functions, so unapplying one restores the
+schema but not the rows. Schema operations do reverse: `migrate pft 0016`
+works, which is what makes migration 0017's carry-over testable at all
+(`test_legacy_api_retirement.py` runs the real migration backwards and
+forwards against seeded rows).
 
 ## Testing
 
@@ -376,7 +390,15 @@ apps/api/pft/tests/
 ├── test_bank_sync.py         crypto, ingest/dedup, both providers (mocked HTTP), the API
 ├── test_fx_rates.py          rate fetch/store, EUR-triangulated conversion, the API
 ├── test_multi_currency.py    per-account currency defaulting and the balances endpoint
-└── test_migration_importers.py  Firefly III / Actual Budget parsers, end-to-end import
+├── test_migration_importers.py  Firefly III / Actual Budget parsers, end-to-end import
+├── test_insights_reports.py  net worth series, cash-flow Sankey, spending trends
+├── test_savings_goals.py     goal progress read from live account balances
+├── test_debt_payoff.py       snowball / avalanche projections
+├── test_ai_categorization.py BYOK + Ollama suggestion path and its SSRF guard
+├── test_demo_mode.py         read-only demo enforcement and the reset task
+├── test_prune_finance_jobs.py  import/export payload pruning
+├── test_database_url_config.py DATABASE_URL parsing
+└── test_legacy_api_retirement.py  migration 0017's carry-over into the ledger
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright

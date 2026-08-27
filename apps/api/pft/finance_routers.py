@@ -6,7 +6,7 @@ from .finance_views import (
     BudgetFileViewSet,
     BudgetMonthViewSet,
     CategoryGroupViewSet,
-    CategoryV2ViewSet,
+    CategoryViewSet,
     EnvelopeAssignmentViewSet,
     ExportJobViewSet,
     FxRateViewSet,
@@ -28,7 +28,7 @@ router.register("budget-files", BudgetFileViewSet, basename="budget-file")
 router.register("accounts", AccountViewSet, basename="account")
 router.register("savings-goals", SavingsGoalViewSet, basename="savings-goal")
 router.register("category-groups", CategoryGroupViewSet, basename="category-group")
-router.register("categories", CategoryV2ViewSet, basename="category")
+router.register("categories", CategoryViewSet, basename="category")
 router.register("payees", PayeeViewSet, basename="payee")
 router.register("tags", TagViewSet, basename="tag")
 router.register("transactions", LedgerTransactionViewSet, basename="transaction")

@@ -11,11 +11,11 @@ from typing_extensions import Self
 from ..models.kind_enum import KindEnum
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="PatchedCategoryV2")
+T = TypeVar("T", bound="PatchedCategory")
 
 
 @_attrs_define
-class PatchedCategoryV2:
+class PatchedCategory:
     """
     Attributes:
         id (int | Unset):
@@ -137,7 +137,7 @@ class PatchedCategoryV2:
         else:
             updated_at = datetime.datetime.fromisoformat(_updated_at)
 
-        patched_category_v2 = cls(
+        patched_category = cls(
             id=id,
             budget_file=budget_file,
             group=group,
@@ -149,8 +149,8 @@ class PatchedCategoryV2:
             updated_at=updated_at,
         )
 
-        patched_category_v2.additional_properties = d
-        return patched_category_v2
+        patched_category.additional_properties = d
+        return patched_category
 
     @property
     def additional_keys(self) -> list[str]:

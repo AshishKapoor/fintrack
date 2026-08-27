@@ -17,7 +17,7 @@ from pft.finance_services import materialize_due_scheduled_transactions
 from pft.models import (
     Account,
     BudgetFile,
-    CategoryV2,
+    Category,
     LedgerTransaction,
     ScheduledTransaction,
 )
@@ -68,8 +68,8 @@ class MaterializeDueScheduledTransactionsTests(TestCase):
         self.user = _make_user("scheduler-user@example.com")
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def test_materializes_a_due_schedule_and_advances_next_run_date(self):
@@ -194,8 +194,8 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
         user = _make_user(email)
         budget_file = BudgetFile.objects.get(user=user, is_default=True)
         account = Account.objects.get(budget_file=budget_file, name="Cash")
-        category = CategoryV2.objects.filter(
-            budget_file=budget_file, kind=CategoryV2.KIND_EXPENSE
+        category = Category.objects.filter(
+            budget_file=budget_file, kind=Category.KIND_EXPENSE
         ).first()
         return budget_file, account, category
 

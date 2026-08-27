@@ -19,7 +19,7 @@ from pft.models import (
     Account,
     AICategorizationSettings,
     BudgetFile,
-    CategoryV2,
+    Category,
     LedgerPosting,
     LedgerTransaction,
     NotificationPreference,
@@ -42,8 +42,8 @@ class TenantFixture:
         )
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category_v2 = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
         self.payee = Payee.objects.create(
             budget_file=self.budget_file, name=f"Payee {email}"
@@ -77,7 +77,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
         return {
             "budget-files": f"/api/v1/finance/budget-files/{alice.budget_file.id}/",
             "accounts": f"/api/v1/finance/accounts/{alice.account.id}/",
-            "categories": f"/api/v1/finance/categories/{alice.category_v2.id}/",
+            "categories": f"/api/v1/finance/categories/{alice.category.id}/",
             "payees": f"/api/v1/finance/payees/{alice.payee.id}/",
             "savings-goals": f"/api/v1/finance/savings-goals/{alice.savings_goal.id}/",
         }
@@ -124,7 +124,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             "postings": [
                 {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
                 {
-                    "category": self.alice.category_v2.id,
+                    "category": self.alice.category.id,
                     "amount": "5.00",
                     "sort_order": 1,
                 },
@@ -170,7 +170,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
                 "memo": "Rent",
                 "postings": [
                     {"account_id": self.alice.account.id, "amount": "-100.00"},
-                    {"category_id": self.bob.category_v2.id, "amount": "100.00"},
+                    {"category_id": self.bob.category.id, "amount": "100.00"},
                 ],
             },
         )
@@ -332,7 +332,7 @@ class OrganizationSharingTests(TenantIsolationTestCase):
                         "sort_order": 0,
                     },
                     {
-                        "category": self.alice.category_v2.id,
+                        "category": self.alice.category.id,
                         "amount": "5.00",
                         "sort_order": 1,
                     },
@@ -361,7 +361,7 @@ class OrganizationSharingTests(TenantIsolationTestCase):
                         "sort_order": 0,
                     },
                     {
-                        "category": self.alice.category_v2.id,
+                        "category": self.alice.category.id,
                         "amount": "5.00",
                         "sort_order": 1,
                     },

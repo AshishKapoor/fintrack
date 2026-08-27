@@ -16,6 +16,12 @@
 # Carried-over rows are stamped with match_key "legacy:<pk>" so a re-run is a
 # no-op and so the provenance survives in the database, not just in this file.
 #
+# Migration 0005 already did this once, for every row that existed when the
+# ledger was introduced, stamping those "v1-<pk>". Only rows written through
+# the flat API *after* 0005 ran are left, so both stamps have to be checked
+# before carrying anything - otherwise every pre-0005 transaction comes out of
+# this upgrade twice.
+#
 # The reverse is a genuine no-op, not a reconstruction: this migration is not
 # losslessly reversible and pretending otherwise would be worse than saying so.
 # `migrate pft 0016` restores the tables (empty) without deleting anything the
@@ -24,6 +30,7 @@
 from decimal import Decimal
 
 from django.db import migrations
+from django.db.models import Q
 
 # Same seed lists as pft/signals.py. Duplicated rather than imported because a
 # migration must not depend on application code that will keep changing.
@@ -36,7 +43,10 @@ DEFAULT_EXPENSE_CATEGORIES = [
     "Entertainment",
 ]
 
-UNCATEGORIZED = "Uncategorized"
+# The bucket names 0005 used for uncategorised rows. Reused verbatim so a row
+# carried today joins the same category as its pre-0005 siblings instead of
+# founding a third one.
+UNCATEGORIZED = {"income": "Uncategorized Income", "expense": "Uncategorized Expense"}
 
 
 def _budget_file_for(apps, user_id, cache):
@@ -123,7 +133,8 @@ def _category_for(apps, budget_file, legacy_name, kind, cache):
     marked income and a ledger "Bonus" marked expense are still one category.
     Whichever exists wins; the kind is only used when creating.
     """
-    lookup = (legacy_name or UNCATEGORIZED).strip() or UNCATEGORIZED
+    fallback = UNCATEGORIZED[kind]
+    lookup = (legacy_name or fallback).strip() or fallback
     key = (budget_file.id, lookup.lower())
     if key in cache:
         return cache[key]
@@ -157,17 +168,19 @@ def carry_legacy_data_into_the_ledger(apps, schema_editor):
     accounts = {}
     categories = {}
 
+    # Both stamps: "v1-<pk>" is 0005's, "legacy:<pk>" is this migration's own
+    # (so a re-run, or a resumed run, is a no-op).
     already_carried = set(
-        LedgerTransaction.objects.filter(match_key__startswith="legacy:").values_list(
-            "match_key", flat=True
-        )
+        LedgerTransaction.objects.filter(
+            Q(match_key__startswith="legacy:") | Q(match_key__startswith="v1-")
+        ).values_list("match_key", flat=True)
     )
 
     for legacy in (
         Transaction.objects.select_related("category").order_by("id").iterator()
     ):
         match_key = f"legacy:{legacy.id}"
-        if match_key in already_carried:
+        if match_key in already_carried or f"v1-{legacy.id}" in already_carried:
             continue
 
         budget_file = _budget_file_for(apps, legacy.user_id, budget_files)
@@ -178,7 +191,7 @@ def carry_legacy_data_into_the_ledger(apps, schema_editor):
         category = _category_for(
             apps,
             budget_file,
-            legacy.category.name if legacy.category_id else UNCATEGORIZED,
+            legacy.category.name if legacy.category_id else None,
             kind,
             categories,
         )
@@ -231,7 +244,7 @@ def carry_legacy_data_into_the_ledger(apps, schema_editor):
         category = _category_for(
             apps,
             budget_file,
-            legacy.category.name if legacy.category_id else UNCATEGORIZED,
+            legacy.category.name if legacy.category_id else None,
             legacy.category.type if legacy.category_id else "expense",
             categories,
         )

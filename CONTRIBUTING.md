@@ -171,8 +171,6 @@ start, these are all real and self-contained:
 
 - Audit `apps/web/app/components/ui/` for shadcn components nothing imports and
   remove them.
-- Rename `CategoryV2`/`CategoryGroupV2` (schema + models + regenerated
-  clients) before `v1.0.0` bakes the names in.
 - Merge `apps/web/app/lib/finance-client.ts`'s remaining helpers into the
   generated client + `lib/ledger.ts` and delete it.
 - Pick any page or dialog not yet listed in [docs/i18n.md](docs/i18n.md)'s

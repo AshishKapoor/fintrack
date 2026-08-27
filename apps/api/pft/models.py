@@ -321,7 +321,7 @@ class Account(models.Model):
         return self.currency_code or self.budget_file.currency_code
 
 
-class CategoryGroupV2(models.Model):
+class CategoryGroup(models.Model):
     budget_file = models.ForeignKey(
         BudgetFile, on_delete=models.CASCADE, related_name="category_groups"
     )
@@ -343,7 +343,7 @@ class CategoryGroupV2(models.Model):
         return self.name
 
 
-class CategoryV2(models.Model):
+class Category(models.Model):
     KIND_INCOME = "income"
     KIND_EXPENSE = "expense"
 
@@ -353,10 +353,10 @@ class CategoryV2(models.Model):
     )
 
     budget_file = models.ForeignKey(
-        BudgetFile, on_delete=models.CASCADE, related_name="categories_v2"
+        BudgetFile, on_delete=models.CASCADE, related_name="categories"
     )
     group = models.ForeignKey(
-        CategoryGroupV2,
+        CategoryGroup,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -374,7 +374,7 @@ class CategoryV2(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["budget_file", "name"],
-                name="unique_category_v2_name_per_budget_file",
+                name="unique_category_name_per_budget_file",
             )
         ]
 
@@ -486,7 +486,7 @@ class LedgerPosting(models.Model):
         related_name="ledger_postings",
     )
     category = models.ForeignKey(
-        CategoryV2,
+        Category,
         null=True,
         blank=True,
         on_delete=models.CASCADE,
@@ -581,7 +581,7 @@ class EnvelopeAssignment(models.Model):
         BudgetMonth, on_delete=models.CASCADE, related_name="assignments"
     )
     category = models.ForeignKey(
-        CategoryV2, on_delete=models.CASCADE, related_name="envelope_assignments"
+        Category, on_delete=models.CASCADE, related_name="envelope_assignments"
     )
     assigned_amount = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal("0.00")
@@ -1078,7 +1078,7 @@ class FxRate(models.Model):
     triangulates through EUR at read time instead of storing every cross
     pair, which would be O(currencies^2) for no real benefit. Not scoped to
     a budget file - exchange rates are reference data shared by everyone on
-    the instance, the same way the legacy Category rows with user=NULL are.
+    the instance, unlike every other model here.
     """
 
     rate_date = models.DateField(db_index=True)

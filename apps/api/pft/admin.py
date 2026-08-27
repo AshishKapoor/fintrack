@@ -6,8 +6,8 @@ from .models import (
     AICategorizationSettings,
     BudgetFile,
     BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -128,14 +128,14 @@ class AICategorizationSettingsAdmin(admin.ModelAdmin):
     search_fields = ("budget_file__name", "budget_file__user__email")
 
 
-@admin.register(CategoryGroupV2)
+@admin.register(CategoryGroup)
 class CategoryGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "budget_file", "sort_order")
     search_fields = ("name",)
 
 
-@admin.register(CategoryV2)
-class CategoryV2Admin(admin.ModelAdmin):
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
     list_display = ("name", "budget_file", "group", "kind", "is_archived")
     list_filter = ("kind", "is_archived")
     search_fields = ("name",)

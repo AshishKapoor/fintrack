@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import AuditLog, BudgetFile, CategoryV2, Organization
+from pft.models import AuditLog, BudgetFile, Category, Organization
 
 User = get_user_model()
 
@@ -21,7 +21,7 @@ class AuditWritingTests(APITestCase):
         self.client.force_authenticate(user=self.owner)
         self.org = Organization.objects.get(memberships__user=self.owner)
         self.budget_file = BudgetFile.objects.get(user=self.owner, is_default=True)
-        self.category = CategoryV2.objects.filter(budget_file=self.budget_file).first()
+        self.category = Category.objects.filter(budget_file=self.budget_file).first()
 
     def test_finance_mutations_are_recorded(self):
         response = self.client.post(

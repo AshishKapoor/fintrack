@@ -5,7 +5,7 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.category_group_v2 import CategoryGroupV2
+from ...models.category_group import CategoryGroup
 from ...types import Response
 
 
@@ -21,12 +21,12 @@ def _get_kwargs() -> dict[str, Any]:
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> list[CategoryGroupV2] | None:
+) -> list[CategoryGroup] | None:
     if response.status_code == 200:
         response_200 = []
         _response_200 = response.json()
         for response_200_item_data in _response_200:
-            response_200_item = CategoryGroupV2.from_dict(response_200_item_data)
+            response_200_item = CategoryGroup.from_dict(response_200_item_data)
 
             response_200.append(response_200_item)
 
@@ -40,7 +40,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[list[CategoryGroupV2]]:
+) -> Response[list[CategoryGroup]]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -52,7 +52,7 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[CategoryGroupV2]]:
+) -> Response[list[CategoryGroup]]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -65,7 +65,7 @@ def sync_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[CategoryGroupV2]]
+        Response[list[CategoryGroup]]
     """
 
     kwargs = _get_kwargs()
@@ -80,7 +80,7 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-) -> list[CategoryGroupV2] | None:
+) -> list[CategoryGroup] | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -93,7 +93,7 @@ def sync(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[CategoryGroupV2]
+        list[CategoryGroup]
     """
 
     return sync_detailed(
@@ -104,7 +104,7 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[CategoryGroupV2]]:
+) -> Response[list[CategoryGroup]]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -117,7 +117,7 @@ async def asyncio_detailed(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[CategoryGroupV2]]
+        Response[list[CategoryGroup]]
     """
 
     kwargs = _get_kwargs()
@@ -130,7 +130,7 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-) -> list[CategoryGroupV2] | None:
+) -> list[CategoryGroup] | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -143,7 +143,7 @@ async def asyncio(
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[CategoryGroupV2]
+        list[CategoryGroup]
     """
 
     return (

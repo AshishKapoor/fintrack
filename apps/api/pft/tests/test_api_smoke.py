@@ -13,7 +13,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile, CategoryV2, LedgerPosting, LedgerTransaction
+from pft.models import Account, BudgetFile, Category, LedgerPosting, LedgerTransaction
 
 User = get_user_model()
 
@@ -47,11 +47,11 @@ class AuthSmokeTests(APITestCase):
         self.assertIsNotNone(budget_file.organization)
         self.assertEqual(Account.objects.filter(budget_file=budget_file).count(), 1)
 
-        categories = CategoryV2.objects.filter(budget_file=budget_file)
+        categories = Category.objects.filter(budget_file=budget_file)
         self.assertEqual(categories.count(), 10)
         self.assertSetEqual(
             set(
-                categories.filter(kind=CategoryV2.KIND_INCOME).values_list(
+                categories.filter(kind=Category.KIND_INCOME).values_list(
                     "name", flat=True
                 )
             ),
@@ -59,7 +59,7 @@ class AuthSmokeTests(APITestCase):
         )
         self.assertSetEqual(
             set(
-                categories.filter(kind=CategoryV2.KIND_EXPENSE).values_list(
+                categories.filter(kind=Category.KIND_EXPENSE).values_list(
                     "name", flat=True
                 )
             ),
@@ -106,8 +106,8 @@ class CoreFinanceSmokeTests(APITestCase):
 
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.expense_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.expense_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def _postings(self, amount: str, category_id: int | None = None):
@@ -148,7 +148,7 @@ class CoreFinanceSmokeTests(APITestCase):
             {
                 "budget_file": self.budget_file.id,
                 "name": "Travel",
-                "kind": CategoryV2.KIND_EXPENSE,
+                "kind": Category.KIND_EXPENSE,
             },
             format="json",
         )

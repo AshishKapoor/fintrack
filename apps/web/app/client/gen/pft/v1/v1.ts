@@ -27,8 +27,8 @@ import type {
   BankSyncResult,
   BudgetFile,
   BudgetMonth,
-  CategoryGroupV2,
-  CategoryV2,
+  Category,
+  CategoryGroup,
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
@@ -45,8 +45,8 @@ import type {
   PatchedAccount,
   PatchedBudgetFile,
   PatchedBudgetMonth,
-  PatchedCategoryGroupV2,
-  PatchedCategoryV2,
+  PatchedCategory,
+  PatchedCategoryGroup,
   PatchedEncryptedBackupBundle,
   PatchedEnvelopeAssignment,
   PatchedExportJob,
@@ -1825,7 +1825,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoriesList = (
     
  ) => {
-    return httpPFTClient<CategoryV2[]>(
+    return httpPFTClient<Category[]>(
     {url: `/api/v1/finance/categories/`, method: 'GET'
     },
     );
@@ -1863,12 +1863,12 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesCreate = (
-    categoryV2: NonReadonly<CategoryV2>,
+    category: NonReadonly<Category>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: categoryV2
+      data: category
     },
     );
   }
@@ -1876,7 +1876,7 @@ export const v1FinanceCategoriesCreate = (
 
 
 export const getV1FinanceCategoriesCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
     return v1FinanceCategoriesCreate(arg);
   }
 }
@@ -1886,7 +1886,7 @@ export type V1FinanceCategoriesCreateMutationResult = NonNullable<Awaited<Return
 export type V1FinanceCategoriesCreateMutationError = unknown
 
 export const useV1FinanceCategoriesCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>, TError, Key, NonReadonly<CategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>> & { swrKey?: string }, }
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -1912,7 +1912,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoriesRetrieve = (
     id: string,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'GET'
     },
     );
@@ -1951,12 +1951,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesUpdate = (
     id: string,
-    categoryV2: NonReadonly<CategoryV2>,
+    category: NonReadonly<Category>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryV2
+      data: category
     },
     );
   }
@@ -1964,7 +1964,7 @@ export const v1FinanceCategoriesUpdate = (
 
 
 export const getV1FinanceCategoriesUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
     return v1FinanceCategoriesUpdate(id, arg);
   }
 }
@@ -1974,7 +1974,7 @@ export type V1FinanceCategoriesUpdateMutationResult = NonNullable<Awaited<Return
 export type V1FinanceCategoriesUpdateMutationError = unknown
 
 export const useV1FinanceCategoriesUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>, TError, Key, NonReadonly<CategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -1999,12 +1999,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesPartialUpdate = (
     id: string,
-    patchedCategoryV2: NonReadonly<PatchedCategoryV2>,
+    patchedCategory: NonReadonly<PatchedCategory>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: patchedCategoryV2
+      data: patchedCategory
     },
     );
   }
@@ -2012,7 +2012,7 @@ export const v1FinanceCategoriesPartialUpdate = (
 
 
 export const getV1FinanceCategoriesPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategory> }) => {
     return v1FinanceCategoriesPartialUpdate(id, arg);
   }
 }
@@ -2022,7 +2022,7 @@ export type V1FinanceCategoriesPartialUpdateMutationResult = NonNullable<Awaited
 export type V1FinanceCategoriesPartialUpdateMutationError = unknown
 
 export const useV1FinanceCategoriesPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>, TError, Key, NonReadonly<PatchedCategory>, Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2093,7 +2093,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoryGroupsList = (
     
  ) => {
-    return httpPFTClient<CategoryGroupV2[]>(
+    return httpPFTClient<CategoryGroup[]>(
     {url: `/api/v1/finance/category-groups/`, method: 'GET'
     },
     );
@@ -2131,12 +2131,12 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsCreate = (
-    categoryGroupV2: NonReadonly<CategoryGroupV2>,
+    categoryGroup: NonReadonly<CategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: categoryGroupV2
+      data: categoryGroup
     },
     );
   }
@@ -2144,7 +2144,7 @@ export const v1FinanceCategoryGroupsCreate = (
 
 
 export const getV1FinanceCategoryGroupsCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroup> }) => {
     return v1FinanceCategoryGroupsCreate(arg);
   }
 }
@@ -2154,7 +2154,7 @@ export type V1FinanceCategoryGroupsCreateMutationResult = NonNullable<Awaited<Re
 export type V1FinanceCategoryGroupsCreateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>, TError, Key, NonReadonly<CategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>> & { swrKey?: string }, }
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>, TError, Key, NonReadonly<CategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2180,7 +2180,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoryGroupsRetrieve = (
     id: string,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'GET'
     },
     );
@@ -2219,12 +2219,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsUpdate = (
     id: string,
-    categoryGroupV2: NonReadonly<CategoryGroupV2>,
+    categoryGroup: NonReadonly<CategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryGroupV2
+      data: categoryGroup
     },
     );
   }
@@ -2232,7 +2232,7 @@ export const v1FinanceCategoryGroupsUpdate = (
 
 
 export const getV1FinanceCategoryGroupsUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroup> }) => {
     return v1FinanceCategoryGroupsUpdate(id, arg);
   }
 }
@@ -2242,7 +2242,7 @@ export type V1FinanceCategoryGroupsUpdateMutationResult = NonNullable<Awaited<Re
 export type V1FinanceCategoryGroupsUpdateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>, TError, Key, NonReadonly<CategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>, TError, Key, NonReadonly<CategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2267,12 +2267,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsPartialUpdate = (
     id: string,
-    patchedCategoryGroupV2: NonReadonly<PatchedCategoryGroupV2>,
+    patchedCategoryGroup: NonReadonly<PatchedCategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: patchedCategoryGroupV2
+      data: patchedCategoryGroup
     },
     );
   }
@@ -2280,7 +2280,7 @@ export const v1FinanceCategoryGroupsPartialUpdate = (
 
 
 export const getV1FinanceCategoryGroupsPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryGroup> }) => {
     return v1FinanceCategoryGroupsPartialUpdate(id, arg);
   }
 }
@@ -2290,7 +2290,7 @@ export type V1FinanceCategoryGroupsPartialUpdateMutationResult = NonNullable<Awa
 export type V1FinanceCategoryGroupsPartialUpdateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}

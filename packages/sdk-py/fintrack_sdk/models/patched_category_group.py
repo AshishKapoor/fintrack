@@ -10,11 +10,11 @@ from typing_extensions import Self
 
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="PatchedCategoryGroupV2")
+T = TypeVar("T", bound="PatchedCategoryGroup")
 
 
 @_attrs_define
-class PatchedCategoryGroupV2:
+class PatchedCategoryGroup:
     """
     Attributes:
         id (int | Unset):
@@ -93,7 +93,7 @@ class PatchedCategoryGroupV2:
         else:
             updated_at = datetime.datetime.fromisoformat(_updated_at)
 
-        patched_category_group_v2 = cls(
+        patched_category_group = cls(
             id=id,
             budget_file=budget_file,
             name=name,
@@ -102,8 +102,8 @@ class PatchedCategoryGroupV2:
             updated_at=updated_at,
         )
 
-        patched_category_group_v2.additional_properties = d
-        return patched_category_group_v2
+        patched_category_group.additional_properties = d
+        return patched_category_group
 
     @property
     def additional_keys(self) -> list[str]:

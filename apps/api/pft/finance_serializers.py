@@ -10,8 +10,8 @@ from .models import (
     AICategorizationSettings,
     BudgetFile,
     BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -212,9 +212,9 @@ class AICategorizationSettingsSerializer(serializers.ModelSerializer, UserOwnedB
         return attrs
 
 
-class CategoryGroupV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class CategoryGroupSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
-        model = CategoryGroupV2
+        model = CategoryGroup
         fields = [
             "id",
             "budget_file",
@@ -230,9 +230,9 @@ class CategoryGroupV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFile
         return value
 
 
-class CategoryV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class CategorySerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
-        model = CategoryV2
+        model = Category
         fields = [
             "id",
             "budget_file",

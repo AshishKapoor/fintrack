@@ -11,7 +11,7 @@ from pft.models import (
     Account,
     BudgetFile,
     BudgetMonth,
-    CategoryV2,
+    Category,
     EnvelopeAssignment,
     LedgerPosting,
     LedgerTransaction,
@@ -81,7 +81,7 @@ class Command(BaseCommand):
         budget_file, checking, savings = self._prepare_accounts(user)
         categories = {
             category.name: category
-            for category in CategoryV2.objects.filter(budget_file=budget_file)
+            for category in Category.objects.filter(budget_file=budget_file)
         }
 
         rng = random.Random(SEED)
@@ -143,7 +143,7 @@ class Command(BaseCommand):
 
     def _category_for(self, budget_file, categories, name, kind):
         if name not in categories:
-            categories[name] = CategoryV2.objects.create(
+            categories[name] = Category.objects.create(
                 budget_file=budget_file, name=name, kind=kind
             )
         return categories[name]
@@ -153,7 +153,7 @@ class Command(BaseCommand):
 
         for name, amount, payee_name in INCOME_PLAN:
             category = self._category_for(
-                budget_file, categories, name, CategoryV2.KIND_INCOME
+                budget_file, categories, name, Category.KIND_INCOME
             )
             created += self._write_transaction(
                 budget_file=budget_file,
@@ -168,7 +168,7 @@ class Command(BaseCommand):
 
         for name, payee_name, low, high, times in EXPENSE_PLAN:
             category = self._category_for(
-                budget_file, categories, name, CategoryV2.KIND_EXPENSE
+                budget_file, categories, name, Category.KIND_EXPENSE
             )
             for _ in range(times):
                 created += self._write_transaction(
@@ -194,7 +194,7 @@ class Command(BaseCommand):
         )
         for name, assigned in ENVELOPE_TARGETS.items():
             category = self._category_for(
-                budget_file, categories, name, CategoryV2.KIND_EXPENSE
+                budget_file, categories, name, Category.KIND_EXPENSE
             )
             EnvelopeAssignment.objects.get_or_create(
                 budget_month=budget_month,

@@ -33,7 +33,7 @@ from django.utils import timezone
 
 from .models import (
     BudgetMonth,
-    CategoryV2,
+    Category,
     LedgerPosting,
     NotificationLog,
     NotificationPreference,
@@ -372,10 +372,10 @@ def send_weekly_digest() -> tuple[int, list[tuple[int, str]]]:
                 category__isnull=False,
             )
             spent = postings.filter(
-                category__kind=CategoryV2.KIND_EXPENSE
+                category__kind=Category.KIND_EXPENSE
             ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
             income = postings.filter(
-                category__kind=CategoryV2.KIND_INCOME
+                category__kind=Category.KIND_INCOME
             ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
 
             upcoming = list(

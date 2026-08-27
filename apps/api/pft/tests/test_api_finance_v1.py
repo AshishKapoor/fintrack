@@ -8,7 +8,7 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     BudgetFile,
-    CategoryV2,
+    Category,
     ImportJob,
     LedgerPosting,
     LedgerTransaction,
@@ -28,13 +28,13 @@ class FinanceApiV1Tests(APITestCase):
 
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.expense_category = CategoryV2.objects.filter(
+        self.expense_category = Category.objects.filter(
             budget_file=self.budget_file,
-            kind=CategoryV2.KIND_EXPENSE,
+            kind=Category.KIND_EXPENSE,
         ).first()
-        self.income_category = CategoryV2.objects.filter(
+        self.income_category = Category.objects.filter(
             budget_file=self.budget_file,
-            kind=CategoryV2.KIND_INCOME,
+            kind=Category.KIND_INCOME,
         ).first()
 
     def test_user_bootstrap_creates_default_finance_objects(self):
@@ -43,7 +43,7 @@ class FinanceApiV1Tests(APITestCase):
             Account.objects.filter(budget_file=self.budget_file).count(), 1
         )
         self.assertGreaterEqual(
-            CategoryV2.objects.filter(budget_file=self.budget_file).count(),
+            Category.objects.filter(budget_file=self.budget_file).count(),
             10,
         )
 

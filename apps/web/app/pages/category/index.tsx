@@ -47,7 +47,7 @@ export default function CategoriesPage() {
 
   const { data: categories, isLoading, mutate: refreshCategories } = useV1FinanceCategoriesList()
 
-  // Native CategoryV2: the classification field is `kind`. Adapt to the
+  // Native ledger categories: the classification field is `kind`. Adapt to the
   // page's existing `type` vocabulary at the boundary.
   const categoriesList = (categories ?? [])
     .filter((category) => !category.is_archived)

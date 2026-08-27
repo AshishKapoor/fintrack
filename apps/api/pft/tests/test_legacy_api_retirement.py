@@ -65,14 +65,24 @@ class SignupNoLongerSeedsLegacyRowsTests(TestCase):
         self.assertIsNotNone(budget_file.organization)
         self.assertEqual(budget_file.accounts.count(), 1)
         self.assertEqual(budget_file.category_groups.count(), 2)
-        self.assertEqual(budget_file.categories_v2.count(), 10)
+        self.assertEqual(budget_file.categories.count(), 10)
 
     def test_the_legacy_models_are_not_importable(self):
         import pft.models as models
 
-        for name in ("Category", "Transaction", "Budget"):
+        # `Category` is deliberately absent from this list: the name is now
+        # taken by the ledger category, which migration 0018 renamed out of
+        # CategoryV2 once 0017 had freed it up.
+        for name in ("Transaction", "Budget"):
             with self.subTest(model=name):
                 self.assertFalse(hasattr(models, name))
+
+        # What `Category` now means: the ledger model, which is budget-file
+        # scoped and kind-based rather than user-owned and type-based.
+        self.assertTrue(hasattr(models.Category, "KIND_EXPENSE"))
+        self.assertTrue(hasattr(models.Category, "budget_file"))
+        self.assertFalse(hasattr(models, "CategoryV2"))
+        self.assertFalse(hasattr(models, "CategoryGroupV2"))
 
 
 class LegacyCarryOverMigrationTests(TransactionTestCase):
@@ -94,10 +104,23 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
         executor.loader.build_graph()
         return executor.loader.project_state([("pft", target)]).apps
 
+    @staticmethod
+    def _latest_migration():
+        """The current leaf of pft's migration graph.
+
+        Hard-coding AFTER here would strand the database one migration behind
+        for everything that runs after this class - which is exactly what
+        happened the moment 0018 landed.
+        """
+        loader = MigrationExecutor(connection).loader
+        loader.build_graph()
+        (leaf,) = [node for node in loader.graph.leaf_nodes() if node[0] == "pft"]
+        return leaf[1]
+
     def tearDown(self):
-        # Leave the database on the latest migration for whatever runs next,
-        # including this class's own second test method.
-        self._migrate(self.AFTER)
+        # Put the database back on the latest migration for whatever runs
+        # next, including this class's own second test method.
+        self._migrate(self._latest_migration())
 
     def _seed_old_world(self, apps):
         """Build, in the 0016 schema, the state a real upgrade would find."""
@@ -106,6 +129,8 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
         Membership = apps.get_model("pft", "Membership")
         BudgetFile = apps.get_model("pft", "BudgetFile")
         Account = apps.get_model("pft", "Account")
+        # These are the 0016 names: the ledger category is still CategoryV2
+        # there, and `Category` still means the flat legacy model.
         CategoryGroupV2 = apps.get_model("pft", "CategoryGroupV2")
         CategoryV2 = apps.get_model("pft", "CategoryV2")
         Category = apps.get_model("pft", "Category")
@@ -120,7 +145,7 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
         budget_file = BudgetFile.objects.create(
             user=user, organization=organization, name="Primary Budget", is_default=True
         )
-        Account.objects.create(
+        cash = Account.objects.create(
             budget_file=budget_file, name="Cash", type="checking", currency_code="USD"
         )
         expenses = CategoryGroupV2.objects.create(
@@ -128,7 +153,7 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
         )
         # Groceries already exists in the ledger; the legacy row of the same
         # name must map onto it rather than creating a duplicate.
-        CategoryV2.objects.create(
+        groceries_v2 = CategoryV2.objects.create(
             budget_file=budget_file, group=expenses, name="Groceries", kind="expense"
         )
 
@@ -167,6 +192,42 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
             category=None,
             transaction_date=date(2026, 3, 3),
         )
+        # A transaction migration 0005 already carried into the ledger, back
+        # when the flat model still had rows predating the ledger. 0017 must
+        # leave it alone; carrying it again would double it on upgrade.
+        already_carried = Transaction.objects.create(
+            user=user,
+            title="Ancient history",
+            amount=Decimal("11.11"),
+            type="expense",
+            category=groceries,
+            transaction_date=date(2026, 2, 1),
+        )
+        LedgerTransaction = apps.get_model("pft", "LedgerTransaction")
+        LedgerPosting = apps.get_model("pft", "LedgerPosting")
+        twin = LedgerTransaction.objects.create(
+            budget_file=budget_file,
+            transaction_date=date(2026, 2, 1),
+            memo="Ancient history",
+            match_key=f"v1-{already_carried.id}",
+        )
+        LedgerPosting.objects.bulk_create(
+            [
+                LedgerPosting(
+                    transaction=twin,
+                    account_id=cash.id,
+                    amount=Decimal("-11.11"),
+                    sort_order=0,
+                ),
+                LedgerPosting(
+                    transaction=twin,
+                    category_id=groceries_v2.id,
+                    amount=Decimal("11.11"),
+                    sort_order=1,
+                ),
+            ]
+        )
+
         Budget.objects.create(
             user=user,
             category=groceries,
@@ -188,6 +249,18 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
             budget_file_id=budget_file_id, match_key__startswith="legacy:"
         ).order_by("transaction_date")
         self.assertEqual(carried.count(), 3)
+
+        # The row 0005 already carried is still exactly one ledger
+        # transaction, and it is not among the three this migration wrote.
+        self.assertEqual(
+            LedgerTransaction.objects.filter(
+                budget_file_id=budget_file_id, memo="Ancient history"
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            LedgerTransaction.objects.filter(budget_file_id=budget_file_id).count(), 4
+        )
 
         shop, paycheck, mystery = carried
 
@@ -217,9 +290,11 @@ class LegacyCarryOverMigrationTests(TransactionTestCase):
             )
 
         # An uncategorised legacy row gets a real category, because a posting
-        # must target exactly one of account/category.
+        # must target exactly one of account/category. The bucket name matches
+        # the one migration 0005 used, so rows carried at either point land
+        # together instead of in two near-identical categories.
         mystery_category = mystery.postings.exclude(category_id=None).get()
-        self.assertEqual(mystery_category.category.name, "Uncategorized")
+        self.assertEqual(mystery_category.category.name, "Uncategorized Expense")
 
         # The pre-existing ledger "Groceries" absorbed the legacy one instead
         # of being duplicated.

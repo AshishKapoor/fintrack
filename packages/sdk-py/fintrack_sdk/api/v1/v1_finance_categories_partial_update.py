@@ -6,15 +6,15 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.category_v2 import CategoryV2
-from ...models.patched_category_v2 import PatchedCategoryV2
+from ...models.category import Category
+from ...models.patched_category import PatchedCategory
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     id: str,
     *,
-    body: PatchedCategoryV2 | Unset = UNSET,
+    body: PatchedCategory | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -36,9 +36,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CategoryV2 | None:
+) -> Category | None:
     if response.status_code == 200:
-        response_200 = CategoryV2.from_dict(response.json())
+        response_200 = Category.from_dict(response.json())
 
         return response_200
 
@@ -50,7 +50,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CategoryV2]:
+) -> Response[Category]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -63,8 +63,8 @@ def sync_detailed(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryV2 | Unset = UNSET,
-) -> Response[CategoryV2]:
+    body: PatchedCategory | Unset = UNSET,
+) -> Response[Category]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -74,14 +74,14 @@ def sync_detailed(
 
     Args:
         id (str):
-        body (PatchedCategoryV2 | Unset):
+        body (PatchedCategory | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryV2]
+        Response[Category]
     """
 
     kwargs = _get_kwargs(
@@ -100,8 +100,8 @@ def sync(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryV2 | Unset = UNSET,
-) -> CategoryV2 | None:
+    body: PatchedCategory | Unset = UNSET,
+) -> Category | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -111,14 +111,14 @@ def sync(
 
     Args:
         id (str):
-        body (PatchedCategoryV2 | Unset):
+        body (PatchedCategory | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryV2
+        Category
     """
 
     return sync_detailed(
@@ -132,8 +132,8 @@ async def asyncio_detailed(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryV2 | Unset = UNSET,
-) -> Response[CategoryV2]:
+    body: PatchedCategory | Unset = UNSET,
+) -> Response[Category]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -143,14 +143,14 @@ async def asyncio_detailed(
 
     Args:
         id (str):
-        body (PatchedCategoryV2 | Unset):
+        body (PatchedCategory | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryV2]
+        Response[Category]
     """
 
     kwargs = _get_kwargs(
@@ -167,8 +167,8 @@ async def asyncio(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryV2 | Unset = UNSET,
-) -> CategoryV2 | None:
+    body: PatchedCategory | Unset = UNSET,
+) -> Category | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -178,14 +178,14 @@ async def asyncio(
 
     Args:
         id (str):
-        body (PatchedCategoryV2 | Unset):
+        body (PatchedCategory | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryV2
+        Category
     """
 
     return (

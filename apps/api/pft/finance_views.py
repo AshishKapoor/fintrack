@@ -29,8 +29,8 @@ from .finance_serializers import (
     BankSyncResultSerializer,
     BudgetFileSerializer,
     BudgetMonthSerializer,
-    CategoryGroupV2Serializer,
-    CategoryV2Serializer,
+    CategoryGroupSerializer,
+    CategorySerializer,
     EncryptedBackupBundleSerializer,
     EnvelopeAssignmentSerializer,
     ExportJobSerializer,
@@ -69,8 +69,8 @@ from .models import (
     AuditLog,
     BudgetFile,
     BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -319,21 +319,21 @@ class AICategorizationTestView(APIView):
 
 
 class CategoryGroupViewSet(UserScopedModelViewSet):
-    serializer_class = CategoryGroupV2Serializer
+    serializer_class = CategoryGroupSerializer
 
     def get_queryset(self):
-        queryset = CategoryGroupV2.objects.filter(budget_file_q(self.request.user)).order_by("sort_order", "id")
+        queryset = CategoryGroup.objects.filter(budget_file_q(self.request.user)).order_by("sort_order", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
         return queryset
 
 
-class CategoryV2ViewSet(UserScopedModelViewSet):
-    serializer_class = CategoryV2Serializer
+class CategoryViewSet(UserScopedModelViewSet):
+    serializer_class = CategorySerializer
 
     def get_queryset(self):
-        queryset = CategoryV2.objects.filter(budget_file_q(self.request.user)).order_by("id")
+        queryset = Category.objects.filter(budget_file_q(self.request.user)).order_by("id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -392,7 +392,7 @@ class PayeeViewSet(UserScopedModelViewSet):
         ).first()
         if ai_settings:
             candidates = list(
-                CategoryV2.objects.filter(
+                Category.objects.filter(
                     budget_file=payee.budget_file, is_archived=False
                 ).values("id", "name")
             )
@@ -467,7 +467,7 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
         # Income and expense are a property of the category on the posting, not
         # of the transaction, so filtering by "type" filters on that category.
         tx_type = self.request.query_params.get("type")
-        if tx_type in {CategoryV2.KIND_INCOME, CategoryV2.KIND_EXPENSE}:
+        if tx_type in {Category.KIND_INCOME, Category.KIND_EXPENSE}:
             queryset = queryset.filter(postings__category__kind=tx_type).distinct()
 
         return queryset

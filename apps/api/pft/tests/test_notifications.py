@@ -21,7 +21,7 @@ from pft.models import (
     Account,
     BudgetFile,
     BudgetMonth,
-    CategoryV2,
+    Category,
     EnvelopeAssignment,
     LedgerPosting,
     LedgerTransaction,
@@ -239,8 +239,8 @@ class BudgetThresholdTriggerTests(TestCase):
         self.user = _make_user("threshold@example.com", email_enabled=True, budget_alert_threshold=80)
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
         self.budget_month = BudgetMonth.objects.create(
             budget_file=self.budget_file, year=2026, month=3
@@ -326,8 +326,8 @@ class ScheduledReminderTriggerTests(TestCase):
         )
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def _schedule(self, next_run_date):
@@ -400,8 +400,8 @@ class WeeklyDigestTriggerTests(TestCase):
         self.user = _make_user("digest@example.com", email_enabled=True, weekly_digest_enabled=True)
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     @patch("pft.notifications.timezone.now")

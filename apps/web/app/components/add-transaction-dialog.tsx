@@ -60,7 +60,7 @@ export function AddTransactionDialog({
   const [saving, setSaving] = useState(false)
 
   // Native finance categories through the generated SDK: the classification
-  // field is `kind`, and ids are CategoryV2 ids. No adapter, no /me round-trip
+  // field is `kind`, and ids are Category ids. No adapter, no /me round-trip
   // (the old create path fetched the user only to send an id the API ignored).
   const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)

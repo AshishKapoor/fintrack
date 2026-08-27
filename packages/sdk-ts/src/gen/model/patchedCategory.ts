@@ -7,16 +7,16 @@
  */
 import type { KindEnum } from './kindEnum';
 
-export interface CategoryV2 {
-  readonly id: number;
-  budget_file: number;
+export interface PatchedCategory {
+  readonly id?: number;
+  budget_file?: number;
   /** @nullable */
   group?: number | null;
   /** @maxLength 120 */
-  name: string;
+  name?: string;
   kind?: KindEnum;
   is_archived?: boolean;
   notes_md?: string;
-  readonly created_at: string;
-  readonly updated_at: string;
+  readonly created_at?: string;
+  readonly updated_at?: string;
 }

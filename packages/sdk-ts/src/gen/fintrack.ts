@@ -15,8 +15,8 @@ import type {
   BankSyncResult,
   BudgetFile,
   BudgetMonth,
-  CategoryGroupV2,
-  CategoryV2,
+  Category,
+  CategoryGroup,
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
@@ -33,8 +33,8 @@ import type {
   PatchedAccount,
   PatchedBudgetFile,
   PatchedBudgetMonth,
-  PatchedCategoryGroupV2,
-  PatchedCategoryV2,
+  PatchedCategory,
+  PatchedCategoryGroup,
   PatchedEncryptedBackupBundle,
   PatchedEnvelopeAssignment,
   PatchedExportJob,
@@ -1844,7 +1844,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesListResponse200 = {
-  data: CategoryV2[]
+  data: Category[]
   status: 200
 }
     
@@ -1885,7 +1885,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesCreateResponse201 = {
-  data: CategoryV2
+  data: Category
   status: 201
 }
     
@@ -1904,7 +1904,7 @@ export const getV1FinanceCategoriesCreateUrl = () => {
   return `/api/v1/finance/categories/`
 }
 
-export const v1FinanceCategoriesCreate = async (categoryV2: NonReadonly<CategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesCreateResponse> => {
+export const v1FinanceCategoriesCreate = async (category: NonReadonly<Category>, options?: RequestInit): Promise<v1FinanceCategoriesCreateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesCreateResponse>(getV1FinanceCategoriesCreateUrl(),
   {      
@@ -1912,7 +1912,7 @@ export const v1FinanceCategoriesCreate = async (categoryV2: NonReadonly<Category
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryV2,)
+      category,)
   }
 );}
 
@@ -1927,7 +1927,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesRetrieveResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -1968,7 +1968,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesUpdateResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -1988,7 +1988,7 @@ export const getV1FinanceCategoriesUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoriesUpdate = async (id: string,
-    categoryV2: NonReadonly<CategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesUpdateResponse> => {
+    category: NonReadonly<Category>, options?: RequestInit): Promise<v1FinanceCategoriesUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesUpdateResponse>(getV1FinanceCategoriesUpdateUrl(id),
   {      
@@ -1996,7 +1996,7 @@ export const v1FinanceCategoriesUpdate = async (id: string,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryV2,)
+      category,)
   }
 );}
 
@@ -2011,7 +2011,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesPartialUpdateResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -2031,7 +2031,7 @@ export const getV1FinanceCategoriesPartialUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoriesPartialUpdate = async (id: string,
-    patchedCategoryV2: NonReadonly<PatchedCategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesPartialUpdateResponse> => {
+    patchedCategory: NonReadonly<PatchedCategory>, options?: RequestInit): Promise<v1FinanceCategoriesPartialUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesPartialUpdateResponse>(getV1FinanceCategoriesPartialUpdateUrl(id),
   {      
@@ -2039,7 +2039,7 @@ export const v1FinanceCategoriesPartialUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      patchedCategoryV2,)
+      patchedCategory,)
   }
 );}
 
@@ -2095,7 +2095,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsListResponse200 = {
-  data: CategoryGroupV2[]
+  data: CategoryGroup[]
   status: 200
 }
     
@@ -2136,7 +2136,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsCreateResponse201 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 201
 }
     
@@ -2155,7 +2155,7 @@ export const getV1FinanceCategoryGroupsCreateUrl = () => {
   return `/api/v1/finance/category-groups/`
 }
 
-export const v1FinanceCategoryGroupsCreate = async (categoryGroupV2: NonReadonly<CategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsCreateResponse> => {
+export const v1FinanceCategoryGroupsCreate = async (categoryGroup: NonReadonly<CategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsCreateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsCreateResponse>(getV1FinanceCategoryGroupsCreateUrl(),
   {      
@@ -2163,7 +2163,7 @@ export const v1FinanceCategoryGroupsCreate = async (categoryGroupV2: NonReadonly
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryGroupV2,)
+      categoryGroup,)
   }
 );}
 
@@ -2178,7 +2178,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsRetrieveResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2219,7 +2219,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsUpdateResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2239,7 +2239,7 @@ export const getV1FinanceCategoryGroupsUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoryGroupsUpdate = async (id: string,
-    categoryGroupV2: NonReadonly<CategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsUpdateResponse> => {
+    categoryGroup: NonReadonly<CategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsUpdateResponse>(getV1FinanceCategoryGroupsUpdateUrl(id),
   {      
@@ -2247,7 +2247,7 @@ export const v1FinanceCategoryGroupsUpdate = async (id: string,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryGroupV2,)
+      categoryGroup,)
   }
 );}
 
@@ -2262,7 +2262,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsPartialUpdateResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2282,7 +2282,7 @@ export const getV1FinanceCategoryGroupsPartialUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoryGroupsPartialUpdate = async (id: string,
-    patchedCategoryGroupV2: NonReadonly<PatchedCategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsPartialUpdateResponse> => {
+    patchedCategoryGroup: NonReadonly<PatchedCategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsPartialUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsPartialUpdateResponse>(getV1FinanceCategoryGroupsPartialUpdateUrl(id),
   {      
@@ -2290,7 +2290,7 @@ export const v1FinanceCategoryGroupsPartialUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      patchedCategoryGroupV2,)
+      patchedCategoryGroup,)
   }
 );}
 

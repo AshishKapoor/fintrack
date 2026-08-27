@@ -10,11 +10,11 @@ from typing_extensions import Self
 
 from ..types import UNSET, Unset
 
-T = TypeVar("T", bound="CategoryGroupV2")
+T = TypeVar("T", bound="CategoryGroup")
 
 
 @_attrs_define
-class CategoryGroupV2:
+class CategoryGroup:
     """
     Attributes:
         id (int):
@@ -77,7 +77,7 @@ class CategoryGroupV2:
 
         sort_order = d.pop("sort_order", UNSET)
 
-        category_group_v2 = cls(
+        category_group = cls(
             id=id,
             budget_file=budget_file,
             name=name,
@@ -86,8 +86,8 @@ class CategoryGroupV2:
             sort_order=sort_order,
         )
 
-        category_group_v2.additional_properties = d
-        return category_group_v2
+        category_group.additional_properties = d
+        return category_group
 
     @property
     def additional_keys(self) -> list[str]:

@@ -158,7 +158,7 @@ export default function RulesAndRecurringPage() {
   const [loading, setLoading] = useState(false)
 
   const { data: categoriesData } = useV1FinanceCategoriesList()
-  // Native CategoryV2 rows: the classification field is `kind`.
+  // Native ledger category rows: the classification field is `kind`.
   const categories = useMemo(() => categoriesData ?? [], [categoriesData])
 
   const expenseCategories = useMemo(

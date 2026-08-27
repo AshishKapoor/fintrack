@@ -14,7 +14,7 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     BudgetFile,
-    CategoryV2,
+    Category,
     LedgerPosting,
     LedgerTransaction,
     Payee,
@@ -35,8 +35,8 @@ class SuggestedCategoryTests(APITestCase):
         self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         categories = list(
-            CategoryV2.objects.filter(
-                budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+            Category.objects.filter(
+                budget_file=self.budget_file, kind=Category.KIND_EXPENSE
             )[:2]
         )
         self.groceries, self.dining = categories

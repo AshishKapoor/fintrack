@@ -175,12 +175,7 @@ export default function UserSettingsPage() {
       <Typography variant='h2' className='mb-4'>
         {t('settings.title')}
       </Typography>
-      {loading && (
-        // <div className="flex justify-center items-center my-8">
-        //   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        // </div>
-        <AnimateSpinner size={64} />
-      )}
+      {loading && <AnimateSpinner size={64} />}
       {!loading && profile && (
         <Tabs defaultValue={defaultTab} className='space-y-6'>
           <TabsList className='w-full justify-start p-0'>

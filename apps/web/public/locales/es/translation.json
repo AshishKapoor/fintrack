@@ -35,6 +35,7 @@
       "errorInvalid": "Credenciales no válidas",
       "errorNetwork": "No se puede contactar con el servidor. ¿Está la API activa y accesible?",
       "noAccount": "¿No tienes una cuenta?",
+      "password": "Contraseña",
       "privacyLink": "Política de privacidad",
       "signUp": "Regístrate",
       "submit": "Iniciar sesión",

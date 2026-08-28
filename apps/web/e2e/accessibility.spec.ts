@@ -128,6 +128,17 @@ test.describe('signed in', () => {
     }
   })
 
+  test('the 404 page has no automatically detectable violations', async ({ page }) => {
+    await signIn(page, email)
+    // Unauthenticated visits to an unmatched path redirect to /login before
+    // the catch-all route ever renders, so this page is only reachable
+    // signed in - nothing routes to it in the happy path, which is how it
+    // went uncovered by this spec for as long as it did.
+    await page.goto('/this-page-does-not-exist')
+    await expect(page.getByRole('heading', { name: '404' })).toBeVisible({ timeout: 30_000 })
+    await expectNoViolations(page)
+  })
+
   test('the add-transaction dialog is reachable and labelled', async ({ page }) => {
     await signIn(page, email)
     await page.goto('/transactions')

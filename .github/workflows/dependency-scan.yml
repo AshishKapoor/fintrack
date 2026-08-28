@@ -40,7 +40,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Reporting only, deliberately, and this should tighten once the backlog
       # is triaged. The first run found ~30 advisories, essentially all against
@@ -80,7 +80,7 @@ jobs:
           - name: web
             context: ./apps/web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Build the image locally
         # Built here rather than pulled: the point is to catch a vulnerable

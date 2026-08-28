@@ -15,7 +15,7 @@ jobs:
       # Squash-merge puts the PR title in the commit subject, so this is what
       # actually keeps the Conventional Commits convention CONTRIBUTING.md
       # documents true of `git log` on main.
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

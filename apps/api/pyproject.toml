@@ -3,6 +3,7 @@ name = "fintrack-api"
 version = "0.1.0"
 description = "FinTrack API - privacy-first, self-hostable personal finance tracker"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "celery[redis]>=5.4",

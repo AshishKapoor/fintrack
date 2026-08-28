@@ -327,13 +327,14 @@ Contributions, issues, and feature requests are welcome! Please read the
 |---|---|
 | [ROADMAP.md](ROADMAP.md) | Where FinTrack is headed, phase by phase, and how to help |
 | [How double-entry works, for developers](docs/blog/double-entry-for-developers.md) | The mental model behind the ledger — start here |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why there are two API surfaces |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and the reasoning behind the ledger |
 | [docs/self-hosting.md](docs/self-hosting.md) | Reverse proxy, TLS, backups, upgrades, monitoring |
 | [docs/one-click-deploy.md](docs/one-click-deploy.md) | Render, Railway, PikaPods, Unraid, TrueNAS SCALE |
 | [docs/demo.md](docs/demo.md) | Running a public, read-only demo instance |
 | [SECURITY.md](SECURITY.md) | Hardening checklist, private reporting, known limitations |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
 | [SUPPORT.md](SUPPORT.md) | Where to ask what — Discussions, issues, security reports |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Attribution for code vendored into this repo |
 | [CHANGELOG.md](CHANGELOG.md) | What changed per release, and what an upgrade needs |
 | [RELEASING.md](RELEASING.md) | The monthly release cadence and its checklist |
 | [docs/adr/](docs/adr/) | Architecture decision records, including [licensing](docs/adr/0001-licensing.md) |

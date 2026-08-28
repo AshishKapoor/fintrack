@@ -1,0 +1,8 @@
+# Canonical identities for `git shortlog`, `git log --author` and anything else
+# that counts contributors.
+#
+# Ashish commits under two identities - a real address and GitHub's noreply
+# form used by the web UI and by squash merges - so without this the project's
+# single human author reads as two people.
+
+Ashish Kapoor <swiftobjc@gmail.com> <AshishKapoor@users.noreply.github.com>

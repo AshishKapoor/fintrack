@@ -339,8 +339,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard
               icon={<CreditCard className="h-10 w-10 text-emerald-600" />}
-              title="Transaction Tracking"
-              description="Easily log and categorize your income and expenses to keep track of where your money goes."
+              title="Double-Entry Ledger"
+              description="A real accounting model, not a list of amounts: transfers balance, account balances are derived, and the zero-sum rule is enforced by the database itself."
             />
             <FeatureCard
               icon={<PieChart className="h-10 w-10 text-emerald-600" />}
@@ -359,13 +359,13 @@ export default function LandingPage() {
             />
             <FeatureCard
               icon={<Smartphone className="h-10 w-10 text-emerald-600" />}
-              title="Mobile Access"
-              description="Access your financial data anytime, anywhere with our responsive web application."
+              title="Install It On Your Phone"
+              description="A progressive web app with a one-tap Quick Add screen that works offline and syncs when you reconnect. No app store, no second codebase."
             />
             <FeatureCard
               icon={<Shield className="h-10 w-10 text-emerald-600" />}
               title="Secure & Private"
-              description="Your financial data is encrypted and secure. We never share your information with third parties."
+              description="You host it, so there is no third party to share it with. Bank credentials are encrypted at rest, in-app backups are encrypted in your browser, and there is no telemetry."
             />
           </div>
         </div>

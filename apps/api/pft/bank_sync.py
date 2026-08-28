@@ -22,6 +22,7 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from .crypto import DecryptionError
 from .models import (
     LedgerPosting,
     LedgerTransaction,
@@ -249,6 +250,28 @@ def sync_connection(connection: SyncConnection) -> dict:
         try:
             provider_rows = provider.fetch_transactions(connection, linked, since=since)
             result = ingest_transactions(linked, provider_rows)
+        except DecryptionError:
+            # The stored credential cannot be read back, which means
+            # FINTRACK_SYNC_ENCRYPTION_KEY is not the key it was encrypted
+            # with. Connection-wide rather than per-account, but handled here
+            # so the docstring's "never raises for a single account's failure"
+            # stays true: uncaught, this reached the request as a 500, because
+            # CELERY_TASK_ALWAYS_EAGER defaults on whenever REDIS_URL is unset
+            # - the bare-metal and Render deployments the docs recommend.
+            label = linked.display_name or linked.external_account_id
+            message = (
+                "stored credentials could not be decrypted - "
+                "FINTRACK_SYNC_ENCRYPTION_KEY has changed since this "
+                "connection was created. Reconnect this institution."
+            )
+            totals["errors"].append(f"{label}: {message}")
+            logger.error(
+                "bank sync credentials for connection %s are undecryptable; "
+                "FINTRACK_SYNC_ENCRYPTION_KEY does not match the one used to "
+                "encrypt them",
+                connection.id,
+            )
+            continue
         except BankSyncError as exc:
             label = linked.display_name or linked.external_account_id
             totals["errors"].append(f"{label}: {exc}")

@@ -18,7 +18,7 @@ from pft.bank_sync import (
     ingest_transactions,
     sync_connection,
 )
-from pft.crypto import decrypt_json, encrypt_json
+from pft.crypto import DecryptionError, decrypt_json, encrypt_json
 from pft.models import (
     Account,
     LedgerTransaction,
@@ -589,6 +589,42 @@ class SyncConnectionApiTests(APITestCase):
         response = self.client.post(f"/api/v1/finance/sync-connections/{connection.id}/sync/")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         mock_get_provider.assert_not_called()
+
+    @patch("pft.bank_sync.get_provider")
+    def test_sync_survives_an_unreadable_stored_credential(self, mock_get_provider):
+        """A rotated FINTRACK_SYNC_ENCRYPTION_KEY must not 500 the request.
+
+        sync_connection promises never to raise for a single account's failure,
+        but it only caught BankSyncError - so DecryptionError from crypto.py
+        escaped. That matters more than it looks: CELERY_TASK_ALWAYS_EAGER
+        defaults on whenever REDIS_URL is unset (bare metal, and the Render
+        one-click deploy the docs recommend) and EAGER_PROPAGATES is True, so
+        the exception landed in the request as an unhandled 500.
+        """
+        connection = SyncConnection.objects.create(
+            budget_file=self.budget_file,
+            provider=SyncConnection.PROVIDER_SIMPLEFIN,
+            status=SyncConnection.STATUS_ACTIVE,
+        )
+        SyncConnectionAccount.objects.create(
+            connection=connection, account=self.account, external_account_id="ext-1"
+        )
+        provider = MagicMock()
+        provider.fetch_transactions.side_effect = DecryptionError("Invalid token")
+        mock_get_provider.return_value = provider
+
+        response = self.client.post(
+            f"/api/v1/finance/sync-connections/{connection.id}/sync/"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        connection.refresh_from_db()
+        self.assertEqual(connection.status, SyncConnection.STATUS_ERROR)
+        # The message has to name the cause: "Invalid token" tells a
+        # self-hoster nothing about which knob to turn.
+        self.assertIn("FINTRACK_SYNC_ENCRYPTION_KEY", connection.last_error)
+        self.assertIn("Reconnect", connection.last_error)
 
     @patch("pft.bank_sync.get_provider")
     def test_sync_action_runs_inline_under_eager_celery(self, mock_get_provider):

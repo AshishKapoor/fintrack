@@ -91,38 +91,92 @@ const enqueueOfflineRequest = (config: CustomInternalAxiosRequestConfig) => {
   saveOfflineQueue(queue)
 }
 
+/**
+ * What every rejection from this client looks like.
+ *
+ * `status` matters as much as the message: the response interceptor below
+ * converts AxiosErrors into plain objects, so without carrying the status
+ * across, anything downstream - the offline replay loop especially - loses the
+ * ability to tell "the server said no" from "the server was unreachable".
+ */
+export interface PFTClientError {
+  errorMessage: string
+  status?: number
+  queued?: boolean
+}
+
+const rejection = (message: string, status?: number, extra?: Record<string, unknown>) =>
+  ({ errorMessage: message, status, ...extra }) as PFTClientError
+
+/**
+ * Did the server refuse this request, or could we not reach it?
+ *
+ * A 4xx means the server understood and said no - replaying it tomorrow gets
+ * the same answer, so it must not sit at the head of the queue blocking
+ * everything behind it. A 429 is the exception: it means "not now", which is
+ * exactly what retrying is for. Anything else (network failure, 5xx, timeout)
+ * is transient.
+ */
+const isPermanentlyRejected = (error: unknown) => {
+  const status =
+    (error as PFTClientError)?.status ?? (error as AxiosError)?.response?.status
+  return status !== undefined && status >= 400 && status < 500 && status !== 429
+}
+
 const flushOfflineQueue = async () => {
   if (!isBrowser || !navigator.onLine || isFlushingOfflineQueue) return
   const queue = loadOfflineQueue()
   if (!queue.length) return
 
   isFlushingOfflineQueue = true
-  const remaining: OfflineQueuedRequest[] = []
+  try {
+    const rejected: OfflineQueuedRequest[] = []
+    let index = 0
 
-  for (const item of queue) {
-    try {
-      await AXIOS_INSTANCE.request({
-        url: item.url,
-        method: item.method,
-        data: item.data,
-        params: item.params,
-        headers: {
-          ...(item.headers || {}),
-          [OFFLINE_REPLAY_HEADER]: '1',
-        },
-      })
-    } catch {
-      remaining.push(item)
-      break
+    for (; index < queue.length; index += 1) {
+      const item = queue[index]
+      try {
+        await AXIOS_INSTANCE.request({
+          url: item.url,
+          method: item.method,
+          data: item.data,
+          params: item.params,
+          headers: {
+            ...(item.headers || {}),
+            [OFFLINE_REPLAY_HEADER]: '1',
+          },
+        })
+      } catch (error) {
+        // Skip past something the server will never accept, but stop dead on a
+        // transient failure so replay stays in order.
+        if (isPermanentlyRejected(error)) {
+          rejected.push(item)
+          continue
+        }
+        break
+      }
     }
-  }
 
-  saveOfflineQueue(remaining)
-  if (!remaining.length) {
-    toast.success('Offline changes synced')
-  }
+    // Everything from the first transient failure onward is still owed. The
+    // previous version kept only the item that failed and dropped the untried
+    // tail, which silently destroyed changes the user had been told were saved.
+    const remaining = queue.slice(index)
+    saveOfflineQueue(remaining)
 
-  isFlushingOfflineQueue = false
+    if (rejected.length) {
+      toast.error(
+        rejected.length === 1
+          ? 'One offline change was rejected by the server and could not be applied.'
+          : `${rejected.length} offline changes were rejected by the server and could not be applied.`,
+      )
+    } else if (!remaining.length) {
+      toast.success('Offline changes synced')
+    }
+  } finally {
+    // Without this, a throw from localStorage (quota, private mode) would leave
+    // the flag set and no later flush would ever run.
+    isFlushingOfflineQueue = false
+  }
 }
 
 AXIOS_INSTANCE.interceptors.request.use(async function (config) {
@@ -206,17 +260,24 @@ AXIOS_INSTANCE.interceptors.response.use(
           ? firstValue
           : undefined
       toast.error(message || 'Bad Request')
-      throw { errorMessage: message || 'Bad Request' }
+      throw rejection(message || 'Bad Request', 400)
     }
 
     if (error.response?.status === 404 || error.response?.status === 405) {
       toast.error('Not Found')
-      throw { errorMessage: 'Not Found' }
+      throw rejection('Not Found', error.response.status)
     }
 
     if (error.response?.status === 403) {
       toast.error('Access forbidden')
-      throw { errorMessage: 'Access forbidden' }
+      throw rejection('Access forbidden', 403)
+    }
+
+    // A 401 that survived the refresh above: the retry carried a fresh token
+    // and was still refused, so the session is genuinely gone.
+    if (error.response?.status === 401) {
+      toast.error('Session expired. Please login again.')
+      throw rejection('Session expired', 401)
     }
 
     if (error.message === 'Network Error') {
@@ -224,14 +285,39 @@ AXIOS_INSTANCE.interceptors.response.use(
       if (!replaying && isMutationMethod(originalRequest.method) && !isAuthEndpoint(originalRequest.url)) {
         enqueueOfflineRequest(originalRequest)
         toast.info('Offline. Change queued and will sync when connection returns.')
-        throw { errorMessage: 'Queued offline', queued: true }
+        throw rejection('Queued offline', undefined, { queued: true })
       }
 
       toast.error('Network Error')
-      throw { errorMessage: 'Network Error' }
+      throw rejection('Network Error')
     }
 
-    return Promise.reject(error)
+    // Throttled. Every scoped rate in settings/base.py can be hit by ordinary
+    // use - `login` is 10/min, `bank_sync` 30/hour - and without this branch
+    // the caller got no toast and no error state, just a spinner that stopped.
+    if (error.response?.status === 429) {
+      const retryAfter = Number(error.response.headers?.['retry-after'])
+      const message = Number.isFinite(retryAfter)
+        ? `Too many requests. Try again in ${Math.ceil(retryAfter / 60) || 1} minute(s).`
+        : 'Too many requests. Try again shortly.'
+      toast.error(message)
+      throw rejection(message, 429)
+    }
+
+    // Server-side failure. Also previously silent: SWR is configured with
+    // revalidateOnFocus/revalidateIfStale off (see main.tsx), so nothing
+    // retried and nothing told the user anything had gone wrong.
+    if (error.response && error.response.status >= 500) {
+      const message = 'Something went wrong on the server. Please try again.'
+      toast.error(message)
+      throw rejection(message, error.response.status)
+    }
+
+    // Anything left is genuinely unexpected. Surface it rather than rejecting
+    // with a raw AxiosError no call site knows how to read.
+    const message = error.message || 'Unexpected error'
+    toast.error(message)
+    throw rejection(message, error.response?.status)
   },
 )
 

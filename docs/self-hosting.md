@@ -357,12 +357,26 @@ Two things changed at once, and the second is the one that surprises people:
   `/var/lib/postgresql/data`, because 18+ keeps the cluster in a
   major-version-specific subdirectory underneath that mount.
 
-**If you upgrade without doing the steps below, the stack still starts — with
-an empty database.** Postgres finds nothing at the new location and initialises
-a fresh cluster there, so FinTrack comes up with no accounts and no
-transactions. Your 16 data is still sitting in the same volume, untouched, so
-this is recoverable; it just does not look that way from the UI. Do the dump
-first and you never see it.
+**If you upgrade without doing the steps below, the stack does not start.**
+The 16 cluster sits at the *root* of the volume (its mount point used to be
+`/var/lib/postgresql/data`), so remounting the same volume one level up puts a
+16-era `PG_VERSION` directly in `/var/lib/postgresql` — and the 18 image
+checks for exactly that and refuses to run rather than shadow your data with a
+fresh cluster. `db` exits within seconds, its healthcheck never passes, and
+everything behind it fails with:
+
+```
+dependency failed to start: container fintrack-db-1 is unhealthy
+```
+
+`docker compose logs db` shows the real error — `Error: in 18+, these Docker
+images are configured to store database data in a format which is compatible
+with "pg_ctlcluster" … there appears to be PostgreSQL data in:
+/var/lib/postgresql`. This refusal is the image protecting your data: nothing
+has been touched, and [the recovery procedure
+below](#if-you-already-upgraded-and-the-stack-is-down) gets you from here to a
+running 18 without losing anything. Do the dump first and you never see it at
+all.
 
 Run every step from your install directory, on the **old** stack, before
 pulling the new compose file:
@@ -414,6 +428,38 @@ docker compose exec -T db psql -U fintrack -d fintrack \
 `SECRET_KEY` and `FINTRACK_SYNC_ENCRYPTION_KEY` live in `.env`, not in the
 database, so a dump and restore does not disturb bank sync credentials or
 stored LLM keys. Keep `.env` as it is.
+
+#### If you already upgraded and the stack is down
+
+Pulled first, and now `docker compose up` dies with `container fintrack-db-1
+is unhealthy`? Nothing is lost — your 16 cluster is still at the root of the
+volume; the compose file just no longer runs an image that can read it. Take
+the dump from a one-off Postgres 16 container instead of step 1, then rejoin
+the procedure above at step 3:
+
+```bash
+cd /srv/fintrack
+docker compose down
+
+# Old image, old mount point: 16 reads the cluster exactly where it left it.
+# No POSTGRES_* env needed - the entrypoint skips initialisation when it
+# finds an existing cluster.
+docker run --rm -d --name fintrack-pg16 \
+  -v fintrack_postgres_data:/var/lib/postgresql/data \
+  postgres:16-alpine
+
+# Give it a few seconds, until this reports "accepting connections".
+docker exec fintrack-pg16 pg_isready -U fintrack
+
+docker exec fintrack-pg16 pg_dump -U fintrack fintrack \
+  | gzip > fintrack-pre-pg18-$(date +%F).sql.gz
+
+docker stop fintrack-pg16
+```
+
+Sanity-check the dump is not empty (`gunzip -c fintrack-pre-pg18-*.sql.gz |
+head` should show `-- PostgreSQL database dump`), then continue with steps 3–5
+above: tarball the old volume, remove it, start `db` on 18, restore.
 
 ## Housekeeping
 

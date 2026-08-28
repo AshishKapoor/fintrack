@@ -183,7 +183,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
     networks:
       - fintrack_network

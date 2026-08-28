@@ -57,7 +57,7 @@ import {
   Trash,
   Upload,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -80,6 +80,10 @@ export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(
     () => searchParams.get('new') === '1',
   )
+  // Handed to AddTransactionDialog so it can return focus here on close - the
+  // button lives outside the Dialog's own tree, so Radix has no trigger of
+  // its own to restore focus to.
+  const addTransactionTriggerRef = useRef<HTMLButtonElement>(null)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
@@ -200,7 +204,9 @@ export default function TransactionsPage() {
             <Repeat className='mr-2 h-4 w-4' />
             Add Transfer
           </Button>
-          <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+          <Button ref={addTransactionTriggerRef} onClick={() => setShowAddTransaction(true)}>
+            Add Transaction
+          </Button>
         </div>
       </div>
 
@@ -465,7 +471,11 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+      <AddTransactionDialog
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        triggerRef={addTransactionTriggerRef}
+      />
       <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       <AddTransferDialog
         open={showAddTransfer}

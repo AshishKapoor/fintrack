@@ -2,7 +2,7 @@
 
 import { useAllCategories } from '@/lib/finance-lists'
 
-import { useState } from 'react'
+import { useState, type RefObject } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Dialog,
@@ -46,9 +46,14 @@ import useSWR from 'swr'
 export function AddTransactionDialog({
   open,
   onOpenChange,
+  triggerRef,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
+  // The visible "Add Transaction" button lives in the parent page, not inside
+  // this Dialog's tree, so Radix has no DialogTrigger to return focus to on
+  // close - onCloseAutoFocus below does that restoration by hand.
+  triggerRef?: RefObject<HTMLButtonElement | null>
 }) {
   const { t } = useTranslation()
   const [kind, setKind] = useState<TransactionKind>('expense')
@@ -147,7 +152,14 @@ export function AddTransactionDialog({
       onOpenChange(next)
       if (!next) resetForm()
     }}>
-      <DialogContent className='sm:max-w-[425px]'>
+      <DialogContent
+        className='sm:max-w-[425px]'
+        onCloseAutoFocus={(event) => {
+          if (!triggerRef?.current) return
+          event.preventDefault()
+          triggerRef.current.focus()
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Transaction</DialogTitle>
           <DialogDescription>Enter the details of your transaction below.</DialogDescription>

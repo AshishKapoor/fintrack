@@ -19,12 +19,15 @@ The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   major version, and 18+ also changes where the images keep the cluster: the
   compose volume is now mounted at `/var/lib/postgresql` rather than
   `/var/lib/postgresql/data`, with `PGDATA` left at the image default of
-  `/var/lib/postgresql/18/docker`. Upgrading without migrating starts the
-  stack against a freshly initialised, empty cluster — the 16 data is still in
-  the volume and recoverable, but FinTrack comes up looking empty. The
-  procedure is in [docs/self-hosting.md](docs/self-hosting.md), "Upgrading
-  across a Postgres major version". Managed-Postgres deployments
-  (`render.yaml`) are unaffected.
+  `/var/lib/postgresql/18/docker`. Upgrading without migrating fails loudly:
+  the 18 image finds the 16 cluster at the root of the remounted volume and
+  refuses to start, so the stack dies with `dependency failed to start:
+  container fintrack-db-1 is unhealthy`. The 16 data is untouched and
+  recoverable. The procedure — including recovery for installs that already
+  pulled and hit that error — is in
+  [docs/self-hosting.md](docs/self-hosting.md), "Upgrading across a Postgres
+  major version". Managed-Postgres deployments (`render.yaml`) are
+  unaffected.
 
 ### Changed
 

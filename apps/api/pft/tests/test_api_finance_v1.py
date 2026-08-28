@@ -403,7 +403,10 @@ class FinanceApiV1Tests(APITestCase):
                     "transaction_date": day,
                     "memo": "flow",
                     "postings": [
-                        {"account": self.account.id, "amount": str(-sign * float(amount))},
+                        {
+                            "account": self.account.id,
+                            "amount": str(-sign * float(amount)),
+                        },
                         {"category": category.id, "amount": str(sign * float(amount))},
                     ],
                 },

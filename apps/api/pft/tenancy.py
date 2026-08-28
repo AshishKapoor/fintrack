@@ -54,9 +54,7 @@ def can_access(user, budget_file: BudgetFile, *, write: bool = False) -> bool:
 
 
 def can_access_organization(user, organization, *, write: bool = False) -> bool:
-    membership = Membership.objects.filter(
-        user=user, organization=organization
-    ).first()
+    membership = Membership.objects.filter(user=user, organization=organization).first()
     if membership is None:
         return False
     if write:
@@ -81,9 +79,7 @@ def default_budget_file(user, organization):
     choice), otherwise the organization's oldest file. Returns None for an
     organization with no files yet - the caller decides whether to create one.
     """
-    membership = Membership.objects.filter(
-        user=user, organization=organization
-    ).first()
+    membership = Membership.objects.filter(user=user, organization=organization).first()
     if membership is None:
         return None
 

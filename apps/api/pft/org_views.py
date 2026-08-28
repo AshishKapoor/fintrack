@@ -137,7 +137,8 @@ class OrganizationViewSet(viewsets.ModelViewSet):
 
         # Only an owner touches owners - promoting to or demoting from.
         touching_owner = (
-            membership.role == Membership.ROLE_OWNER or new_role == Membership.ROLE_OWNER
+            membership.role == Membership.ROLE_OWNER
+            or new_role == Membership.ROLE_OWNER
         )
         if touching_owner and actor.role != Membership.ROLE_OWNER:
             raise PermissionDenied("Only an owner can manage owners.")
@@ -148,7 +149,9 @@ class OrganizationViewSet(viewsets.ModelViewSet):
             and new_role != Membership.ROLE_OWNER
             and organization.memberships.filter(role=Membership.ROLE_OWNER).count() == 1
         ):
-            raise ValidationError({"detail": "An organization needs at least one owner."})
+            raise ValidationError(
+                {"detail": "An organization needs at least one owner."}
+            )
 
         old_role = membership.role
         membership.role = new_role
@@ -178,13 +181,18 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         removing_self = membership.user_id == request.user.id
         if not removing_self and actor.role not in Membership.MANAGE_ROLES:
             raise PermissionDenied("Your role does not allow removing members.")
-        if membership.role == Membership.ROLE_OWNER and actor.role != Membership.ROLE_OWNER:
+        if (
+            membership.role == Membership.ROLE_OWNER
+            and actor.role != Membership.ROLE_OWNER
+        ):
             raise PermissionDenied("Only an owner can remove an owner.")
         if (
             membership.role == Membership.ROLE_OWNER
             and organization.memberships.filter(role=Membership.ROLE_OWNER).count() == 1
         ):
-            raise ValidationError({"detail": "An organization needs at least one owner."})
+            raise ValidationError(
+                {"detail": "An organization needs at least one owner."}
+            )
 
         removed_email = membership.user.email
         membership.delete()

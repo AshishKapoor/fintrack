@@ -53,7 +53,9 @@ class Command(BaseCommand):
         audit_cutoff = timezone.now() - timezone.timedelta(days=audit_days)
         pruned_audit = AuditLog.objects.filter(created_at__lt=audit_cutoff).delete()[0]
         if pruned_audit:
-            self.stdout.write(f"Pruned {pruned_audit} audit entries older than {audit_days} days.")
+            self.stdout.write(
+                f"Pruned {pruned_audit} audit entries older than {audit_days} days."
+            )
 
         self.stdout.write(
             self.style.SUCCESS(

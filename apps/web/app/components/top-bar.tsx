@@ -68,7 +68,7 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
         <LanguageSwitcher />
         <ModeToggle />
 

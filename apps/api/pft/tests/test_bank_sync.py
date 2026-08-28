@@ -49,7 +49,9 @@ def _text_response(text):
 
 class CryptoTests(TestCase):
     def test_roundtrip(self):
-        token = encrypt_json({"access_url": "https://user:pass@bridge.example/simplefin"})
+        token = encrypt_json(
+            {"access_url": "https://user:pass@bridge.example/simplefin"}
+        )
         self.assertNotIn("pass", token)
         self.assertEqual(
             decrypt_json(token),
@@ -63,7 +65,9 @@ class CryptoTests(TestCase):
 class IngestTransactionsTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="sync@example.com", username="sync@example.com", password="StrongPass123!"
+            email="sync@example.com",
+            username="sync@example.com",
+            password="StrongPass123!",
         )
         self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
@@ -73,7 +77,9 @@ class IngestTransactionsTests(TestCase):
             status=SyncConnection.STATUS_ACTIVE,
         )
         self.linked = SyncConnectionAccount.objects.create(
-            connection=self.connection, account=self.account, external_account_id="acct-1"
+            connection=self.connection,
+            account=self.account,
+            external_account_id="acct-1",
         )
 
     def test_creates_transactions_and_dedupes_by_external_id(self):
@@ -119,7 +125,9 @@ class IngestTransactionsTests(TestCase):
                 unmapped,
                 [
                     ProviderTransaction(
-                        external_id="x", transaction_date=date(2026, 3, 1), amount=Decimal("1")
+                        external_id="x",
+                        transaction_date=date(2026, 3, 1),
+                        amount=Decimal("1"),
                     )
                 ],
             )
@@ -152,7 +160,9 @@ class IngestTransactionsTests(TestCase):
 class SyncConnectionOrchestrationTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="orch@example.com", username="orch@example.com", password="StrongPass123!"
+            email="orch@example.com",
+            username="orch@example.com",
+            password="StrongPass123!",
         )
         self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
@@ -162,7 +172,9 @@ class SyncConnectionOrchestrationTests(TestCase):
             status=SyncConnection.STATUS_ACTIVE,
         )
         self.linked = SyncConnectionAccount.objects.create(
-            connection=self.connection, account=self.account, external_account_id="acct-1"
+            connection=self.connection,
+            account=self.account,
+            external_account_id="acct-1",
         )
 
     @patch("pft.bank_sync.get_provider")
@@ -170,7 +182,9 @@ class SyncConnectionOrchestrationTests(TestCase):
         provider = MagicMock()
         provider.fetch_transactions.return_value = [
             ProviderTransaction(
-                external_id="tx-1", transaction_date=date(2026, 3, 1), amount=Decimal("10")
+                external_id="tx-1",
+                transaction_date=date(2026, 3, 1),
+                amount=Decimal("10"),
             )
         ]
         mock_get_provider.return_value = provider
@@ -239,7 +253,9 @@ class GoCardlessProviderTests(TestCase):
     def test_list_institutions_fetches_token_once_and_caches_result(self, mock_urlopen):
         mock_urlopen.side_effect = [
             _json_response({"access": "tok-1", "access_expires": 3600}),
-            _json_response([{"id": "REVOLUT_REVOGB21", "name": "Revolut", "logo": "l"}]),
+            _json_response(
+                [{"id": "REVOLUT_REVOGB21", "name": "Revolut", "logo": "l"}]
+            ),
         ]
         institutions = gc.provider.list_institutions(country="gb")
         self.assertEqual([i.id for i in institutions], ["REVOLUT_REVOGB21"])
@@ -258,7 +274,9 @@ class GoCardlessProviderTests(TestCase):
             _json_response({"id": "agreement-1"}),
             _json_response({"id": "req-1", "link": "https://bank.example/consent"}),
         ]
-        result = gc.provider.start_link(self.connection, {"institution_id": "REVOLUT_REVOGB21"})
+        result = gc.provider.start_link(
+            self.connection, {"institution_id": "REVOLUT_REVOGB21"}
+        )
 
         self.assertEqual(result, {"redirect_url": "https://bank.example/consent"})
         self.connection.refresh_from_db()
@@ -299,7 +317,13 @@ class GoCardlessProviderTests(TestCase):
             _json_response({"access": "tok-1", "access_expires": 3600}),
             _json_response({"id": "req-1", "status": "LN", "accounts": ["acct-1"]}),
             _json_response(
-                {"account": {"iban": "GB00BANK00000000", "currency": "gbp", "name": "Main"}}
+                {
+                    "account": {
+                        "iban": "GB00BANK00000000",
+                        "currency": "gbp",
+                        "name": "Main",
+                    }
+                }
             ),
         ]
         accounts = gc.provider.list_accounts(self.connection)
@@ -309,7 +333,9 @@ class GoCardlessProviderTests(TestCase):
         self.assertEqual(accounts[0].iban, "GB00BANK00000000")
 
     @patch("pft.bank_sync_gocardless.urllib.request.urlopen")
-    def test_fetch_transactions_parses_booked_entries_with_signed_amount(self, mock_urlopen):
+    def test_fetch_transactions_parses_booked_entries_with_signed_amount(
+        self, mock_urlopen
+    ):
         linked = SyncConnectionAccount.objects.create(
             connection=self.connection, external_account_id="acct-1"
         )
@@ -322,7 +348,10 @@ class GoCardlessProviderTests(TestCase):
                             {
                                 "transactionId": "gc-1",
                                 "bookingDate": "2026-03-01",
-                                "transactionAmount": {"amount": "-9.99", "currency": "GBP"},
+                                "transactionAmount": {
+                                    "amount": "-9.99",
+                                    "currency": "GBP",
+                                },
                                 "creditorName": "Corner Shop",
                                 "remittanceInformationUnstructured": "card purchase",
                             }
@@ -332,7 +361,9 @@ class GoCardlessProviderTests(TestCase):
                 }
             ),
         ]
-        rows = gc.provider.fetch_transactions(self.connection, linked, since=date(2026, 3, 1))
+        rows = gc.provider.fetch_transactions(
+            self.connection, linked, since=date(2026, 3, 1)
+        )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].external_id, "gc-1")
         self.assertEqual(rows[0].amount, Decimal("-9.99"))
@@ -375,7 +406,9 @@ class SimpleFinProviderTests(TestCase):
         self.assertEqual(self.connection.status, SyncConnection.STATUS_ACTIVE)
         self.assertEqual(
             decrypt_json(self.connection.secret_data),
-            {"access_url": "https://demo-user:demo-pass@bridge.simplefin.org/simplefin"},
+            {
+                "access_url": "https://demo-user:demo-pass@bridge.simplefin.org/simplefin"
+            },
         )
         # Basic auth is sent as a header, not left in the claim request's URL.
         request = mock_urlopen.call_args[0][0]
@@ -391,7 +424,9 @@ class SimpleFinProviderTests(TestCase):
             sf.provider.start_link(self.connection, {})
 
     @patch("pft.bank_sync_simplefin.urllib.request.urlopen")
-    def test_start_link_rejects_claim_url_pointing_at_private_network(self, mock_urlopen):
+    def test_start_link_rejects_claim_url_pointing_at_private_network(
+        self, mock_urlopen
+    ):
         setup_token = self._token_for("http://127.0.0.1:8000/claim/evil")
         with self.assertRaises(BankSyncError):
             sf.provider.start_link(self.connection, {"setup_token": setup_token})
@@ -408,7 +443,9 @@ class SimpleFinProviderTests(TestCase):
         )
 
         mock_urlopen.return_value = _text_response(
-            json.dumps({"accounts": [{"id": "acct-9", "name": "Checking", "currency": "usd"}]})
+            json.dumps(
+                {"accounts": [{"id": "acct-9", "name": "Checking", "currency": "usd"}]}
+            )
         )
         accounts = sf.provider.list_accounts(self.connection)
         self.assertEqual(accounts[0].external_id, "acct-9")
@@ -436,7 +473,9 @@ class SimpleFinProviderTests(TestCase):
                 }
             )
         )
-        rows = sf.provider.fetch_transactions(self.connection, linked, since=date(2026, 3, 1))
+        rows = sf.provider.fetch_transactions(
+            self.connection, linked, since=date(2026, 3, 1)
+        )
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0].external_id, "sf-1")
         self.assertEqual(rows[0].amount, Decimal("-42.10"))
@@ -446,7 +485,9 @@ class SimpleFinProviderTests(TestCase):
 class SyncConnectionApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="api-sync@example.com", username="api-sync@example.com", password="StrongPass123!"
+            email="api-sync@example.com",
+            username="api-sync@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
         self.budget_file = personal_budget_file(self.user)
@@ -586,7 +627,9 @@ class SyncConnectionApiTests(APITestCase):
         connection = SyncConnection.objects.create(
             budget_file=self.budget_file, provider=SyncConnection.PROVIDER_SIMPLEFIN
         )
-        response = self.client.post(f"/api/v1/finance/sync-connections/{connection.id}/sync/")
+        response = self.client.post(
+            f"/api/v1/finance/sync-connections/{connection.id}/sync/"
+        )
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
         mock_get_provider.assert_not_called()
 
@@ -639,12 +682,16 @@ class SyncConnectionApiTests(APITestCase):
         provider = MagicMock()
         provider.fetch_transactions.return_value = [
             ProviderTransaction(
-                external_id="tx-1", transaction_date=date(2026, 3, 1), amount=Decimal("5")
+                external_id="tx-1",
+                transaction_date=date(2026, 3, 1),
+                amount=Decimal("5"),
             )
         ]
         mock_get_provider.return_value = provider
 
-        response = self.client.post(f"/api/v1/finance/sync-connections/{connection.id}/sync/")
+        response = self.client.post(
+            f"/api/v1/finance/sync-connections/{connection.id}/sync/"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             LedgerTransaction.objects.filter(
@@ -680,9 +727,7 @@ class SyncConnectionApiTests(APITestCase):
         self.client.force_authenticate(user=self.other_user)
 
         list_response = self.client.get("/api/v1/finance/sync-connections/")
-        self.assertEqual(
-            [row["id"] for row in rows(list_response)], []
-        )
+        self.assertEqual([row["id"] for row in rows(list_response)], [])
 
         detail_response = self.client.get(
             f"/api/v1/finance/sync-connections/{connection.id}/"

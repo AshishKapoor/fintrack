@@ -39,7 +39,9 @@ AMOUNTS = st.decimals(
 
 
 def make_user(email):
-    return User.objects.create_user(email=email, username=email, password="StrongPass123!")
+    return User.objects.create_user(
+        email=email, username=email, password="StrongPass123!"
+    )
 
 
 class DatabaseInvariantTests(TransactionTestCase):
@@ -58,15 +60,21 @@ class DatabaseInvariantTests(TransactionTestCase):
             tx = LedgerTransaction.objects.create(
                 budget_file=self.budget_file, transaction_date="2026-03-10", memo="ok"
             )
-            LedgerPosting.objects.create(transaction=tx, account=self.account, amount=Decimal("-5"))
-            LedgerPosting.objects.create(transaction=tx, category=self.category, amount=Decimal("5"))
+            LedgerPosting.objects.create(
+                transaction=tx, account=self.account, amount=Decimal("-5")
+            )
+            LedgerPosting.objects.create(
+                transaction=tx, category=self.category, amount=Decimal("5")
+            )
         self.assertEqual(tx.postings.count(), 2)
 
     def test_unbalanced_orm_write_is_rejected_at_commit(self):
         with self.assertRaises(IntegrityError):
             with transaction.atomic():
                 tx = LedgerTransaction.objects.create(
-                    budget_file=self.budget_file, transaction_date="2026-03-10", memo="bad"
+                    budget_file=self.budget_file,
+                    transaction_date="2026-03-10",
+                    memo="bad",
                 )
                 LedgerPosting.objects.create(
                     transaction=tx, account=self.account, amount=Decimal("-5")
@@ -80,7 +88,9 @@ class DatabaseInvariantTests(TransactionTestCase):
             tx = LedgerTransaction.objects.create(
                 budget_file=self.budget_file, transaction_date="2026-03-10", memo="pair"
             )
-            LedgerPosting.objects.create(transaction=tx, account=self.account, amount=Decimal("-7"))
+            LedgerPosting.objects.create(
+                transaction=tx, account=self.account, amount=Decimal("-7")
+            )
             leg = LedgerPosting.objects.create(
                 transaction=tx, category=self.category, amount=Decimal("7")
             )
@@ -89,14 +99,20 @@ class DatabaseInvariantTests(TransactionTestCase):
             with transaction.atomic():
                 leg.delete()
 
-        self.assertEqual(tx.postings.count(), 2, "the delete must have been rolled back")
+        self.assertEqual(
+            tx.postings.count(), 2, "the delete must have been rolled back"
+        )
 
     def test_amending_one_leg_is_rejected(self):
         with transaction.atomic():
             tx = LedgerTransaction.objects.create(
-                budget_file=self.budget_file, transaction_date="2026-03-10", memo="amend"
+                budget_file=self.budget_file,
+                transaction_date="2026-03-10",
+                memo="amend",
             )
-            LedgerPosting.objects.create(transaction=tx, account=self.account, amount=Decimal("-7"))
+            LedgerPosting.objects.create(
+                transaction=tx, account=self.account, amount=Decimal("-7")
+            )
             leg = LedgerPosting.objects.create(
                 transaction=tx, category=self.category, amount=Decimal("7")
             )
@@ -109,10 +125,16 @@ class DatabaseInvariantTests(TransactionTestCase):
     def test_deleting_the_whole_transaction_is_allowed(self):
         with transaction.atomic():
             tx = LedgerTransaction.objects.create(
-                budget_file=self.budget_file, transaction_date="2026-03-10", memo="whole"
+                budget_file=self.budget_file,
+                transaction_date="2026-03-10",
+                memo="whole",
             )
-            LedgerPosting.objects.create(transaction=tx, account=self.account, amount=Decimal("-3"))
-            LedgerPosting.objects.create(transaction=tx, category=self.category, amount=Decimal("3"))
+            LedgerPosting.objects.create(
+                transaction=tx, account=self.account, amount=Decimal("-3")
+            )
+            LedgerPosting.objects.create(
+                transaction=tx, category=self.category, amount=Decimal("3")
+            )
 
         with transaction.atomic():
             tx.delete()  # cascade removes both postings together: still balanced
@@ -147,7 +169,8 @@ class LedgerPropertyTests(HypothesisTestCase):
 
         for account in Account.objects.all():
             derived = account.opening_balance + (
-                account.ledger_postings.aggregate(total=Sum("amount"))["total"] or Decimal("0")
+                account.ledger_postings.aggregate(total=Sum("amount"))["total"]
+                or Decimal("0")
             )
             self.assertEqual(
                 Decimal(account.current_balance),
@@ -155,7 +178,9 @@ class LedgerPropertyTests(HypothesisTestCase):
                 msg=f"balance drifted for account {account.id}",
             )
 
-    @settings(max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+    @settings(
+        max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow]
+    )
     @given(amount=AMOUNTS)
     def test_balanced_pairs_always_accepted(self, amount):
         response = self.api().post(
@@ -174,7 +199,9 @@ class LedgerPropertyTests(HypothesisTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.assert_globally_balanced()
 
-    @settings(max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+    @settings(
+        max_examples=25, deadline=None, suppress_health_check=[HealthCheck.too_slow]
+    )
     @given(amount=AMOUNTS, skew=AMOUNTS)
     def test_unbalanced_pairs_always_rejected(self, amount, skew):
         response = self.api().post(
@@ -194,7 +221,9 @@ class LedgerPropertyTests(HypothesisTestCase):
         self.assertFalse(LedgerTransaction.objects.filter(memo="skewed").exists())
         self.assert_globally_balanced()
 
-    @settings(max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+    @settings(
+        max_examples=10, deadline=None, suppress_health_check=[HealthCheck.too_slow]
+    )
     @given(amounts=st.lists(AMOUNTS, min_size=2, max_size=6))
     def test_multi_leg_transactions_hold_the_invariant(self, amounts):
         """A split across several categories balances against one account leg."""

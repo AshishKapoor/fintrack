@@ -50,7 +50,9 @@ def _base_url() -> str:
     return settings.GOCARDLESS_API_BASE_URL.rstrip("/")
 
 
-def _request(method: str, path: str, *, token: str | None = None, body: dict | None = None) -> dict:
+def _request(
+    method: str, path: str, *, token: str | None = None, body: dict | None = None
+) -> dict:
     url = f"{_base_url()}{path}"
     if not is_safe_outbound_url(url):
         raise BankSyncError("GOCARDLESS_API_BASE_URL is not a safe outbound target.")
@@ -70,7 +72,9 @@ def _request(method: str, path: str, *, token: str | None = None, body: dict | N
             return json.loads(raw) if raw else {}
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", "replace")[:500]
-        raise BankSyncError(f"GoCardless {method} {path} failed ({exc.code}): {detail}") from exc
+        raise BankSyncError(
+            f"GoCardless {method} {path} failed ({exc.code}): {detail}"
+        ) from exc
     except (urllib.error.URLError, OSError, ValueError) as exc:
         raise BankSyncError(f"GoCardless {method} {path} failed: {exc}") from exc
 
@@ -124,9 +128,7 @@ class GoCardlessProvider(BankSyncProvider):
             return [ProviderInstitution(**row) for row in cached]
 
         token = _get_access_token()
-        rows = _request(
-            "GET", f"/institutions/?country={country.lower()}", token=token
-        )
+        rows = _request("GET", f"/institutions/?country={country.lower()}", token=token)
         if not isinstance(rows, list):
             raise BankSyncError("Unexpected response listing institutions.")
         institutions = [
@@ -145,7 +147,9 @@ class GoCardlessProvider(BankSyncProvider):
     def start_link(self, connection: SyncConnection, params: dict) -> dict:
         institution_id = (params or {}).get("institution_id")
         if not institution_id:
-            raise BankSyncError("institution_id is required to start a GoCardless link.")
+            raise BankSyncError(
+                "institution_id is required to start a GoCardless link."
+            )
 
         token = _get_access_token()
         agreement = _request(
@@ -173,12 +177,20 @@ class GoCardlessProvider(BankSyncProvider):
         )
 
         connection.external_reference = requisition["id"]
-        connection.settings = {**(connection.settings or {}), "institution_id": institution_id}
+        connection.settings = {
+            **(connection.settings or {}),
+            "institution_id": institution_id,
+        }
         connection.secret_data = encrypt_json(
             {"requisition_id": requisition["id"], "agreement_id": agreement["id"]}
         )
         connection.save(
-            update_fields=["external_reference", "settings", "secret_data", "updated_at"]
+            update_fields=[
+                "external_reference",
+                "settings",
+                "secret_data",
+                "updated_at",
+            ]
         )
         return {"redirect_url": requisition["link"]}
 

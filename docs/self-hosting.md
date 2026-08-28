@@ -389,10 +389,12 @@ docker run --rm \
 
 ```bash
 # 4. Take the new compose file, then start from an empty volume so 18
-#    initialises its own cluster.
+#    initialises its own cluster. --wait blocks on the healthcheck, which
+#    matters here: initdb on a fresh volume takes a few seconds, and without
+#    it the restore below races the database and fails to connect.
 git pull
 docker volume rm fintrack_postgres_data
-docker compose up -d db
+docker compose up -d --wait db
 ```
 
 ```bash

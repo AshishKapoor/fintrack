@@ -344,6 +344,77 @@ Watch it come up:
 docker compose logs -f migrate api
 ```
 
+### Upgrading across a Postgres major version
+
+FinTrack now runs `postgres:18-alpine`. Postgres never reads a data directory
+written by a different major version, so moving from a 16 volume is a dump and
+restore — there is no in-place `docker compose up -d` for it.
+
+Two things changed at once, and the second is the one that surprises people:
+
+- The image is `18-alpine` rather than `16-alpine`.
+- The volume is mounted at `/var/lib/postgresql` rather than
+  `/var/lib/postgresql/data`, because 18+ keeps the cluster in a
+  major-version-specific subdirectory underneath that mount.
+
+**If you upgrade without doing the steps below, the stack still starts — with
+an empty database.** Postgres finds nothing at the new location and initialises
+a fresh cluster there, so FinTrack comes up with no accounts and no
+transactions. Your 16 data is still sitting in the same volume, untouched, so
+this is recoverable; it just does not look that way from the UI. Do the dump
+first and you never see it.
+
+Run every step from your install directory, on the **old** stack, before
+pulling the new compose file:
+
+```bash
+cd /srv/fintrack
+
+# 1. Dump, while 16 is still the running image.
+docker compose exec -T db pg_dump -U fintrack fintrack \
+  | gzip > fintrack-pre-pg18-$(date +%F).sql.gz
+
+# 2. Stop everything.
+docker compose down
+```
+
+```bash
+# 3. Keep the old volume as a tarball, so 16 is recoverable if the restore
+#    goes wrong. The volume is prefixed with the compose project name, which
+#    defaults to the directory name - check `docker volume ls` if you renamed it.
+docker run --rm \
+  -v fintrack_postgres_data:/from -v "$PWD":/to alpine \
+  tar czf /to/postgres_data-pg16-$(date +%F).tar.gz -C /from .
+```
+
+```bash
+# 4. Take the new compose file, then start from an empty volume so 18
+#    initialises its own cluster. --wait blocks on the healthcheck, which
+#    matters here: initdb on a fresh volume takes a few seconds, and without
+#    it the restore below races the database and fails to connect.
+git pull
+docker volume rm fintrack_postgres_data
+docker compose up -d --wait db
+```
+
+```bash
+# 5. Restore into it, then bring the rest of the stack up.
+gunzip -c fintrack-pre-pg18-*.sql.gz \
+  | docker compose exec -T db psql -U fintrack -d fintrack
+docker compose up -d
+```
+
+Check it before deleting the tarball:
+
+```bash
+docker compose exec -T db psql -U fintrack -d fintrack \
+  -c 'select count(*) from pft_ledgertransaction;'
+```
+
+`SECRET_KEY` and `FINTRACK_SYNC_ENCRYPTION_KEY` live in `.env`, not in the
+database, so a dump and restore does not disturb bank sync credentials or
+stored LLM keys. Keep `.env` as it is.
+
 ## Housekeeping
 
 Import and export jobs retain their payloads in the database, and those

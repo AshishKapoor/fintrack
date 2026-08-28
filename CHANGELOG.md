@@ -10,6 +10,27 @@ whole procedure.
 
 The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Upgrading
+
+- **Postgres moves from 16 to 18, and existing installs need a dump and
+  restore.** Postgres never reads a data directory written by a different
+  major version, and 18+ also changes where the images keep the cluster: the
+  compose volume is now mounted at `/var/lib/postgresql` rather than
+  `/var/lib/postgresql/data`, with `PGDATA` left at the image default of
+  `/var/lib/postgresql/18/docker`. Upgrading without migrating starts the
+  stack against a freshly initialised, empty cluster — the 16 data is still in
+  the volume and recoverable, but FinTrack comes up looking empty. The
+  procedure is in [docs/self-hosting.md](docs/self-hosting.md), "Upgrading
+  across a Postgres major version". Managed-Postgres deployments
+  (`render.yaml`) are unaffected.
+
+### Changed
+
+- Redis moves from 7 to 8 in the compose stack. No action needed: Redis only
+  carries queued jobs in flight here.
+
 ## [1.0.0] — 2026-08-28
 
 The v1.0.0 hardening pass ([ROADMAP.md](ROADMAP.md) Phase 4). This is where the

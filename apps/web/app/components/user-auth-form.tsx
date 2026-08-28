@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useToast } from '@/hooks/use-toast'
-import { register } from '@/lib/auth'
+import { RegisterError, register } from '@/lib/auth'
 import { cn } from '@/lib/utils'
 import { Loader } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -33,9 +33,21 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
       setTimeout(() => {
         window.location.href = '/login'
       }, 1000)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      setError(err.message || t('auth.register.genericError'))
+    } catch (err) {
+      // A rejection carries the server's own reason - "An account with this
+      // email already exists", "Password must be at least 8 characters long" -
+      // already translated by Django. Showing it is the whole point: this form
+      // used to render a bare "Registration failed" for every one of them.
+      if (err instanceof RegisterError && err.kind === 'rejected') {
+        setError(err.message)
+      } else if (err instanceof RegisterError && err.kind === 'network') {
+        setError(t('auth.register.errorNetwork'))
+      } else if (err instanceof RegisterError) {
+        setError(`${t('auth.register.errorServer')} (${err.status})`)
+      } else {
+        setError(t('auth.register.genericError'))
+      }
+      console.error(err)
     } finally {
       setIsLoading(false)
     }

@@ -199,12 +199,23 @@ class RegisterUserAPIView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Check if email already exists
+        # Check if email already exists.
+        #
+        # This says plainly that the address is taken. It does not leak anything
+        # the endpoint was hiding: a caller already tells a taken address from a
+        # free one by the status alone (400 vs 201), so the previous "Something
+        # went wrong. Please contact support or try again." bought no privacy -
+        # it just sent people who already have an account to support instead of
+        # to the login page. Registration stays rate limited (THROTTLE_REGISTER)
+        # so the status code cannot be swept over an address list cheaply.
         if get_user_model().objects.filter(email=email).exists():
             return Response(
                 {
                     "email": [
-                        _("Something went wrong. Please contact support or try again.")
+                        _(
+                            "An account with this email already exists. "
+                            "Try logging in instead."
+                        )
                     ]
                 },
                 status=status.HTTP_400_BAD_REQUEST,

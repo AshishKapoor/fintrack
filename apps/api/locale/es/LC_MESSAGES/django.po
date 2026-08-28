@@ -68,8 +68,8 @@ msgstr "Sesión cerrada."
 msgid "Enter a valid email address."
 msgstr "Introduce una dirección de correo electrónico válida."
 
-msgid "Something went wrong. Please contact support or try again."
-msgstr "Algo salió mal. Contacta con soporte o inténtalo de nuevo."
+msgid "An account with this email already exists. Try logging in instead."
+msgstr "Ya existe una cuenta con este correo electrónico. Inicia sesión en su lugar."
 
 msgid "Your password is required to delete your account."
 msgstr "Se requiere tu contraseña para eliminar tu cuenta."

@@ -245,3 +245,106 @@ describe('logout', () => {
     expect(auth.isLoggedIn()).toBe(false)
   })
 })
+
+describe('register', () => {
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('surfaces the reason DRF puts in a field key', async () => {
+    // The signup form renders this message verbatim. Reading only `detail` -
+    // which DRF does not send for a validation error - is what turned "this
+    // email is taken" into an unactionable "Registration failed" on screen.
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse(
+        { email: ['An account with this email already exists. Try logging in instead.'] },
+        { status: 400 },
+      ),
+    )
+
+    await expect(auth.register('taken@example.com', 'StrongPass123!')).rejects.toThrow(
+      'An account with this email already exists. Try logging in instead.',
+    )
+  })
+
+  it('surfaces a password rule the same way', async () => {
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ password: ['Password must be at least 8 characters long.'] }, { status: 400 }),
+    )
+
+    await expect(auth.register('new@example.com', 'short')).rejects.toThrow(
+      'Password must be at least 8 characters long.',
+    )
+  })
+
+  it('still prefers `detail` when the server sends one', async () => {
+    // Throttling (THROTTLE_REGISTER) is the case that does use this shape.
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ detail: 'Request was throttled. Expected available in 3546 seconds.' }, { status: 429 }),
+    )
+
+    await expect(auth.register('new@example.com', 'StrongPass123!')).rejects.toThrow(
+      'Request was throttled. Expected available in 3546 seconds.',
+    )
+  })
+
+  it('marks a quotable reason as `rejected` so the form shows it verbatim', async () => {
+    // Django already localized this text; the form must not replace it with a
+    // generic translated string.
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ email: ['Ya existe una cuenta con este correo electrónico.'] }, { status: 400 }),
+    )
+
+    await expect(auth.register('taken@example.com', 'StrongPass123!')).rejects.toMatchObject({
+      kind: 'rejected',
+      status: 400,
+      message: 'Ya existe una cuenta con este correo electrónico.',
+    })
+  })
+
+  it('carries the status when the body is not DRF JSON', async () => {
+    // An nginx 502, or Django's own 400 DisallowedHost page: nothing to quote,
+    // so the status code is the only lead the self-hoster gets.
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      new Response('<html>502 Bad Gateway</html>', {
+        status: 502,
+        headers: { 'Content-Type': 'text/html' },
+      }),
+    )
+
+    await expect(auth.register('new@example.com', 'StrongPass123!')).rejects.toMatchObject({
+      kind: 'server',
+      status: 502,
+    })
+  })
+
+  it('distinguishes an unreachable API from a rejected signup', async () => {
+    const auth = await importAuth()
+    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('Failed to fetch'))
+
+    await expect(auth.register('new@example.com', 'StrongPass123!')).rejects.toMatchObject({
+      kind: 'network',
+    })
+  })
+
+  it('returns the created user on success', async () => {
+    const auth = await importAuth()
+    vi.mocked(fetch).mockResolvedValueOnce(
+      jsonResponse({ email: 'new@example.com', username: 'new@example.com' }, { status: 201 }),
+    )
+
+    await expect(auth.register('new@example.com', 'StrongPass123!')).resolves.toEqual({
+      email: 'new@example.com',
+      username: 'new@example.com',
+    })
+  })
+})

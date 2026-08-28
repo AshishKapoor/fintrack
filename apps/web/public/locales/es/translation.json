@@ -48,6 +48,8 @@
     },
     "register": {
       "email": "Correo electrónico",
+      "errorNetwork": "No se puede contactar con el servidor. ¿Está la API activa y accesible?",
+      "errorServer": "Algo salió mal en el servidor. Inténtalo de nuevo.",
       "genericError": "No se pudo completar el registro",
       "loginLink": "Iniciar sesión",
       "password": "Contraseña",

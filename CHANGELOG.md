@@ -10,7 +10,7 @@ whole procedure.
 
 The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [1.0.0] — 2026-08-28
 
 The v1.0.0 hardening pass ([ROADMAP.md](ROADMAP.md) Phase 4). This is where the
 API contract stops moving, so it is deliberately where the breaking changes are
@@ -111,6 +111,14 @@ first** — the encrypted backup in the app covers the ledger, and a
 - `scripts/feature_audit.py` never scanned `pft/finance_urls.py`, so the three
   AI-categorization endpoints had reported as schema-only since the day they
   shipped.
+- **The landing site had not deployed since 2026-08-13.** Vercel built it on
+  every push of every branch, which first exhausted the free tier's build
+  quota, and the monorepo restructure left the project's Root Directory
+  pointing at the old `landing/` path. Deploys are now gated by an Ignored
+  Build Step (`apps/landing/vercel.json`) that skips every build unless the
+  project version was bumped — so the site redeploys once per release, not
+  per merge. The Root Directory fix is a dashboard setting; it is documented
+  in `apps/landing/README.md`.
 
 ## [0.2.0] — 2026-08-13
 
@@ -141,5 +149,6 @@ first** — the encrypted backup in the app covers the ledger, and a
 The first release: the double-entry ledger, envelope budgeting, seven import
 formats, the rules engine, scheduled transactions, and reports.
 
+[1.0.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v1.0.0
 [0.2.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v0.2.0
 [0.1.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v0.1.0

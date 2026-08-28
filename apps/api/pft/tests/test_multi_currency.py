@@ -15,7 +15,9 @@ class AccountCurrencyDefaultingTests(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="currency@example.com", username="currency@example.com", password="StrongPass123!"
+            email="currency@example.com",
+            username="currency@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
         self.budget_file = personal_budget_file(self.user)
@@ -52,7 +54,9 @@ class AccountCurrencyDefaultingTests(APITestCase):
             budget_file=self.budget_file, name="Legacy Row", type=Account.TYPE_CASH
         )
         self.assertEqual(account.currency_code, "")
-        self.assertEqual(account.effective_currency_code, self.budget_file.currency_code)
+        self.assertEqual(
+            account.effective_currency_code, self.budget_file.currency_code
+        )
 
     def test_changing_budget_file_currency_does_not_retroactively_change_accounts(self):
         # currency_code is resolved once at account-creation time (see

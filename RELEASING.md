@@ -79,9 +79,10 @@ whether the step is reversible.
    migrations that take a long time or cannot be reversed.
 
 6. **Bump the versions.** `apps/api/pyproject.toml`,
-   `packages/sdk-py/pyproject.toml`, `packages/sdk-ts/package.json`. They move
-   together; a reader should never have to work out which SDK matches which
-   server.
+   `packages/sdk-py/pyproject.toml`, `packages/sdk-ts/package.json`,
+   `apps/web/package.json`, `apps/landing/package.json`. All five move
+   together; a reader should never have to work out which SDK, web build, or
+   landing site matches which server.
 
 7. **Tag and push.**
 

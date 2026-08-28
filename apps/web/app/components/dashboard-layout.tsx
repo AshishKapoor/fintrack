@@ -28,8 +28,8 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
     // DemoBanner (demo instances only) can take real space above this without
     // pushing the sidebar/main content below the fold.
     <div className="flex h-full overflow-hidden">
-      <Sidebar 
-        expanded={sidebarExpanded} 
+      <Sidebar
+        expanded={sidebarExpanded}
         toggleSidebar={toggleSidebar}
         isMobile={isMobile}
         isOpen={mobileSidebarOpen}

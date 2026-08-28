@@ -34,7 +34,12 @@ class FetchAndStoreRatesTests(TestCase):
     @patch("pft.fx_rates.urllib.request.urlopen")
     def test_stores_a_row_per_currency_plus_eur_itself(self, mock_urlopen):
         mock_urlopen.return_value = _response(
-            {"amount": 1.0, "base": "EUR", "date": "2026-03-20", "rates": {"USD": 1.08, "GBP": 0.85}}
+            {
+                "amount": 1.0,
+                "base": "EUR",
+                "date": "2026-03-20",
+                "rates": {"USD": 1.08, "GBP": 0.85},
+            }
         )
         stored = fetch_and_store_rates()
 
@@ -57,9 +62,7 @@ class FetchAndStoreRatesTests(TestCase):
         fetch_and_store_rates()
 
         self.assertEqual(FxRate.objects.filter(currency_code="USD").count(), 1)
-        self.assertEqual(
-            FxRate.objects.get(currency_code="USD").rate, Decimal("1.10")
-        )
+        self.assertEqual(FxRate.objects.get(currency_code="USD").rate, Decimal("1.10"))
 
     @patch("pft.fx_rates.urllib.request.urlopen", side_effect=OSError("network down"))
     def test_network_failure_raises_fx_rate_error(self, _mock_urlopen):
@@ -90,7 +93,9 @@ class SyncFxRatesCommandTests(TestCase):
     """`manage.py sync_fx_rates` - the bare-metal-cron / no-beat fallback for
     sync-fx-rates-daily, mirroring prune_finance_jobs' own command wrapper."""
 
-    @patch("pft.management.commands.sync_fx_rates.fetch_and_store_rates", return_value=3)
+    @patch(
+        "pft.management.commands.sync_fx_rates.fetch_and_store_rates", return_value=3
+    )
     def test_reports_how_many_currencies_were_stored(self, _mock_fetch):
         out = StringIO()
         call_command("sync_fx_rates", stdout=out)
@@ -107,13 +112,20 @@ class SyncFxRatesCommandTests(TestCase):
 
 class ConvertAmountTests(TestCase):
     def setUp(self):
-        FxRate.objects.create(rate_date=date(2026, 3, 20), currency_code="EUR", rate=Decimal("1"))
-        FxRate.objects.create(rate_date=date(2026, 3, 20), currency_code="USD", rate=Decimal("1.10"))
-        FxRate.objects.create(rate_date=date(2026, 3, 20), currency_code="GBP", rate=Decimal("0.85"))
+        FxRate.objects.create(
+            rate_date=date(2026, 3, 20), currency_code="EUR", rate=Decimal("1")
+        )
+        FxRate.objects.create(
+            rate_date=date(2026, 3, 20), currency_code="USD", rate=Decimal("1.10")
+        )
+        FxRate.objects.create(
+            rate_date=date(2026, 3, 20), currency_code="GBP", rate=Decimal("0.85")
+        )
 
     def test_same_currency_is_a_no_op(self):
         self.assertEqual(
-            convert_amount(Decimal("50"), "USD", "USD", as_of=date(2026, 3, 20)), Decimal("50")
+            convert_amount(Decimal("50"), "USD", "USD", as_of=date(2026, 3, 20)),
+            Decimal("50"),
         )
 
     def test_eur_to_quote_currency(self):
@@ -127,7 +139,9 @@ class ConvertAmountTests(TestCase):
     def test_triangulates_between_two_non_eur_currencies(self):
         # 100 USD -> EUR (/1.10) -> GBP (*0.85)
         result = convert_amount(Decimal("100"), "USD", "GBP", as_of=date(2026, 3, 20))
-        expected = (Decimal("100") / Decimal("1.10") * Decimal("0.85")).quantize(Decimal("0.0001"))
+        expected = (Decimal("100") / Decimal("1.10") * Decimal("0.85")).quantize(
+            Decimal("0.0001")
+        )
         self.assertEqual(result, expected)
 
     def test_uses_nearest_rate_on_or_before_as_of(self):
@@ -135,7 +149,9 @@ class ConvertAmountTests(TestCase):
         self.assertEqual(result, Decimal("11.0000"))
 
     def test_missing_rate_returns_none_not_a_guess(self):
-        self.assertIsNone(convert_amount(Decimal("10"), "EUR", "JPY", as_of=date(2026, 3, 20)))
+        self.assertIsNone(
+            convert_amount(Decimal("10"), "EUR", "JPY", as_of=date(2026, 3, 20))
+        )
         self.assertIsNone(
             convert_amount(Decimal("10"), "EUR", "USD", as_of=date(2020, 1, 1))
         )
@@ -153,7 +169,9 @@ class AccountBalanceConversionTests(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="fx-user@example.com", username="fx-user@example.com", password="StrongPass123!"
+            email="fx-user@example.com",
+            username="fx-user@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
         self.budget_file = personal_budget_file(self.user)
@@ -169,8 +187,12 @@ class AccountBalanceConversionTests(APITestCase):
             opening_balance=Decimal("200.00"),
             currency_code="EUR",
         )
-        FxRate.objects.create(rate_date=date.today(), currency_code="EUR", rate=Decimal("1"))
-        FxRate.objects.create(rate_date=date.today(), currency_code="USD", rate=Decimal("1.10"))
+        FxRate.objects.create(
+            rate_date=date.today(), currency_code="EUR", rate=Decimal("1")
+        )
+        FxRate.objects.create(
+            rate_date=date.today(), currency_code="USD", rate=Decimal("1.10")
+        )
 
     def test_balances_endpoint_reports_native_and_converted_amounts(self):
         response = self.client.get(
@@ -205,19 +227,27 @@ class AccountBalanceConversionTests(APITestCase):
         # Same-currency accounts still convert trivially even with an empty table.
         self.assertEqual(by_id[self.cash.id]["converted_balance"], "100.00")
         self.assertTrue(response.data["net_worth"]["missing_rate"])
-        self.assertEqual(Decimal(response.data["net_worth"]["total"]), Decimal("100.00"))
+        self.assertEqual(
+            Decimal(response.data["net_worth"]["total"]), Decimal("100.00")
+        )
 
 
 class FxRateApiTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="fx-api@example.com", username="fx-api@example.com", password="StrongPass123!"
+            email="fx-api@example.com",
+            username="fx-api@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
 
     def test_list_filters_by_currency_code(self):
-        FxRate.objects.create(rate_date=date(2026, 3, 20), currency_code="USD", rate=Decimal("1.1"))
-        FxRate.objects.create(rate_date=date(2026, 3, 20), currency_code="GBP", rate=Decimal("0.85"))
+        FxRate.objects.create(
+            rate_date=date(2026, 3, 20), currency_code="USD", rate=Decimal("1.1")
+        )
+        FxRate.objects.create(
+            rate_date=date(2026, 3, 20), currency_code="GBP", rate=Decimal("0.85")
+        )
 
         response = self.client.get("/api/v1/finance/fx-rates/?currency_code=usd")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

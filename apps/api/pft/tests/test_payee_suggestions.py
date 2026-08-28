@@ -40,7 +40,9 @@ class SuggestedCategoryTests(APITestCase):
             )[:2]
         )
         self.groceries, self.dining = categories
-        self.payee = Payee.objects.create(budget_file=self.budget_file, name="Corner Store")
+        self.payee = Payee.objects.create(
+            budget_file=self.budget_file, name="Corner Store"
+        )
 
     def _spend(self, category, amount="10.00", on=date(2026, 3, 1)):
         tx = LedgerTransaction.objects.create(
@@ -86,11 +88,17 @@ class SuggestedCategoryTests(APITestCase):
         self.assertEqual(response.data["category"], self.dining.id)
 
     def test_only_considers_this_payees_history(self):
-        other_payee = Payee.objects.create(budget_file=self.budget_file, name="Other Shop")
-        other_tx = LedgerTransaction.objects.create(
-            budget_file=self.budget_file, transaction_date=date(2026, 3, 1), payee=other_payee
+        other_payee = Payee.objects.create(
+            budget_file=self.budget_file, name="Other Shop"
         )
-        LedgerPosting.objects.create(transaction=other_tx, account=self.account, amount="-5.00")
+        other_tx = LedgerTransaction.objects.create(
+            budget_file=self.budget_file,
+            transaction_date=date(2026, 3, 1),
+            payee=other_payee,
+        )
+        LedgerPosting.objects.create(
+            transaction=other_tx, account=self.account, amount="-5.00"
+        )
         LedgerPosting.objects.create(
             transaction=other_tx, category=self.dining, amount=Decimal("5.00")
         )

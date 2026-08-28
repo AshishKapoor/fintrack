@@ -1,6 +1,6 @@
 {
   "name": "@fintrack/sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Typed TypeScript client for the FinTrack API, generated from its OpenAPI schema.",
   "license": "MIT",
   "repository": {
@@ -28,6 +28,11 @@
     "README.md"
   ],
   "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "overrides": {
+      "js-yaml@4.1.1": "^4.3.2"
+    }
+  },
   "scripts": {
     "generate": "orval",
     "build": "tsc -p tsconfig.json",

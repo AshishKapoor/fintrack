@@ -1,6 +1,6 @@
 [project]
 name = "fintrack-sdk"
-version = "0.1.0"
+version = "1.0.0"
 description = "Typed Python client for the FinTrack API, generated from its OpenAPI schema."
 readme = "README.md"
 license = { text = "MIT" }

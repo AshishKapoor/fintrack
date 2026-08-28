@@ -56,7 +56,9 @@ def _split_auth(url: str) -> tuple[str, dict]:
     netloc = parts.hostname or ""
     if parts.port:
         netloc += f":{parts.port}"
-    clean_url = urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
+    clean_url = urlunsplit(
+        (parts.scheme, netloc, parts.path, parts.query, parts.fragment)
+    )
     token = base64.b64encode(
         f"{parts.username}:{parts.password or ''}".encode()
     ).decode("ascii")
@@ -85,7 +87,9 @@ def _claim_access_url(setup_token: str) -> str:
     try:
         claim_url = base64.b64decode(setup_token.strip(), validate=True).decode("utf-8")
     except (binascii.Error, ValueError, UnicodeDecodeError) as exc:
-        raise BankSyncError("That does not look like a valid SimpleFIN setup token.") from exc
+        raise BankSyncError(
+            "That does not look like a valid SimpleFIN setup token."
+        ) from exc
 
     if not claim_url.startswith(("http://", "https://")):
         raise BankSyncError("That does not look like a valid SimpleFIN setup token.")
@@ -111,7 +115,9 @@ class SimpleFinProvider(BankSyncProvider):
     def start_link(self, connection: SyncConnection, params: dict) -> dict:
         setup_token = (params or {}).get("setup_token")
         if not setup_token:
-            raise BankSyncError("setup_token is required to connect a SimpleFIN bridge.")
+            raise BankSyncError(
+                "setup_token is required to connect a SimpleFIN bridge."
+            )
 
         access_url = _claim_access_url(setup_token)
         connection.secret_data = encrypt_json({"access_url": access_url})
@@ -172,9 +178,11 @@ class SimpleFinProvider(BankSyncProvider):
                 if posted is None or tx.get("amount") is None:
                     continue
                 payee = tx.get("payee") or tx.get("description") or ""
-                memo = tx.get("memo") or (
-                    tx.get("description") if tx.get("payee") else ""
-                ) or ""
+                memo = (
+                    tx.get("memo")
+                    or (tx.get("description") if tx.get("payee") else "")
+                    or ""
+                )
                 rows.append(
                     ProviderTransaction(
                         external_id=str(tx["id"]),

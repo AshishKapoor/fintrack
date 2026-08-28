@@ -65,7 +65,11 @@ class NetWorthSeriesTests(APITestCase):
     def _run(self, **payload):
         response = self.client.post(
             "/api/v1/finance/reports/run/",
-            {"budget_file": self.budget_file.id, "report_type": "net_worth_series", **payload},
+            {
+                "budget_file": self.budget_file.id,
+                "report_type": "net_worth_series",
+                **payload,
+            },
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
@@ -73,7 +77,10 @@ class NetWorthSeriesTests(APITestCase):
 
     def test_empty_ledger_is_zero_at_every_point(self):
         data = self._run(start_date="2026-01-01", end_date="2026-03-31")
-        self.assertEqual([p["date"] for p in data["points"]], ["2026-01-31", "2026-02-28", "2026-03-31"])
+        self.assertEqual(
+            [p["date"] for p in data["points"]],
+            ["2026-01-31", "2026-02-28", "2026-03-31"],
+        )
         for point in data["points"]:
             self.assertEqual(point["total"], "0.00")
             self.assertFalse(point["missing_rate"])
@@ -89,7 +96,9 @@ class NetWorthSeriesTests(APITestCase):
         self.assertEqual(totals["2026-02-28"], "300.00")
         self.assertEqual(totals["2026-03-31"], "400.00")
 
-    def test_fx_rate_added_partway_through_history_applies_only_from_its_date_forward(self):
+    def test_fx_rate_added_partway_through_history_applies_only_from_its_date_forward(
+        self,
+    ):
         # A second, EUR-denominated account with a constant balance across the
         # whole range - any change in the total across points is purely the FX
         # picture changing, not the account's own balance moving.
@@ -102,7 +111,9 @@ class NetWorthSeriesTests(APITestCase):
         )
         # Only a USD rate dated mid-February - convert_amount's EUR branch only
         # needs the *quote* currency's rate, not a same-dated EUR row.
-        FxRate.objects.create(rate_date=date(2026, 2, 15), currency_code="USD", rate=Decimal("1.10"))
+        FxRate.objects.create(
+            rate_date=date(2026, 2, 15), currency_code="USD", rate=Decimal("1.10")
+        )
 
         data = self._run(start_date="2026-01-01", end_date="2026-03-31")
         points = {p["date"]: p for p in data["points"]}
@@ -146,7 +157,9 @@ class NetWorthSeriesTests(APITestCase):
             type=Account.TYPE_SAVINGS,
             opening_balance=Decimal("0.00"),
         )
-        self._post_account_leg("2026-01-10", self.cash, Decimal("500.00"))  # -> Cash 500
+        self._post_account_leg(
+            "2026-01-10", self.cash, Decimal("500.00")
+        )  # -> Cash 500
         self.client.post(
             "/api/v1/finance/transactions/",
             {
@@ -241,10 +254,14 @@ class CashFlowSankeyTests(APITestCase):
     def _hub_flows(self, data):
         hub_index = self._node_index(data, "Income")
         inflow = sum(
-            Decimal(link["value"]) for link in data["links"] if link["target"] == hub_index
+            Decimal(link["value"])
+            for link in data["links"]
+            if link["target"] == hub_index
         )
         outflow = sum(
-            Decimal(link["value"]) for link in data["links"] if link["source"] == hub_index
+            Decimal(link["value"])
+            for link in data["links"]
+            if link["source"] == hub_index
         )
         return inflow, outflow
 
@@ -259,7 +276,9 @@ class CashFlowSankeyTests(APITestCase):
 
         data = self._run()
         savings_index = self._node_index(data, "Savings")
-        savings_link = next(link for link in data["links"] if link["target"] == savings_index)
+        savings_link = next(
+            link for link in data["links"] if link["target"] == savings_index
+        )
         self.assertEqual(savings_link["value"], "700.00")
         self._assert_no_node(data, "From savings")
         inflow, outflow = self._hub_flows(data)
@@ -296,8 +315,12 @@ class CashFlowSankeyTests(APITestCase):
             self.assertIn(link["value"], {"400.00", "300.00"})
 
         other_index = self._node_index(data, "Other expenses")
-        other_link = next(link for link in data["links"] if link["target"] == other_index)
-        self.assertEqual(other_link["value"], "300.00")  # Transportation (200) + Utilities (100)
+        other_link = next(
+            link for link in data["links"] if link["target"] == other_index
+        )
+        self.assertEqual(
+            other_link["value"], "300.00"
+        )  # Transportation (200) + Utilities (100)
 
         self._assert_no_node(data, "Transportation")
         self._assert_no_node(data, "Utilities")
@@ -421,7 +444,9 @@ class SubscriptionDetectionTests(APITestCase):
         data = self._run()
         hit = self._by_payee(data, "Gym Membership")
         self.assertIsNotNone(hit)
-        self.assertEqual(hit["amount"], "32.99")  # median of [29.99,29.99,32.99,32.99,32.99]
+        self.assertEqual(
+            hit["amount"], "32.99"
+        )  # median of [29.99,29.99,32.99,32.99,32.99]
 
     def test_weekly_cadence_converts_to_a_monthly_equivalent(self):
         coffee = self._payee("Coffee Club")

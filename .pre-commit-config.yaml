@@ -3,15 +3,29 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
+      # Excludes the three generated SDK trees: CI regenerates each of them
+      # from the OpenAPI schema and fails the build on any diff from what's
+      # committed (see ci.yml), so their formatting is whatever the
+      # generator emits - orval's output includes trailing whitespace on
+      # some blank lines - not a style choice these hooks should "fix" out
+      # from under that check.
       - id: trailing-whitespace
+        exclude: &generated_clients ^(apps/web/app/client/gen/|packages/sdk-ts/src/gen/|packages/sdk-py/fintrack_sdk/)
       - id: end-of-file-fixer
+        exclude: *generated_clients
+      # --unsafe: docker-compose.images.yml uses the Compose Spec's `!reset`
+      # tag to null out `build:` when overriding onto the base file, which
+      # plain PyYAML (this hook's default constructor) doesn't recognize.
+      # --unsafe skips semantic loading and checks syntax only, so custom
+      # tags don't fail a file that is otherwise valid YAML.
       - id: check-yaml
+        args: [--unsafe]
       - id: check-added-large-files
       - id: check-merge-conflict
       - id: detect-private-key
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.10.0
+    rev: v0.16.2
     hooks:
       - id: ruff
         args: [--fix]

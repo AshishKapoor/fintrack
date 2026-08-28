@@ -58,7 +58,9 @@ class AuditWritingTests(APITestCase):
 
     def test_membership_changes_are_recorded(self):
         invitee = make_user("audit-joiner@example.com")
-        org_response = self.client.post("/api/v1/orgs/", {"name": "Audit Co"}, format="json")
+        org_response = self.client.post(
+            "/api/v1/orgs/", {"name": "Audit Co"}, format="json"
+        )
         org_id = org_response.data["id"]
         invited = self.client.post(
             f"/api/v1/orgs/{org_id}/invitations/",
@@ -77,7 +79,9 @@ class AuditWritingTests(APITestCase):
                 "summary", flat=True
             )
         )
-        self.assertTrue(any("Invited audit-joiner@example.com" in item for item in summaries))
+        self.assertTrue(
+            any("Invited audit-joiner@example.com" in item for item in summaries)
+        )
         self.assertTrue(any("joined as member" in item for item in summaries))
 
 
@@ -87,7 +91,9 @@ class AuditReadingTests(APITestCase):
         self.member = make_user("reader-member@example.com")
         self.client.force_authenticate(user=self.owner)
 
-        org_response = self.client.post("/api/v1/orgs/", {"name": "Readers"}, format="json")
+        org_response = self.client.post(
+            "/api/v1/orgs/", {"name": "Readers"}, format="json"
+        )
         self.org_id = org_response.data["id"]
         invited = self.client.post(
             f"/api/v1/orgs/{self.org_id}/invitations/",

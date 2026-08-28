@@ -67,6 +67,36 @@ class AuthSmokeTests(APITestCase):
             DEFAULT_EXPENSE_CATEGORIES,
         )
 
+    def test_registering_a_taken_email_says_the_account_exists(self):
+        """The 400 has to name the conflict, not send the user to support.
+
+        The web signup form renders whatever this endpoint puts in the body, so
+        a vague message here is what a self-hoster sees when they retry a signup
+        that already went through (or bootstrapped an admin with
+        FINTRACK_ADMIN_EMAIL): a dead end pointing at the wrong remedy.
+        """
+        User.objects.create_user(
+            email="taken@example.com",
+            username="taken@example.com",
+            password="StrongPass123!",
+        )
+
+        response = self.client.post(
+            "/api/v1/register/",
+            {
+                "email": "taken@example.com",
+                "password": "StrongPass123!",
+                "confirm_password": "StrongPass123!",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        message = response.data["email"][0]
+        self.assertIn("already exists", message)
+        self.assertNotIn("contact support", message)
+        self.assertEqual(User.objects.filter(email="taken@example.com").count(), 1)
+
     def test_token_obtain_and_refresh(self):
         User.objects.create_user(
             email="auth-user@example.com",

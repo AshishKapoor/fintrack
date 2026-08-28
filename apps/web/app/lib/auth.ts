@@ -244,15 +244,75 @@ export async function getUserId() {
   return null
 }
 
+/**
+ * Pull the human-readable reason out of a DRF error body.
+ *
+ * DRF reports failed validation as `{field: ["reason", ...]}`; only throttling
+ * and plain action errors use `{detail: "reason"}`. Reading `detail` alone -
+ * which register() used to do - collapsed every actionable reason ("An account
+ * with this email already exists", "Password must be at least 8 characters
+ * long") into an opaque "Registration failed" with nothing to act on. The
+ * axios client's 400 handler (httpPFTClient.ts) already reads both shapes;
+ * the raw fetch() callers in this module need their own copy.
+ */
+function firstErrorMessage(body: unknown): string | undefined {
+  if (!body || typeof body !== 'object') return undefined
+  const data = body as Record<string, unknown>
+  if (typeof data.detail === 'string') return data.detail
+  for (const value of Object.values(data)) {
+    if (typeof value === 'string') return value
+    if (Array.isArray(value) && typeof value[0] === 'string') return value[0]
+  }
+  return undefined
+}
+
+export type RegisterErrorKind = 'rejected' | 'server' | 'network'
+
+/**
+ * Why a signup failed, in the shape the form can localize.
+ *
+ * Mirrors LoginError above: `kind` picks the translated string, so nothing
+ * here leaks untranslated English onto the page. The exception is `rejected`,
+ * whose `message` is the server's own reason - Django runs it through gettext
+ * (LocaleMiddleware honours Accept-Language), so it arrives already in the
+ * user's language and is far more specific than anything the client knows.
+ */
+export class RegisterError extends Error {
+  kind: RegisterErrorKind
+  status?: number
+
+  constructor(kind: RegisterErrorKind, message: string, status?: number) {
+    super(message)
+    this.name = 'RegisterError'
+    this.kind = kind
+    this.status = status
+  }
+}
+
 export async function register(email: string, password: string) {
-  const response = await fetch(`${PFT_BASE_URL}/api/v1/register/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: email, email, password, confirm_password: password }),
-  })
+  let response: Response
+  try {
+    response = await fetch(`${PFT_BASE_URL}/api/v1/register/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: email, email, password, confirm_password: password }),
+    })
+  } catch {
+    // fetch only throws on network-level failures - an API that never came up,
+    // or a build carrying a VITE_BASE_DOMAIN that does not resolve from the
+    // browser - never on an HTTP error status.
+    throw new RegisterError('network', 'Could not reach the server')
+  }
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(errorData?.detail || 'Registration failed')
+    const errorData = await response.json().catch(() => null)
+    const reason = firstErrorMessage(errorData)
+    if (reason) {
+      throw new RegisterError('rejected', reason, response.status)
+    }
+    // No quotable reason means the request never reached DRF (an nginx 502, or
+    // Django's own 400 DisallowedHost page). The status is the only lead left,
+    // and the form appends it to the translated message.
+    throw new RegisterError('server', `Server error (${response.status})`, response.status)
   }
   return await response.json()
 }

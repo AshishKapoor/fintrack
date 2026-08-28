@@ -48,6 +48,8 @@
     },
     "register": {
       "email": "Email",
+      "errorNetwork": "Cannot reach the server — is the API running and reachable?",
+      "errorServer": "Something went wrong on the server. Please try again.",
       "genericError": "Registration failed",
       "loginLink": "Login",
       "password": "Password",

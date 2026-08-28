@@ -71,7 +71,7 @@ msgstr ""
 msgid "Enter a valid email address."
 msgstr ""
 
-msgid "Something went wrong. Please contact support or try again."
+msgid "An account with this email already exists. Try logging in instead."
 msgstr ""
 
 msgid "Your password is required to delete your account."

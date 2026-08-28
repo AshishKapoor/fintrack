@@ -474,6 +474,16 @@ hostname, which the UI reports as a failed signup. Set
 serve the web app and API from *different* origins — then it must match the
 scheme, host, and port you are browsing from.
 
+**Signup says the account already exists (or used to just say "Registration
+failed").** The address is already registered, so use the login page instead of
+signup. Two ways a "fresh" instance already has it: an earlier signup attempt
+actually succeeded, or `FINTRACK_ADMIN_EMAIL` in `.env` bootstrapped that same
+address as the admin account when `migrate` ran. If you no longer have the
+password, reset it with
+`docker compose exec api uv run manage.py changepassword <email>`. Note that
+signup is rate limited (`THROTTLE_REGISTER`, five attempts an hour by default),
+so a burst of retries answers `Request was throttled` for a while afterwards.
+
 **Redirect loop after enabling TLS.** Your proxy is not sending
 `X-Forwarded-Proto: https`, so Django thinks the request is plain HTTP and
 redirects again.

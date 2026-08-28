@@ -80,6 +80,24 @@ test.describe('signed out', () => {
       await expectNoViolations(page)
     })
   }
+
+  test('reduced-motion preference calms UI transitions', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.goto('/login')
+    const trigger = page.getByRole('button', { name: /login/i })
+    await expect(trigger).toBeVisible({ timeout: 30_000 })
+
+    const longestDuration = await trigger.evaluate((element) => {
+      const styles = getComputedStyle(element)
+      const durations = `${styles.animationDuration},${styles.transitionDuration}`
+        .split(',')
+        .map((duration) => Number.parseFloat(duration))
+      return Math.max(...durations)
+    })
+
+    // Computed durations are expressed in seconds; 0.01ms is 0.00001s.
+    expect(longestDuration).toBeLessThanOrEqual(0.00001)
+  })
 })
 
 test.describe('signed in', () => {
@@ -112,6 +130,7 @@ test.describe('signed in', () => {
       ['/insights', 'Insights'],
       ['/rules', 'Rules'],
       ['/settings', 'Settings'],
+      ['/this-route-does-not-exist', 'Page not found'],
     ]
 
     for (const [path, label] of pages) {
@@ -132,12 +151,17 @@ test.describe('signed in', () => {
     await signIn(page, email)
     await page.goto('/transactions')
 
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+    const trigger = page.getByRole('button', { name: 'Add Transaction' }).first()
+    await trigger.click()
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 30_000 })
 
     // Scoped to the dialog: a modal traps focus, so the page behind it is
     // inert and its markup is not what a user is dealing with here.
     await expectNoViolations(page, scan(page).include('[role="dialog"]'))
+
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(trigger).toBeFocused()
   })
 
   test('the command palette is labelled', async ({ page }) => {

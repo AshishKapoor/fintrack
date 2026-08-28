@@ -91,6 +91,9 @@ first** — the encrypted backup in the app covers the ledger, and a
 - **"Sync now" returned a 500 after `FINTRACK_SYNC_ENCRYPTION_KEY` changed.**
   `DecryptionError` escaped `sync_connection`, which caught only
   `BankSyncError`. The error now names the environment variable responsible.
+- Accessibility: honor reduced-motion preferences across CSS and the custom
+  loading spinner, restore focus after dialogs close, and include the 404 page
+  in the automated accessibility sweep.
 - `set-default` on a budget file cleared the default across every file the
   caller could see, so in a shared workspace one member's choice moved
   everyone else's — and their own, in their other workspaces.

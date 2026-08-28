@@ -6,9 +6,10 @@ import {
   transform,
   useAnimationFrame,
   useMotionValue,
+  useReducedMotion,
   useTransform,
 } from 'framer-motion'
-import { FC, useRef } from 'react'
+import { FC, useEffect, useRef } from 'react'
 import { path1, path2, path3, path4 } from './path'
 
 // path pattern
@@ -33,17 +34,31 @@ const frames = Array.from({ length: totalFrames }, (_, i) => {
 
 function Spinner({ size = 32, fill = '#307b34', stroke = 'black', strokeWidth = 0.7 }) {
   const actualPath = useMotionValue(frames[0])
-  const ref = useRef(null)
+  const ref = useRef<SVGPathElement>(null)
   const rotation = useMotionValue(0)
+  const shouldReduceMotion = useReducedMotion()
   const easedRotation = useTransform(rotation, [0, 1], [0, 360], {
     ease: easeInOut,
   })
 
+  useEffect(() => {
+    if (!shouldReduceMotion) return
+
+    actualPath.set(frames[0])
+    rotation.set(0)
+    if (ref.current) {
+      ref.current.setAttribute('d', frames[0])
+      ref.current.style.transform = 'rotate(0deg)'
+    }
+  }, [actualPath, rotation, shouldReduceMotion])
+
   useAnimationFrame((t) => {
+    if (shouldReduceMotion) return
+
     actualPath.set(frames[Math.floor((60 * (t / 1000 / 0.7)) % totalFrames)])
     rotation.set((t / 1000 / 0.8) % 1)
-    if (ref?.current) {
-      const path = ref.current as SVGPathElement
+    if (ref.current) {
+      const path = ref.current
       path.setAttribute('d', actualPath.get())
       path.style.transform = `rotate(${easedRotation.get()}deg)`
     }

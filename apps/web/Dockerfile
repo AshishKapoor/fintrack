@@ -20,13 +20,20 @@ ARG VITE_UMAMI_WEBSITE_ID=""
 ENV VITE_UMAMI_SCRIPT_URL=$VITE_UMAMI_SCRIPT_URL
 ENV VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID
 
-# NOTE: `pnpm orval` is deliberately NOT run here. The API client under
-# app/client/pft is hand-maintained; orval's output directory (app/client/gen)
-# is generated on demand and is not part of the build.
+# NOTE: `pnpm orval` is deliberately NOT run here. app/client/gen is orval's
+# output, but it is committed to git and CI fails if it drifts from
+# apps/web/schema/pft.yaml - so the build consumes it like any other source
+# file rather than regenerating it. Regenerating during the image build would
+# mean the image could differ from what CI verified.
 RUN pnpm run build
 
 # Stage 2: Serve
 FROM nginx:alpine
+
+# nginx:alpine lags Alpine's own package updates; without this the published
+# image ships whatever openssl the base was built against. See
+# .github/workflows/dependency-scan.yml.
+RUN apk upgrade --no-cache
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

@@ -10,7 +10,13 @@ COPY entrypoint.migrate.sh /entrypoint.migrate.sh
 COPY wait-for-db.sh /usr/local/bin/wait-for-db.sh
 RUN chmod +x /entrypoint.sh /entrypoint.migrate.sh /usr/local/bin/wait-for-db.sh
 
+# `upgrade` as well as `install`: the uv base image tracks bookworm-slim,
+# which lags Debian's security updates, and the difference is not academic -
+# a scan of the published image found a CRITICAL in libgnutls30 and HIGHs
+# across krb5 and libcap2, all with fixes already in the archive. This is what
+# .github/workflows/dependency-scan.yml gates on.
 RUN apt-get update && \
+    apt-get upgrade -y && \
     apt-get install -y libpq-dev gcc build-essential gettext && \
     rm -rf /var/lib/apt/lists/*
 

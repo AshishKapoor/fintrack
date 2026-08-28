@@ -1,0 +1,102 @@
+name: Dependency Scan
+
+# CodeQL finds bugs in code this project wrote. Nothing looked at the ~800
+# transitive packages the lockfiles pull in, or at the base-image layers being
+# published to GHCR - which for a self-hosted finance app is the larger attack
+# surface of the two.
+#
+# Dependabot security updates cover the manifests; this covers what actually
+# ends up in the image, and it runs on a schedule so a CVE published against a
+# pinned transitive dependency surfaces without anyone touching the repo.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "**/uv.lock"
+      - "**/pnpm-lock.yaml"
+      - "**/pyproject.toml"
+      - "**/package.json"
+      - "**/Dockerfile"
+      - "docker-compose*.yml"
+      - ".github/workflows/dependency-scan.yml"
+  schedule:
+    # Weekly, offset off the hour to avoid GitHub's cron rush.
+    - cron: "41 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependency-scan-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  lockfiles:
+    name: Lockfiles (osv-scanner)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Reporting only, deliberately, and this should tighten once the backlog
+      # is triaged. The first run found ~30 advisories, essentially all against
+      # build-time npm packages - vite, rollup, postcss, esbuild's tree - which
+      # never reach a published image: the web image ships static files served
+      # by nginx, and the API image's Python dependencies are gated below.
+      # Failing the build on all of them today would mean a red main nobody can
+      # clear in an afternoon, and a gate people learn to ignore is worse than
+      # no gate. Tracked as an issue.
+      - name: Scan every committed lockfile
+        continue-on-error: true
+        uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
+        with:
+          # `--lockfile` per file rather than a recursive scan: the recursive
+          # form also walks node_modules and vendored trees when they exist on
+          # the runner, which turns a real signal into thousands of lines.
+          scan-args: |-
+            --lockfile=apps/api/uv.lock
+            --lockfile=apps/web/pnpm-lock.yaml
+            --lockfile=apps/landing/pnpm-lock.yaml
+            --lockfile=packages/sdk-ts/pnpm-lock.yaml
+
+  # This one does block. It scans what a self-hoster actually runs, and as of
+  # this commit both images are clean of fixable HIGH/CRITICAL findings, so it
+  # starts green and stays meaningful.
+  images:
+    name: Images (trivy)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            context: ./apps/api
+          - name: web
+            context: ./apps/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image locally
+        # Built here rather than pulled: the point is to catch a vulnerable
+        # layer *before* a release publishes it, not after.
+        run: docker build -t fintrack-${{ matrix.name }}:scan ${{ matrix.context }}
+
+      - name: Scan
+        uses: aquasecurity/trivy-action@0.36.0
+        with:
+          image-ref: fintrack-${{ matrix.name }}:scan
+          format: table
+          # HIGH and CRITICAL only, and only ones with a fix available.
+          # Unfixable findings in a base image are real but not actionable
+          # here, and a gate nobody can satisfy is a gate people learn to
+          # ignore - the base images are tracked by Dependabot separately.
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          vuln-type: os,library

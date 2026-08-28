@@ -63,6 +63,13 @@ updates:
       # migrating the whole client is a deliberate project, not a dep bump.
       - dependency-name: orval
         update-types: ["version-update:semver-major"]
+      # recharts 3 reshaped the Tooltip/Legend prop types that
+      # components/ui/chart.tsx is built on. It was merged once and broke the
+      # web build and the e2e suite on main; the insights charts also work
+      # around specific recharts 2.x behaviour (see ROADMAP.md on the Sankey
+      # tooltip), so this is a migration with its own testing, not a bump.
+      - dependency-name: recharts
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /apps/landing

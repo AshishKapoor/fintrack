@@ -1,0 +1,15 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Question or setup help
+    url: https://github.com/AshishKapoor/fintrack/discussions
+    about: >
+      Reverse proxies, backups, "is this supposed to happen" - Discussions is
+      the right place, and answers there help the next person too.
+  - name: Security vulnerability
+    url: https://github.com/AshishKapoor/fintrack/security/policy
+    about: >
+      Report privately. Please do not open a public issue for anything that
+      could expose someone's financial data.
+  - name: Roadmap
+    url: https://github.com/AshishKapoor/fintrack/blob/main/ROADMAP.md
+    about: What is planned, what is in progress, and what is deliberately not.

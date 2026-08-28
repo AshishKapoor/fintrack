@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import BudgetFile, Invitation, Membership, Organization
+from pft.models import Invitation, Membership, Organization
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -25,7 +26,7 @@ class PersonalOrganizationTests(APITestCase):
 
     def test_budget_file_joins_the_personal_org(self):
         user = make_user("solo2@example.com")
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         self.assertIsNotNone(budget_file.organization)
         self.assertTrue(budget_file.organization.personal)
 
@@ -44,7 +45,9 @@ class OrganizationManagementTests(APITestCase):
         self.other = make_user("other@example.com")
         self.client.force_authenticate(user=self.owner)
 
-        response = self.client.post("/api/v1/orgs/", {"name": "Acme Books"}, format="json")
+        response = self.client.post(
+            "/api/v1/orgs/", {"name": "Acme Books"}, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.org_id = response.data["id"]
         self.assertEqual(response.data["my_role"], "owner")
@@ -69,9 +72,7 @@ class OrganizationManagementTests(APITestCase):
         accepted = self.accept_as(self.other, invited.data["token"])
         self.assertEqual(accepted.status_code, status.HTTP_200_OK)
         self.assertEqual(
-            Membership.objects.get(
-                organization_id=self.org_id, user=self.other
-            ).role,
+            Membership.objects.get(organization_id=self.org_id, user=self.other).role,
             Membership.ROLE_MEMBER,
         )
 
@@ -132,7 +133,9 @@ class OrganizationManagementTests(APITestCase):
     def test_member_can_leave(self):
         invited = self.invite("other@example.com")
         self.accept_as(self.other, invited.data["token"])
-        membership = Membership.objects.get(organization_id=self.org_id, user=self.other)
+        membership = Membership.objects.get(
+            organization_id=self.org_id, user=self.other
+        )
 
         self.client.force_authenticate(user=self.other)
         response = self.client.delete(

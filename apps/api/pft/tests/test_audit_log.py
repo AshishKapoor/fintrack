@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import AuditLog, BudgetFile, CategoryV2, Organization
+from pft.models import AuditLog, Category, Organization
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -20,8 +21,8 @@ class AuditWritingTests(APITestCase):
         self.owner = make_user("audit-owner@example.com")
         self.client.force_authenticate(user=self.owner)
         self.org = Organization.objects.get(memberships__user=self.owner)
-        self.budget_file = BudgetFile.objects.get(user=self.owner, is_default=True)
-        self.category = CategoryV2.objects.filter(budget_file=self.budget_file).first()
+        self.budget_file = personal_budget_file(self.owner)
+        self.category = Category.objects.filter(budget_file=self.budget_file).first()
 
     def test_finance_mutations_are_recorded(self):
         response = self.client.post(
@@ -57,7 +58,9 @@ class AuditWritingTests(APITestCase):
 
     def test_membership_changes_are_recorded(self):
         invitee = make_user("audit-joiner@example.com")
-        org_response = self.client.post("/api/v1/orgs/", {"name": "Audit Co"}, format="json")
+        org_response = self.client.post(
+            "/api/v1/orgs/", {"name": "Audit Co"}, format="json"
+        )
         org_id = org_response.data["id"]
         invited = self.client.post(
             f"/api/v1/orgs/{org_id}/invitations/",
@@ -76,7 +79,9 @@ class AuditWritingTests(APITestCase):
                 "summary", flat=True
             )
         )
-        self.assertTrue(any("Invited audit-joiner@example.com" in item for item in summaries))
+        self.assertTrue(
+            any("Invited audit-joiner@example.com" in item for item in summaries)
+        )
         self.assertTrue(any("joined as member" in item for item in summaries))
 
 
@@ -86,7 +91,9 @@ class AuditReadingTests(APITestCase):
         self.member = make_user("reader-member@example.com")
         self.client.force_authenticate(user=self.owner)
 
-        org_response = self.client.post("/api/v1/orgs/", {"name": "Readers"}, format="json")
+        org_response = self.client.post(
+            "/api/v1/orgs/", {"name": "Readers"}, format="json"
+        )
         self.org_id = org_response.data["id"]
         invited = self.client.post(
             f"/api/v1/orgs/{self.org_id}/invitations/",

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './app.tsx'
+import { ErrorBoundary } from './components/error-boundary'
 import { BrowserRouter } from 'react-router-dom'
 import { SWRConfig } from 'swr'
 import { CurrencyProvider } from './context/currency-context'
@@ -23,28 +24,45 @@ async function bootstrap() {
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <BrowserRouter>
-        <SWRConfig
-          value={{
-            revalidateOnFocus: false,
-            refreshInterval: 0,
-            revalidateIfStale: false,
-            revalidateOnReconnect: false,
-            revalidateOnMount: undefined,
-          }}
-        >
-          <OrganizationProvider>
-            <CurrencyProvider>
-              <App />
-            </CurrencyProvider>
-          </OrganizationProvider>
-        </SWRConfig>
-      </BrowserRouter>
+      <ErrorBoundary>
+        <BrowserRouter>
+          <SWRConfig
+            value={{
+              revalidateOnFocus: false,
+              refreshInterval: 0,
+              revalidateIfStale: false,
+              revalidateOnReconnect: false,
+              revalidateOnMount: undefined,
+            }}
+          >
+            <OrganizationProvider>
+              <CurrencyProvider>
+                <App />
+              </CurrencyProvider>
+            </OrganizationProvider>
+          </SWRConfig>
+        </BrowserRouter>
+      </ErrorBoundary>
     </StrictMode>,
   )
 }
 
-void bootstrap()
+// If bootstrap() rejects, render() never runs and #root stays empty forever -
+// a blank page with nothing in the DOM to explain it. initAuth() swallows its
+// own errors today, but i18nReady is an i18next.init() promise that can reject,
+// and "the guard is free" is the whole argument here.
+void bootstrap().catch((error) => {
+  console.error('FinTrack failed to start:', error)
+  const root = document.getElementById('root')
+  if (root) {
+    root.innerHTML = `
+      <div role="alert" style="font-family:system-ui,sans-serif;padding:2rem;text-align:center">
+        <h1 style="font-size:1.5rem;margin-bottom:.5rem">FinTrack failed to start</h1>
+        <p style="opacity:.75">Reloading usually clears it. If not, check the browser console and the API logs.</p>
+        <button onclick="window.location.reload()" style="margin-top:1rem;padding:.5rem 1rem;cursor:pointer">Reload</button>
+      </div>`
+  }
+})
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

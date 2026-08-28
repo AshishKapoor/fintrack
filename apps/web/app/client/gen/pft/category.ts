@@ -5,13 +5,18 @@
  * Personal Finance Tracker API Documentation
  * OpenAPI spec version: 1.0.0
  */
-import type { TypeF1eEnum } from './typeF1eEnum';
+import type { KindEnum } from './kindEnum';
 
 export interface Category {
   readonly id: number;
-  /** @maxLength 100 */
-  name: string;
-  type: TypeF1eEnum;
+  budget_file: number;
   /** @nullable */
-  readonly user: number | null;
+  group?: number | null;
+  /** @maxLength 120 */
+  name: string;
+  kind?: KindEnum;
+  is_archived?: boolean;
+  notes_md?: string;
+  readonly created_at: string;
+  readonly updated_at: string;
 }

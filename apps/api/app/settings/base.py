@@ -143,6 +143,11 @@ INSTALLED_APPS = [
 # global here changes their response shape and needs a matching frontend change.
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Every list endpoint paginates. Set here rather than per-viewset so a new
+    # resource cannot ship unpaginated by omission - which is how all but two
+    # of them were returning unbounded arrays. See pft/pagination.py.
+    "DEFAULT_PAGINATION_CLASS": "pft.pagination.StandardPagination",
+    "PAGE_SIZE": 50,
     # JSON only. Advertising form and multipart in the schema made every
     # generated client emit three body encodings per operation, and the Python
     # generator picked multipart, which cannot carry nested postings.
@@ -436,7 +441,9 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "FinTrack <notifications@fintrack.local>")
+DEFAULT_FROM_EMAIL = os.getenv(
+    "DEFAULT_FROM_EMAIL", "FinTrack <notifications@fintrack.local>"
+)
 
 # --- Bank sync (ROADMAP.md Phase 2) ---------------------------------------
 # SyncConnection credentials (GoCardless requisition/agreement ids, SimpleFIN

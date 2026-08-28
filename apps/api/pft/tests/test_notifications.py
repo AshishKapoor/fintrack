@@ -19,9 +19,8 @@ from rest_framework.test import APITestCase
 
 from pft.models import (
     Account,
-    BudgetFile,
     BudgetMonth,
-    CategoryV2,
+    Category,
     EnvelopeAssignment,
     LedgerPosting,
     LedgerTransaction,
@@ -45,12 +44,15 @@ from pft.tasks import (
     send_scheduled_transaction_reminders_task,
     send_weekly_digest_task,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
 
 def _make_user(email, **prefs):
-    user = User.objects.create_user(email=email, username=email, password="StrongPass123!")
+    user = User.objects.create_user(
+        email=email, username=email, password="StrongPass123!"
+    )
     if prefs:
         NotificationPreference.objects.create(user=user, **prefs)
     return user
@@ -74,7 +76,9 @@ class IsSafeOutboundUrlTests(TestCase):
         self.assertFalse(is_safe_outbound_url("http://192.168.1.1/x"))
 
     def test_rejects_link_local_including_cloud_metadata(self):
-        self.assertFalse(is_safe_outbound_url("http://169.254.169.254/latest/meta-data/"))
+        self.assertFalse(
+            is_safe_outbound_url("http://169.254.169.254/latest/meta-data/")
+        )
 
     def test_accepts_a_public_address(self):
         self.assertTrue(is_safe_outbound_url("http://8.8.8.8/x"))
@@ -85,12 +89,16 @@ class ChannelSenderTests(TestCase):
         self.user = _make_user("sender@example.com")
 
     def test_send_email_respects_enabled_flag(self):
-        preference = NotificationPreference.objects.create(user=self.user, email_enabled=False)
+        preference = NotificationPreference.objects.create(
+            user=self.user, email_enabled=False
+        )
         self.assertFalse(send_email(preference, "Subject", "Body"))
         self.assertEqual(len(mail.outbox), 0)
 
     def test_send_email_delivers_when_enabled(self):
-        preference = NotificationPreference.objects.create(user=self.user, email_enabled=True)
+        preference = NotificationPreference.objects.create(
+            user=self.user, email_enabled=True
+        )
         self.assertTrue(send_email(preference, "Subject", "Body"))
         self.assertEqual(len(mail.outbox), 1)
         self.assertEqual(mail.outbox[0].to, [self.user.email])
@@ -140,7 +148,9 @@ class ChannelSenderTests(TestCase):
         preference = NotificationPreference.objects.create(
             user=self.user, webhook_enabled=True, webhook_url="https://8.8.8.8/hook"
         )
-        self.assertTrue(send_webhook(preference, "Subject", "Body", extra={"foo": "bar"}))
+        self.assertTrue(
+            send_webhook(preference, "Subject", "Body", extra={"foo": "bar"})
+        )
         request = mock_urlopen.call_args[0][0]
         self.assertEqual(request.full_url, "https://8.8.8.8/hook")
         self.assertIn(b'"foo": "bar"', request.data)
@@ -226,35 +236,47 @@ class NotificationPreferenceModelTests(TestCase):
 
     def test_notification_log_unique_constraint_prevents_duplicate_rows(self):
         NotificationLog.objects.create(
-            user=self.user, kind=NotificationLog.KIND_WEEKLY_DIGEST, dedupe_key="2026-W10"
+            user=self.user,
+            kind=NotificationLog.KIND_WEEKLY_DIGEST,
+            dedupe_key="2026-W10",
         )
         with self.assertRaises(IntegrityError):
             NotificationLog.objects.create(
-                user=self.user, kind=NotificationLog.KIND_WEEKLY_DIGEST, dedupe_key="2026-W10"
+                user=self.user,
+                kind=NotificationLog.KIND_WEEKLY_DIGEST,
+                dedupe_key="2026-W10",
             )
 
 
 class BudgetThresholdTriggerTests(TestCase):
     def setUp(self):
-        self.user = _make_user("threshold@example.com", email_enabled=True, budget_alert_threshold=80)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.user = _make_user(
+            "threshold@example.com", email_enabled=True, budget_alert_threshold=80
+        )
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
         self.budget_month = BudgetMonth.objects.create(
             budget_file=self.budget_file, year=2026, month=3
         )
         EnvelopeAssignment.objects.create(
-            budget_month=self.budget_month, category=self.category, assigned_amount="100.00"
+            budget_month=self.budget_month,
+            category=self.category,
+            assigned_amount="100.00",
         )
 
     def _spend(self, amount):
         tx = LedgerTransaction.objects.create(
             budget_file=self.budget_file, transaction_date=date(2026, 3, 15)
         )
-        LedgerPosting.objects.create(transaction=tx, account=self.account, amount=f"-{amount}")
-        LedgerPosting.objects.create(transaction=tx, category=self.category, amount=amount)
+        LedgerPosting.objects.create(
+            transaction=tx, account=self.account, amount=f"-{amount}"
+        )
+        LedgerPosting.objects.create(
+            transaction=tx, category=self.category, amount=amount
+        )
 
     @patch("pft.notifications.timezone.now")
     def test_alert_fires_once_spend_crosses_threshold(self, mock_now):
@@ -324,10 +346,10 @@ class ScheduledReminderTriggerTests(TestCase):
         self.user = _make_user(
             "reminder@example.com", email_enabled=True, reminder_days_before=2
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def _schedule(self, next_run_date):
@@ -397,11 +419,13 @@ class ScheduledReminderTriggerTests(TestCase):
 
 class WeeklyDigestTriggerTests(TestCase):
     def setUp(self):
-        self.user = _make_user("digest@example.com", email_enabled=True, weekly_digest_enabled=True)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.user = _make_user(
+            "digest@example.com", email_enabled=True, weekly_digest_enabled=True
+        )
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     @patch("pft.notifications.timezone.now")
@@ -414,8 +438,12 @@ class WeeklyDigestTriggerTests(TestCase):
         tx = LedgerTransaction.objects.create(
             budget_file=self.budget_file, transaction_date=today - timedelta(days=2)
         )
-        LedgerPosting.objects.create(transaction=tx, account=self.account, amount="-40.00")
-        LedgerPosting.objects.create(transaction=tx, category=self.category, amount="40.00")
+        LedgerPosting.objects.create(
+            transaction=tx, account=self.account, amount="-40.00"
+        )
+        LedgerPosting.objects.create(
+            transaction=tx, category=self.category, amount="40.00"
+        )
 
         sent, errors = send_weekly_digest()
 
@@ -495,7 +523,9 @@ class NotificationPreferenceAPITests(APITestCase):
 
     def test_patch_rejects_enabling_webhook_without_a_url(self):
         response = self.client.patch(
-            "/api/v1/notifications/preferences/", {"webhook_enabled": True}, format="json"
+            "/api/v1/notifications/preferences/",
+            {"webhook_enabled": True},
+            format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("webhook_url", response.data)

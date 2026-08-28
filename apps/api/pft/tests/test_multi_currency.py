@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile
+from pft.models import Account
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -14,10 +15,12 @@ class AccountCurrencyDefaultingTests(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="currency@example.com", username="currency@example.com", password="StrongPass123!"
+            email="currency@example.com",
+            username="currency@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def test_signup_seeded_cash_account_has_explicit_currency(self):
         cash = Account.objects.get(budget_file=self.budget_file, name="Cash")
@@ -51,7 +54,9 @@ class AccountCurrencyDefaultingTests(APITestCase):
             budget_file=self.budget_file, name="Legacy Row", type=Account.TYPE_CASH
         )
         self.assertEqual(account.currency_code, "")
-        self.assertEqual(account.effective_currency_code, self.budget_file.currency_code)
+        self.assertEqual(
+            account.effective_currency_code, self.budget_file.currency_code
+        )
 
     def test_changing_budget_file_currency_does_not_retroactively_change_accounts(self):
         # currency_code is resolved once at account-creation time (see

@@ -1,6 +1,6 @@
 # API/UI Parity Report
 
-Generated on `2026-08-24` by `scripts/feature_audit.py`.
+Generated on `2026-08-28` by `scripts/feature_audit.py`.
 
 ## Matrix Validation
 
@@ -33,4 +33,3 @@ No parity findings.
 ## Active Backend Endpoints Missing From Schema
 
 - None
-

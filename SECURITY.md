@@ -18,9 +18,13 @@ isolation or authentication are prioritised over everything else.
 
 ## Supported versions
 
-FinTrack has not yet cut a stable release. Until `v1.0.0`, only the latest commit
-on `main` receives security fixes. Self-hosters should track the newest tagged
-release.
+FinTrack ships on the monthly cadence described in [RELEASING.md](RELEASING.md).
+Security fixes are backported to the latest **minor** release on the current
+major version (N and N-1 minor both get a patch); anything older is expected to
+upgrade forward. Once a new major ships, the previous major's last minor
+receives security fixes for one more month and is then end-of-life. Self-hosters
+who want to stay covered without tracking every release should upgrade at least
+once per month.
 
 ## Before you expose an instance to the internet
 
@@ -76,9 +80,13 @@ These are real and tracked, not hidden:
   these automatically once a day (`CELERY_BEAT_SCHEDULE`); bare-metal installs
   without it should cron `manage.py prune_finance_jobs` themselves - see
   [docs/self-hosting.md](docs/self-hosting.md).
-- **Most finance list endpoints are unpaginated** (transactions are the
-  exception), so a large ledger's accounts, categories, or payees return in one
-  response.
+- ~~Most finance list endpoints are unpaginated~~ **Fixed:** every list
+  endpoint now paginates through a single `DEFAULT_PAGINATION_CLASS`
+  (`pft/pagination.py`), 50 rows a page with `?page_size=` up to 500. Set
+  project-wide rather than per-viewset precisely because per-viewset is how all
+  but two of them ended up unbounded in the first place, and
+  `tests/test_pagination.py` fails if the router gains a resource nobody added
+  to its list.
 - **Bank sync credentials are encrypted at rest, not zero-knowledge.**
   `SyncConnection.secret_data` (a GoCardless requisition reference, a
   SimpleFIN access URL) is encrypted with a server-held key

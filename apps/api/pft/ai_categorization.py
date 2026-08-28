@@ -103,9 +103,7 @@ def suggest_category_via_ai(
         return None
 
     category_names = [candidate["name"] for candidate in candidates]
-    user_prompt = (
-        f'Payee: "{payee_name}"\nCategories: {", ".join(category_names)}\nBest category:'
-    )
+    user_prompt = f'Payee: "{payee_name}"\nCategories: {", ".join(category_names)}\nBest category:'
     payload = json.dumps(
         {
             "model": _resolve_model(settings_obj),
@@ -126,7 +124,14 @@ def suggest_category_via_ai(
         with urllib.request.urlopen(request, timeout=HTTP_TIMEOUT_SECONDS) as response:
             body = json.loads(response.read().decode("utf-8"))
         content = body["choices"][0]["message"]["content"].strip()
-    except (urllib.error.URLError, OSError, ValueError, KeyError, IndexError, TypeError) as exc:
+    except (
+        urllib.error.URLError,
+        OSError,
+        ValueError,
+        KeyError,
+        IndexError,
+        TypeError,
+    ) as exc:
         logger.warning(
             "AI categorization request for budget file %s failed: %s",
             settings_obj.budget_file_id,
@@ -159,5 +164,11 @@ def test_connection(settings_obj: AICategorizationSettings) -> dict:
     finally:
         settings_obj.is_enabled = enabled_backup
     if result is None:
-        return {"ok": False, "detail": "No response, or the provider couldn't be reached."}
-    return {"ok": True, "detail": f"Reached the provider - it replied with \"{result['name']}\"."}
+        return {
+            "ok": False,
+            "detail": "No response, or the provider couldn't be reached.",
+        }
+    return {
+        "ok": True,
+        "detail": f'Reached the provider - it replied with "{result["name"]}".',
+    }

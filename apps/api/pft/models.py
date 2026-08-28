@@ -76,70 +76,14 @@ class User(AbstractUser):
         return self.email
 
 
-# CATEGORY MODEL
-class Category(models.Model):
-    TYPE_CHOICES = (
-        ("income", "Income"),
-        ("expense", "Expense"),
-    )
-
-    name = models.CharField(max_length=100)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.type})"
-
-
-# TRANSACTION MODEL
-class Transaction(models.Model):
-    TYPE_CHOICES = (
-        ("income", "Income"),
-        ("expense", "Expense"),
-    )
-
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="transactions"
-    )
-    title = models.CharField(max_length=255)
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    category = models.ForeignKey(
-        Category, on_delete=models.SET_NULL, null=True, related_name="transactions"
-    )
-    transaction_date = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return f"{self.title} - {self.amount} ({self.type})"
-
-
-# BUDGET MODEL (Optional Feature)
-class Budget(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="budgets")
-    category = models.ForeignKey(
-        Category, on_delete=models.CASCADE, related_name="budgets"
-    )
-    month = models.PositiveSmallIntegerField()  # 1 to 12
-    year = models.PositiveIntegerField()
-    amount_limit = models.DecimalField(max_digits=12, decimal_places=2)
-
-    class Meta:
-        unique_together = ("user", "category", "month", "year")  # prevent duplicates
-
-    def __str__(self):
-        return f"{self.user.username} - {self.category.name} - {self.month}/{self.year}"
-
-
 class Organization(models.Model):
     """The tenancy boundary.
 
     Every user gets a personal organization on signup; budget files belong to
     an organization, and access flows through Membership. `personal` marks the
     auto-created org so the UI can label it and management endpoints can refuse
-    to delete it. This is the expand phase of the user->organization move:
-    BudgetFile.user stays in place until v1.0.0 (see ARCHITECTURE.md).
+    to delete it. The user->organization move is complete as of migration
+    0019: BudgetFile has no `user` column at all any more.
     """
 
     name = models.CharField(max_length=120)
@@ -180,6 +124,18 @@ class Membership(models.Model):
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
     role = models.CharField(max_length=12, choices=ROLE_CHOICES, default=ROLE_MEMBER)
+    # Which of the workspace's budget files this person opens by default. A
+    # per-person choice, so it belongs on the membership: when it lived on
+    # BudgetFile.is_default, one member picking a default silently changed
+    # everyone else's. SET_NULL rather than CASCADE - deleting a file must not
+    # evict the member from the workspace.
+    default_budget_file = models.ForeignKey(
+        "BudgetFile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -269,38 +225,39 @@ class AuditLog(models.Model):
 
 
 class BudgetFile(models.Model):
-    user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name="budget_files"
-    )
-    # Nullable during the expand phase; every row is backfilled to its owner's
-    # personal organization by migration 0007, and new rows always set it.
+    """A workspace's set of books. The tenant root for everything financial.
+
+    Owned by an `Organization`, never by a user: access is decided entirely by
+    Membership (see pft/tenancy.py). `created_by` is provenance only - it is
+    nullable and SET_NULL so deleting the person who first made the file does
+    not take a shared workspace's books with them.
+
+    Which file a person lands in is *their* choice, not the file's property,
+    so it lives on `Membership.default_budget_file` rather than a flag here.
+    """
+
     organization = models.ForeignKey(
         Organization,
         on_delete=models.CASCADE,
         related_name="budget_files",
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
+        related_name="created_budget_files",
     )
     name = models.CharField(max_length=120)
     currency_code = models.CharField(max_length=3, default="USD")
-    is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        constraints = [
-            # One default per user per workspace: the same user legitimately
-            # holds a default file in their personal org AND in each shared org.
-            models.UniqueConstraint(
-                fields=["user", "organization"],
-                condition=Q(is_default=True),
-                name="unique_default_budget_file_per_user_org",
-            )
-        ]
         ordering = ["id"]
 
     def __str__(self):
-        return f"{self.name} ({self.user.email})"
+        return f"{self.name} ({self.organization.name})"
 
 
 class Account(models.Model):
@@ -340,7 +297,10 @@ class Account(models.Model):
     # account missing either: a 0% default would silently understate real
     # interest, and a $0 minimum would silently imply "no obligation".
     interest_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, null=True, blank=True,
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Annual percentage rate, e.g. 19.99 for 19.99% APR.",
     )
     minimum_payment = models.DecimalField(
@@ -374,7 +334,7 @@ class Account(models.Model):
         return self.currency_code or self.budget_file.currency_code
 
 
-class CategoryGroupV2(models.Model):
+class CategoryGroup(models.Model):
     budget_file = models.ForeignKey(
         BudgetFile, on_delete=models.CASCADE, related_name="category_groups"
     )
@@ -396,7 +356,7 @@ class CategoryGroupV2(models.Model):
         return self.name
 
 
-class CategoryV2(models.Model):
+class Category(models.Model):
     KIND_INCOME = "income"
     KIND_EXPENSE = "expense"
 
@@ -406,10 +366,10 @@ class CategoryV2(models.Model):
     )
 
     budget_file = models.ForeignKey(
-        BudgetFile, on_delete=models.CASCADE, related_name="categories_v2"
+        BudgetFile, on_delete=models.CASCADE, related_name="categories"
     )
     group = models.ForeignKey(
-        CategoryGroupV2,
+        CategoryGroup,
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -427,7 +387,7 @@ class CategoryV2(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["budget_file", "name"],
-                name="unique_category_v2_name_per_budget_file",
+                name="unique_category_name_per_budget_file",
             )
         ]
 
@@ -539,7 +499,7 @@ class LedgerPosting(models.Model):
         related_name="ledger_postings",
     )
     category = models.ForeignKey(
-        CategoryV2,
+        Category,
         null=True,
         blank=True,
         on_delete=models.CASCADE,
@@ -554,7 +514,7 @@ class LedgerPosting(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="ledger_posting_exactly_one_target",
-                check=(
+                condition=(
                     (Q(account__isnull=False) & Q(category__isnull=True))
                     | (Q(account__isnull=True) & Q(category__isnull=False))
                 ),
@@ -634,7 +594,7 @@ class EnvelopeAssignment(models.Model):
         BudgetMonth, on_delete=models.CASCADE, related_name="assignments"
     )
     category = models.ForeignKey(
-        CategoryV2, on_delete=models.CASCADE, related_name="envelope_assignments"
+        Category, on_delete=models.CASCADE, related_name="envelope_assignments"
     )
     assigned_amount = models.DecimalField(
         max_digits=14, decimal_places=2, default=Decimal("0.00")
@@ -902,12 +862,12 @@ class NotificationPreference(models.Model):
         constraints = [
             models.CheckConstraint(
                 name="notification_budget_alert_threshold_range",
-                check=Q(budget_alert_threshold__gte=1)
+                condition=Q(budget_alert_threshold__gte=1)
                 & Q(budget_alert_threshold__lte=100),
             ),
             models.CheckConstraint(
                 name="notification_reminder_days_before_range",
-                check=Q(reminder_days_before__gte=0)
+                condition=Q(reminder_days_before__gte=0)
                 & Q(reminder_days_before__lte=30),
             ),
         ]
@@ -1131,7 +1091,7 @@ class FxRate(models.Model):
     triangulates through EUR at read time instead of storing every cross
     pair, which would be O(currencies^2) for no real benefit. Not scoped to
     a budget file - exchange rates are reference data shared by everyone on
-    the instance, the same way the legacy Category rows with user=NULL are.
+    the instance, unlike every other model here.
     """
 
     rate_date = models.DateField(db_index=True)
@@ -1185,7 +1145,8 @@ class SavingsGoal(models.Model):
         ordering = ["-created_at", "-id"]
         constraints = [
             models.UniqueConstraint(
-                fields=["budget_file", "name"], name="unique_savings_goal_name_per_budget_file"
+                fields=["budget_file", "name"],
+                name="unique_savings_goal_name_per_budget_file",
             )
         ]
 

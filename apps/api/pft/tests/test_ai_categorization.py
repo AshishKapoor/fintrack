@@ -1,5 +1,4 @@
 import json
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -8,8 +7,9 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.ai_categorization import suggest_category_via_ai
-from pft.models import AICategorizationSettings, Account, BudgetFile, CategoryV2, Payee
+from pft.models import Account, AICategorizationSettings, Category, Payee
 from pft.notifications import is_safe_local_service_url
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -45,15 +45,19 @@ class IsSafeLocalServiceUrlTests(TestCase):
         self.assertFalse(is_safe_local_service_url("ftp://127.0.0.1/v1"))
 
     def test_unresolvable_host_is_rejected(self):
-        self.assertFalse(is_safe_local_service_url("http://this-host-does-not-resolve.invalid/v1"))
+        self.assertFalse(
+            is_safe_local_service_url("http://this-host-does-not-resolve.invalid/v1")
+        )
 
 
 class SuggestCategoryViaAiTests(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(
-            email="ai-user@example.com", username="ai-user@example.com", password="StrongPass123!"
+            email="ai-user@example.com",
+            username="ai-user@example.com",
+            password="StrongPass123!",
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.candidates = [{"id": 1, "name": "Groceries"}, {"id": 2, "name": "Rent"}]
 
     def _settings(self, **overrides):
@@ -128,7 +132,9 @@ class SuggestCategoryViaAiTests(TestCase):
         self.assertNotIn("Authorization", sent_request.headers)
 
     @patch("pft.ai_categorization.urllib.request.urlopen")
-    def test_a_cloud_provider_pointed_at_a_private_address_is_blocked(self, mock_urlopen):
+    def test_a_cloud_provider_pointed_at_a_private_address_is_blocked(
+        self, mock_urlopen
+    ):
         settings_obj = self._settings(base_url="http://192.168.1.50:8080/v1")
         result = suggest_category_via_ai(settings_obj, "Some Payee", self.candidates)
         self.assertIsNone(result)
@@ -156,17 +162,25 @@ class AICategorizationSettingsApiTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def test_get_creates_lazily_with_sensible_defaults(self):
-        self.assertFalse(AICategorizationSettings.objects.filter(budget_file=self.budget_file).exists())
+        self.assertFalse(
+            AICategorizationSettings.objects.filter(
+                budget_file=self.budget_file
+            ).exists()
+        )
         response = self.client.get(
             f"/api/v1/finance/ai-categorization/settings/?budget_file={self.budget_file.id}"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(response.data["is_enabled"])
         self.assertFalse(response.data["has_api_key"])
-        self.assertTrue(AICategorizationSettings.objects.filter(budget_file=self.budget_file).exists())
+        self.assertTrue(
+            AICategorizationSettings.objects.filter(
+                budget_file=self.budget_file
+            ).exists()
+        )
 
     def test_the_encrypted_key_field_never_appears_in_a_response(self):
         AICategorizationSettings.objects.create(
@@ -189,7 +203,9 @@ class AICategorizationSettingsApiTests(APITestCase):
         self.assertTrue(set_response.data["has_api_key"])
         self.assertNotIn("sk-abc123", json.dumps(set_response.data))
 
-        settings_obj = AICategorizationSettings.objects.get(budget_file=self.budget_file)
+        settings_obj = AICategorizationSettings.objects.get(
+            budget_file=self.budget_file
+        )
         self.assertNotEqual(settings_obj.encrypted_api_key, "")
         self.assertNotIn("sk-abc123", settings_obj.encrypted_api_key)
 
@@ -203,7 +219,11 @@ class AICategorizationSettingsApiTests(APITestCase):
     def test_updating_provider_and_toggling_enabled(self):
         response = self.client.patch(
             f"/api/v1/finance/ai-categorization/settings/?budget_file={self.budget_file.id}",
-            {"is_enabled": True, "provider": "ollama", "base_url": "http://127.0.0.1:11434/v1"},
+            {
+                "is_enabled": True,
+                "provider": "ollama",
+                "base_url": "http://127.0.0.1:11434/v1",
+            },
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
@@ -242,15 +262,19 @@ class SuggestedCategoryAiFallbackTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.groceries = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE, name="Groceries"
+        self.groceries = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE, name="Groceries"
         ).first()
-        self.payee = Payee.objects.create(budget_file=self.budget_file, name="New Payee")
+        self.payee = Payee.objects.create(
+            budget_file=self.budget_file, name="New Payee"
+        )
 
     def test_no_history_no_ai_configured_returns_nothing(self):
-        response = self.client.get(f"/api/v1/finance/payees/{self.payee.id}/suggested-category/")
+        response = self.client.get(
+            f"/api/v1/finance/payees/{self.payee.id}/suggested-category/"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIsNone(response.data["category"])
         self.assertIsNone(response.data["source"])
@@ -258,16 +282,22 @@ class SuggestedCategoryAiFallbackTests(APITestCase):
     @patch("pft.finance_views.suggest_category_via_ai")
     def test_no_history_ai_enabled_returns_ai_suggestion(self, mock_suggest):
         mock_suggest.return_value = {"id": self.groceries.id, "name": "Groceries"}
-        AICategorizationSettings.objects.create(budget_file=self.budget_file, is_enabled=True)
+        AICategorizationSettings.objects.create(
+            budget_file=self.budget_file, is_enabled=True
+        )
 
-        response = self.client.get(f"/api/v1/finance/payees/{self.payee.id}/suggested-category/")
+        response = self.client.get(
+            f"/api/v1/finance/payees/{self.payee.id}/suggested-category/"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["category"], self.groceries.id)
         self.assertEqual(response.data["source"], "ai")
 
     @patch("pft.finance_views.suggest_category_via_ai")
     def test_existing_history_is_never_overridden_by_ai(self, mock_suggest):
-        AICategorizationSettings.objects.create(budget_file=self.budget_file, is_enabled=True)
+        AICategorizationSettings.objects.create(
+            budget_file=self.budget_file, is_enabled=True
+        )
         self.client.post(
             "/api/v1/finance/transactions/",
             {
@@ -282,6 +312,8 @@ class SuggestedCategoryAiFallbackTests(APITestCase):
             format="json",
         )
 
-        response = self.client.get(f"/api/v1/finance/payees/{self.payee.id}/suggested-category/")
+        response = self.client.get(
+            f"/api/v1/finance/payees/{self.payee.id}/suggested-category/"
+        )
         self.assertEqual(response.data["source"], "history")
         mock_suggest.assert_not_called()

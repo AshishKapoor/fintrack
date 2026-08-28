@@ -17,4 +17,6 @@ class Command(BaseCommand):
         except FxRateError as exc:
             raise CommandError(str(exc)) from exc
 
-        self.stdout.write(self.style.SUCCESS(f"Stored FX rates for {stored} currencies."))
+        self.stdout.write(
+            self.style.SUCCESS(f"Stored FX rates for {stored} currencies.")
+        )

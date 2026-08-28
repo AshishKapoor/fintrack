@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from typing import Any, TypeVar, cast
 
@@ -7,7 +8,8 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.type_f1e_enum import TypeF1EEnum
+from ..models.kind_enum import KindEnum
+from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="Category")
 
@@ -17,38 +19,72 @@ class Category:
     """
     Attributes:
         id (int):
+        budget_file (int):
         name (str):
-        type_ (TypeF1EEnum): * `income` - Income
+        created_at (datetime.datetime):
+        updated_at (datetime.datetime):
+        group (int | None | Unset):
+        kind (KindEnum | Unset): * `income` - Income
             * `expense` - Expense
-        user (int | None):
+        is_archived (bool | Unset):
+        notes_md (str | Unset):
     """
 
     id: int
+    budget_file: int
     name: str
-    type_: TypeF1EEnum
-    user: int | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    group: int | None | Unset = UNSET
+    kind: KindEnum | Unset = UNSET
+    is_archived: bool | Unset = UNSET
+    notes_md: str | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         id = self.id
 
+        budget_file = self.budget_file
+
         name = self.name
 
-        type_ = self.type_.value
+        created_at = self.created_at.isoformat()
 
-        user: int | None
-        user = self.user
+        updated_at = self.updated_at.isoformat()
+
+        group: int | None | Unset
+        if isinstance(self.group, Unset):
+            group = UNSET
+        else:
+            group = self.group
+
+        kind: str | Unset = UNSET
+        if not isinstance(self.kind, Unset):
+            kind = self.kind.value
+
+        is_archived = self.is_archived
+
+        notes_md = self.notes_md
 
         field_dict: dict[str, Any] = {}
         field_dict.update(self.additional_properties)
         field_dict.update(
             {
                 "id": id,
+                "budget_file": budget_file,
                 "name": name,
-                "type": type_,
-                "user": user,
+                "created_at": created_at,
+                "updated_at": updated_at,
             }
         )
+        if group is not UNSET:
+            field_dict["group"] = group
+        if kind is not UNSET:
+            field_dict["kind"] = kind
+        if is_archived is not UNSET:
+            field_dict["is_archived"] = is_archived
+        if notes_md is not UNSET:
+            field_dict["notes_md"] = notes_md
 
         return field_dict
 
@@ -57,22 +93,44 @@ class Category:
         d = dict(src_dict)
         id = d.pop("id")
 
+        budget_file = d.pop("budget_file")
+
         name = d.pop("name")
 
-        type_ = TypeF1EEnum(d.pop("type"))
+        created_at = datetime.datetime.fromisoformat(d.pop("created_at"))
 
-        def _parse_user(data: object) -> int | None:
+        updated_at = datetime.datetime.fromisoformat(d.pop("updated_at"))
+
+        def _parse_group(data: object) -> int | None | Unset:
             if data is None:
                 return data
-            return cast(int | None, data)
+            if isinstance(data, Unset):
+                return data
+            return cast(int | None | Unset, data)
 
-        user = _parse_user(d.pop("user"))
+        group = _parse_group(d.pop("group", UNSET))
+
+        _kind = d.pop("kind", UNSET)
+        kind: KindEnum | Unset
+        if isinstance(_kind, Unset):
+            kind = UNSET
+        else:
+            kind = KindEnum(_kind)
+
+        is_archived = d.pop("is_archived", UNSET)
+
+        notes_md = d.pop("notes_md", UNSET)
 
         category = cls(
             id=id,
+            budget_file=budget_file,
             name=name,
-            type_=type_,
-            user=user,
+            created_at=created_at,
+            updated_at=updated_at,
+            group=group,
+            kind=kind,
+            is_archived=is_archived,
+            notes_md=notes_md,
         )
 
         category.additional_properties = d

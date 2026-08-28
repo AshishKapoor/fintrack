@@ -1,11 +1,52 @@
 version: 2
+
+# Coverage note, because the gap here was silent for 55 bot PRs:
+#
+#   git log --author=dependabot --all -- apps/api   →   nothing
+#
+# `/apps/api` was declared as `pip`, but the project is uv-managed: there is no
+# requirements.txt, and every dependency in pyproject.toml is an open-ended
+# `>=` with no ceiling to bump. Dependabot had nothing it could act on, so
+# Django, DRF, cryptography and psycopg - the half of the codebase holding the
+# money - were never updated. `uv` is the ecosystem that understands uv.lock.
+#
+# Everything with a manifest is listed below. If you add a package, add it here
+# in the same commit.
+
 updates:
-  - package-ecosystem: pip
+  # --- Python -------------------------------------------------------------
+  - package-ecosystem: uv
     directory: /apps/api
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # Django and its ecosystem move together; separate PRs for each just
+      # means several red CI runs that only pass once they are all merged.
+      django:
+        patterns:
+          - django
+          - django-*
+          - djangorestframework
+          - djangorestframework-*
+          - drf-*
+      dev-tooling:
+        dependency-type: development
+    ignore:
+      # Held on the 6.0 line deliberately - drf-spectacular,
+      # django-extensions and simplejwt do not declare 6.1 support yet. Lift
+      # this and the ceiling in pyproject.toml together, not separately.
+      - dependency-name: django
+        update-types: ["version-update:semver-minor", "version-update:semver-major"]
 
+  # Published to PyPI as `fintrack-sdk`, and previously uncovered.
+  - package-ecosystem: uv
+    directory: /packages/sdk-py
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+
+  # --- JavaScript ---------------------------------------------------------
   - package-ecosystem: npm
     directory: /apps/web
     schedule:
@@ -14,10 +55,20 @@ updates:
     groups:
       radix:
         patterns: ["@radix-ui/*"]
+      dev-tooling:
+        dependency-type: development
+        patterns: ["@types/*", "eslint*", "typescript-eslint", "vitest", "@vitest/*"]
     ignore:
       # orval 8 changed the custom-mutator contract to fetch-style calls;
       # migrating the whole client is a deliberate project, not a dep bump.
       - dependency-name: orval
+        update-types: ["version-update:semver-major"]
+      # recharts 3 reshaped the Tooltip/Legend prop types that
+      # components/ui/chart.tsx is built on. It was merged once and broke the
+      # web build and the e2e suite on main; the insights charts also work
+      # around specific recharts 2.x behaviour (see ROADMAP.md on the Sankey
+      # tooltip), so this is a migration with its own testing, not a bump.
+      - dependency-name: recharts
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
@@ -36,10 +87,22 @@ updates:
       - dependency-name: tailwindcss
         update-types: ["version-update:semver-major"]
 
+  # Published to npm as `@fintrack/sdk`, and previously uncovered - its
+  # typescript pin had already drifted a minor behind apps/web's.
+  - package-ecosystem: npm
+    directory: /packages/sdk-ts
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+
+  # --- Containers and CI --------------------------------------------------
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
 
   - package-ecosystem: docker
     directory: /apps/api
@@ -48,5 +111,12 @@ updates:
 
   - package-ecosystem: docker
     directory: /apps/web
+    schedule:
+      interval: weekly
+
+  # postgres:16-alpine and redis:7-alpine live in the compose files at the
+  # repo root, outside every directory above, so nothing was tracking them.
+  - package-ecosystem: docker-compose
+    directory: /
     schedule:
       interval: weekly

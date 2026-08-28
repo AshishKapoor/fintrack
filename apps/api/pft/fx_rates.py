@@ -68,7 +68,9 @@ def fetch_and_store_rates(*, as_of: date_cls | None = None) -> int:
         rate_date = date_cls.fromisoformat(payload["date"])
         rates = payload["rates"]
     except (KeyError, TypeError, ValueError) as exc:
-        raise FxRateError(f"Unexpected response from frankfurter.app: {payload}") from exc
+        raise FxRateError(
+            f"Unexpected response from frankfurter.app: {payload}"
+        ) from exc
 
     stored = 0
     for currency_code, value in rates.items():

@@ -4,11 +4,17 @@ import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
   BarChart3,
+  Bell,
+  Code2,
+  Coins,
   CreditCard,
-  LineChart,
+  Landmark,
   PieChart,
+  PiggyBank,
   Shield,
   Smartphone,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -38,6 +44,12 @@ export default function LandingPage() {
               className="text-sm font-medium hover:text-emerald-600 transition-colors"
             >
               Features
+            </Link>
+            <Link
+              href="#comparison"
+              className="text-sm font-medium hover:text-emerald-600 transition-colors"
+            >
+              Compare
             </Link>
             <Link
               href="#how-it-works"
@@ -101,10 +113,11 @@ export default function LandingPage() {
                 <span className="text-emerald-600">Starts Here</span>
               </h1>
               <p className="text-lg md:text-xl text-gray-600 max-w-[600px]">
-                FinTrack is a completely free and open source personal finance
-                tracker that helps you manage expenses, budgets, and achieve
-                your financial goals with powerful insights and easy-to-use
-                tools.
+                FinTrack is a free, open source, self-hosted personal finance
+                tracker built on a real double-entry ledger — with bank sync,
+                multi-currency, and insights that show you where your money
+                actually goes. No subscriptions, no third party holding your
+                data.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center md:justify-start">
                 <Link href={`${APP_URL}/register`}>
@@ -148,8 +161,8 @@ export default function LandingPage() {
                 <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-emerald-100 rounded-full blur-2xl opacity-80"></div>
                 <div className="relative bg-white border rounded-2xl shadow-xl overflow-hidden">
                   <img
-                    src="/Partnership-bro.svg?height=600&width=800"
-                    alt="FinTrack Artwork"
+                    src="/dashboard.png"
+                    alt="FinTrack dashboard showing accounts, budgets, and net worth"
                     className="w-full h-auto"
                   />
                 </div>
@@ -339,35 +352,173 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <FeatureCard
               icon={<CreditCard className="h-10 w-10 text-emerald-600" />}
-              title="Transaction Tracking"
-              description="Easily log and categorize your income and expenses to keep track of where your money goes."
+              title="Double-Entry Ledger"
+              description="A real accounting model, not a list of amounts: every transaction is a set of postings, and the database itself refuses to save them unless they sum to zero."
             />
             <FeatureCard
               icon={<PieChart className="h-10 w-10 text-emerald-600" />}
-              title="Budget Management"
-              description="Set monthly budgets for different categories and get alerts when you're close to your limits."
+              title="Envelope Budgeting"
+              description="Set monthly budgets by category with envelope assignments, and track progress live instead of finding out you overspent at month's end."
+            />
+            <FeatureCard
+              icon={<Landmark className="h-10 w-10 text-emerald-600" />}
+              title="Get Your Data In"
+              description="Connect your bank through GoCardless (EU/UK) or SimpleFIN (US/CA), or import CSV, OFX, QIF, YNAB, Actual Budget, and Firefly III exports — all through the same dedup and rules engine."
+            />
+            <FeatureCard
+              icon={<Coins className="h-10 w-10 text-emerald-600" />}
+              title="Real Multi-Currency"
+              description="Every account has its own currency, with daily exchange rates fetched automatically. Balances and net worth actually convert — it's not just a label."
             />
             <FeatureCard
               icon={<BarChart3 className="h-10 w-10 text-emerald-600" />}
-              title="Financial Reports"
-              description="Visualize your spending patterns with intuitive charts and detailed financial reports."
+              title="Insights Dashboard"
+              description="A cash-flow Sankey diagram, net worth over time, and month-over-month category comparisons show you where your money really goes."
             />
             <FeatureCard
-              icon={<LineChart className="h-10 w-10 text-emerald-600" />}
-              title="Goal Tracking"
-              description="Set financial goals and track your progress over time to stay motivated and focused."
+              icon={<PiggyBank className="h-10 w-10 text-emerald-600" />}
+              title="Goals & Debt Payoff"
+              description="Savings goals track progress live from your balance. Snowball and avalanche debt projections show exactly when you'll be debt-free."
+            />
+            <FeatureCard
+              icon={<Sparkles className="h-10 w-10 text-emerald-600" />}
+              title="Subscriptions & Smart Categorization"
+              description="Recurring charges are surfaced automatically from your transaction history, and optional AI categorization suggests categories for new payees — off by default, never required."
+            />
+            <FeatureCard
+              icon={<Users className="h-10 w-10 text-emerald-600" />}
+              title="Shared Workspaces"
+              description="Owner, admin, member, and viewer roles with invitations and a manager-visible audit log — built in, no external identity provider needed."
             />
             <FeatureCard
               icon={<Smartphone className="h-10 w-10 text-emerald-600" />}
-              title="Mobile Access"
-              description="Access your financial data anytime, anywhere with our responsive web application."
+              title="Mobile & Keyboard-First Entry"
+              description="A one-tap Quick Add screen for your phone that works offline, plus an always-on inline row and command palette (⌘K) for fast entry on desktop."
+            />
+            <FeatureCard
+              icon={<Bell className="h-10 w-10 text-emerald-600" />}
+              title="Notifications"
+              description="Budget threshold alerts, bill reminders, and a weekly digest by email, ntfy, or webhook — all opt-in and off by default."
+            />
+            <FeatureCard
+              icon={<Code2 className="h-10 w-10 text-emerald-600" />}
+              title="API-First, For Real"
+              description="An OpenAPI schema is the contract CI enforces, driving official TypeScript and Python SDKs published from this repo — not community afterthoughts."
             />
             <FeatureCard
               icon={<Shield className="h-10 w-10 text-emerald-600" />}
               title="Secure & Private"
-              description="Your financial data is encrypted and secure. We never share your information with third parties."
+              description="You host it, so there is no third party to share it with. Bank credentials are encrypted at rest, backups are encrypted in your browser, and there is no telemetry."
             />
           </div>
+        </div>
+      </section>
+
+      {/* Comparison Section */}
+      <section id="comparison" className="py-16 md:py-24 bg-gray-50">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">How FinTrack Compares</h2>
+            <p className="text-xl text-gray-600 max-w-[800px] mx-auto">
+              Every open-source finance tracker trades off something. Here's
+              the honest comparison, not the flattering one.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto overflow-x-auto rounded-xl border bg-white shadow-sm">
+            <table className="w-full text-sm md:text-base border-collapse">
+              <thead>
+                <tr className="border-b bg-gray-50">
+                  <th className="text-left font-semibold p-4 whitespace-nowrap">
+                    &nbsp;
+                  </th>
+                  <th className="text-left font-semibold p-4 whitespace-nowrap text-emerald-700 bg-emerald-50">
+                    FinTrack
+                  </th>
+                  <th className="text-left font-semibold p-4 whitespace-nowrap">
+                    Actual Budget
+                  </th>
+                  <th className="text-left font-semibold p-4 whitespace-nowrap">
+                    Firefly III
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-600">
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">License</td>
+                  <td className="p-4 bg-emerald-50/60">MIT</td>
+                  <td className="p-4">MIT</td>
+                  <td className="p-4">AGPL-3.0</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">
+                    Ledger model
+                  </td>
+                  <td className="p-4 bg-emerald-50/60">
+                    Double-entry, DB-enforced
+                  </td>
+                  <td className="p-4">Envelope budgeting (not double-entry)</td>
+                  <td className="p-4">Double-entry</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">
+                    Shared budgets
+                  </td>
+                  <td className="p-4 bg-emerald-50/60">
+                    Owner/admin/member/viewer roles, built in
+                  </td>
+                  <td className="p-4">
+                    Basic/Admin roles, needs an external OIDC provider first
+                  </td>
+                  <td className="p-4">
+                    Isolated single-user accounts, not a shared budget
+                  </td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">Bank sync</td>
+                  <td className="p-4 bg-emerald-50/60">
+                    GoCardless (EU/UK, free), SimpleFIN (US/CA)
+                  </td>
+                  <td className="p-4">
+                    GoCardless, SimpleFIN (paid), Akahu, more
+                  </td>
+                  <td className="p-4">Via a companion Data Importer</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">
+                    Multi-currency
+                  </td>
+                  <td className="p-4 bg-emerald-50/60">
+                    Per-account, daily rates fetched automatically
+                  </td>
+                  <td className="p-4">Per-account currency</td>
+                  <td className="p-4">Per-account currency</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="p-4 font-medium text-gray-900">
+                    REST API &amp; SDKs
+                  </td>
+                  <td className="p-4 bg-emerald-50/60">
+                    OpenAPI + official TypeScript/Python SDKs
+                  </td>
+                  <td className="p-4">None (Node.js scripting library only)</td>
+                  <td className="p-4">OpenAPI, community SDKs</td>
+                </tr>
+                <tr>
+                  <td className="p-4 font-medium text-gray-900">Audit log</td>
+                  <td className="p-4 bg-emerald-50/60">
+                    Yes, manager-visible per workspace
+                  </td>
+                  <td className="p-4">No</td>
+                  <td className="p-4">No</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p className="text-center text-gray-500 max-w-2xl mx-auto mt-6 text-sm">
+            If you value ledger correctness, real shared workspaces, and an
+            exchange rate that actually updates, FinTrack is worth trying.
+          </p>
         </div>
       </section>
 
@@ -418,6 +569,43 @@ export default function LandingPage() {
                 Get Started Now <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
+          </div>
+
+          <div className="mt-20 max-w-2xl mx-auto">
+            <div className="text-center mb-6">
+              <h3 className="text-xl font-bold mb-2">
+                Prefer to run it yourself?
+              </h3>
+              <p className="text-gray-600">
+                FinTrack is self-hosted software. Spin up the whole stack —
+                web, API, Postgres, Redis — with one command.
+              </p>
+            </div>
+            <pre className="bg-gray-900 text-gray-100 rounded-xl p-4 text-sm overflow-x-auto">
+              <code>{`git clone https://github.com/AshishKapoor/fintrack.git
+cd fintrack
+./setup.sh start`}</code>
+            </pre>
+            <div className="flex flex-col items-center gap-3 mt-6">
+              <a
+                href="https://render.com/deploy?repo=https://github.com/AshishKapoor/fintrack"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src="https://render.com/images/deploy-to-render-button.svg"
+                  alt="Deploy to Render"
+                  width={170}
+                  height={38}
+                />
+              </a>
+              <a
+                href={`${GITHUB_URL}#-quick-start`}
+                className="text-sm text-emerald-700 hover:text-emerald-800 underline underline-offset-4"
+              >
+                More deploy options (Railway, PikaPods, Unraid, TrueNAS)
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -550,10 +738,26 @@ export default function LandingPage() {
                 </li>
                 <li>
                   <a
+                    href="#comparison"
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Compare
+                  </a>
+                </li>
+                <li>
+                  <a
                     href={`${GITHUB_URL}#-api`}
                     className="text-gray-400 hover:text-white transition-colors"
                   >
                     API
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href={`${GITHUB_URL}/blob/main/ROADMAP.md`}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Roadmap
                   </a>
                 </li>
                 <li>

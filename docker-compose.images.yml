@@ -1,0 +1,53 @@
+# Run FinTrack from the published images instead of building from source.
+#
+# Usage:
+#
+#   FINTRACK_VERSION=0.2.0 \
+#     docker compose -f docker-compose.yml -f docker-compose.images.yml up -d
+#
+# The base docker-compose.yml deliberately sets `pull_policy: build`, so that
+# `docker compose up` builds the working tree rather than silently running a
+# published tag that might be older than the code in front of you. That is the
+# right default for development and for anyone who cloned the repo - but it
+# also meant `docker compose pull` was a no-op and the images published to GHCR
+# had no documented way to be used at all. This override is that way.
+#
+# Pin FINTRACK_VERSION to a released tag. It defaults to `latest`, which is
+# fine for a first look and a poor idea for anything you care about: `latest`
+# moves under you on every release, so an unattended `docker compose pull`
+# could apply a major version - and its migrations - without you choosing to.
+# Releases are listed at
+# https://github.com/AshishKapoor/fintrack/releases, and the upgrade procedure
+# is in docs/self-hosting.md.
+#
+# Verify what you pulled before running it (see RELEASING.md):
+#
+#   gh attestation verify \
+#     oci://ghcr.io/ashishkapoor/fintrack-api:${FINTRACK_VERSION} \
+#     --owner AshishKapoor
+
+services:
+  api:
+    image: ghcr.io/ashishkapoor/fintrack-api:${FINTRACK_VERSION:-latest}
+    pull_policy: missing
+    build: !reset null
+
+  migrate:
+    image: ghcr.io/ashishkapoor/fintrack-api:${FINTRACK_VERSION:-latest}
+    pull_policy: missing
+    build: !reset null
+
+  worker:
+    image: ghcr.io/ashishkapoor/fintrack-api:${FINTRACK_VERSION:-latest}
+    pull_policy: missing
+    build: !reset null
+
+  beat:
+    image: ghcr.io/ashishkapoor/fintrack-api:${FINTRACK_VERSION:-latest}
+    pull_policy: missing
+    build: !reset null
+
+  web:
+    image: ghcr.io/ashishkapoor/fintrack-web:${FINTRACK_VERSION:-latest}
+    pull_policy: missing
+    build: !reset null

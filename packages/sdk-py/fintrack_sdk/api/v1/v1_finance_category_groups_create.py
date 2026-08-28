@@ -5,13 +5,13 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.category_group_v2 import CategoryGroupV2
+from ...models.category_group import CategoryGroup
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: CategoryGroupV2,
+    body: CategoryGroup,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -30,9 +30,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CategoryGroupV2 | None:
+) -> CategoryGroup | None:
     if response.status_code == 201:
-        response_201 = CategoryGroupV2.from_dict(response.json())
+        response_201 = CategoryGroup.from_dict(response.json())
 
         return response_201
 
@@ -44,7 +44,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CategoryGroupV2]:
+) -> Response[CategoryGroup]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -56,8 +56,8 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: CategoryGroupV2,
-) -> Response[CategoryGroupV2]:
+    body: CategoryGroup,
+) -> Response[CategoryGroup]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -66,14 +66,14 @@ def sync_detailed(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryGroupV2):
+        body (CategoryGroup):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryGroupV2]
+        Response[CategoryGroup]
     """
 
     kwargs = _get_kwargs(
@@ -90,8 +90,8 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: CategoryGroupV2,
-) -> CategoryGroupV2 | None:
+    body: CategoryGroup,
+) -> CategoryGroup | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -100,14 +100,14 @@ def sync(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryGroupV2):
+        body (CategoryGroup):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryGroupV2
+        CategoryGroup
     """
 
     return sync_detailed(
@@ -119,8 +119,8 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: CategoryGroupV2,
-) -> Response[CategoryGroupV2]:
+    body: CategoryGroup,
+) -> Response[CategoryGroup]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -129,14 +129,14 @@ async def asyncio_detailed(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryGroupV2):
+        body (CategoryGroup):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryGroupV2]
+        Response[CategoryGroup]
     """
 
     kwargs = _get_kwargs(
@@ -151,8 +151,8 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: CategoryGroupV2,
-) -> CategoryGroupV2 | None:
+    body: CategoryGroup,
+) -> CategoryGroup | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -161,14 +161,14 @@ async def asyncio(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryGroupV2):
+        body (CategoryGroup):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryGroupV2
+        CategoryGroup
     """
 
     return (

@@ -63,12 +63,12 @@ def sync_detailed(
     client: AuthenticatedClient,
     body: BudgetFile,
 ) -> Response[BudgetFile]:
-    """Base class for the finance viewsets.
+    """Record this file as the caller's default in its workspace.
 
-    Enforces authentication and, on unsafe methods, that the target budget
-    file admits writes for this user (viewers are read-only). Every subclass
-    remains responsible for scoping its own get_queryset() through
-    tenancy.budget_file_q - see ARCHITECTURE.md.
+    Per-caller, not per-file: before `is_default` moved onto Membership,
+    this cleared the flag across every budget file the caller could see,
+    so one member choosing a default silently changed it for everyone else
+    in a shared workspace - and for their other workspaces too.
 
     Args:
         id (str):
@@ -100,12 +100,12 @@ def sync(
     client: AuthenticatedClient,
     body: BudgetFile,
 ) -> BudgetFile | None:
-    """Base class for the finance viewsets.
+    """Record this file as the caller's default in its workspace.
 
-    Enforces authentication and, on unsafe methods, that the target budget
-    file admits writes for this user (viewers are read-only). Every subclass
-    remains responsible for scoping its own get_queryset() through
-    tenancy.budget_file_q - see ARCHITECTURE.md.
+    Per-caller, not per-file: before `is_default` moved onto Membership,
+    this cleared the flag across every budget file the caller could see,
+    so one member choosing a default silently changed it for everyone else
+    in a shared workspace - and for their other workspaces too.
 
     Args:
         id (str):
@@ -132,12 +132,12 @@ async def asyncio_detailed(
     client: AuthenticatedClient,
     body: BudgetFile,
 ) -> Response[BudgetFile]:
-    """Base class for the finance viewsets.
+    """Record this file as the caller's default in its workspace.
 
-    Enforces authentication and, on unsafe methods, that the target budget
-    file admits writes for this user (viewers are read-only). Every subclass
-    remains responsible for scoping its own get_queryset() through
-    tenancy.budget_file_q - see ARCHITECTURE.md.
+    Per-caller, not per-file: before `is_default` moved onto Membership,
+    this cleared the flag across every budget file the caller could see,
+    so one member choosing a default silently changed it for everyone else
+    in a shared workspace - and for their other workspaces too.
 
     Args:
         id (str):
@@ -167,12 +167,12 @@ async def asyncio(
     client: AuthenticatedClient,
     body: BudgetFile,
 ) -> BudgetFile | None:
-    """Base class for the finance viewsets.
+    """Record this file as the caller's default in its workspace.
 
-    Enforces authentication and, on unsafe methods, that the target budget
-    file admits writes for this user (viewers are read-only). Every subclass
-    remains responsible for scoping its own get_queryset() through
-    tenancy.budget_file_q - see ARCHITECTURE.md.
+    Per-caller, not per-file: before `is_default` moved onto Membership,
+    this cleared the flag across every budget file the caller could see,
+    so one member choosing a default silently changed it for everyone else
+    in a shared workspace - and for their other workspaces too.
 
     Args:
         id (str):

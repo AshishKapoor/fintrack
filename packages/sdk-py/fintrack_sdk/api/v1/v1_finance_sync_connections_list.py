@@ -5,15 +5,28 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.sync_connection import SyncConnection
-from ...types import Response
+from ...models.paginated_sync_connection_list import PaginatedSyncConnectionList
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> dict[str, Any]:
+def _get_kwargs(
+    *,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> dict[str, Any]:
+
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["page_size"] = page_size
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/api/v1/finance/sync-connections/",
+        "params": params,
     }
 
     return _kwargs
@@ -21,14 +34,9 @@ def _get_kwargs() -> dict[str, Any]:
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> list[SyncConnection] | None:
+) -> PaginatedSyncConnectionList | None:
     if response.status_code == 200:
-        response_200 = []
-        _response_200 = response.json()
-        for response_200_item_data in _response_200:
-            response_200_item = SyncConnection.from_dict(response_200_item_data)
-
-            response_200.append(response_200_item)
+        response_200 = PaginatedSyncConnectionList.from_dict(response.json())
 
         return response_200
 
@@ -40,7 +48,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[list[SyncConnection]]:
+) -> Response[PaginatedSyncConnectionList]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -52,7 +60,9 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[SyncConnection]]:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> Response[PaginatedSyncConnectionList]:
     r"""Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
     the provider-agnostic contract and pft/bank_sync_gocardless.py /
     bank_sync_simplefin.py for the two shipped providers.
@@ -63,15 +73,22 @@ def sync_detailed(
     guard - the same \"guarded by construction\" property notifications and
     imports already get for free.
 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[SyncConnection]]
+        Response[PaginatedSyncConnectionList]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        page=page,
+        page_size=page_size,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -83,7 +100,9 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-) -> list[SyncConnection] | None:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> PaginatedSyncConnectionList | None:
     r"""Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
     the provider-agnostic contract and pft/bank_sync_gocardless.py /
     bank_sync_simplefin.py for the two shipped providers.
@@ -94,23 +113,31 @@ def sync(
     guard - the same \"guarded by construction\" property notifications and
     imports already get for free.
 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[SyncConnection]
+        PaginatedSyncConnectionList
     """
 
     return sync_detailed(
         client=client,
+        page=page,
+        page_size=page_size,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[SyncConnection]]:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> Response[PaginatedSyncConnectionList]:
     r"""Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
     the provider-agnostic contract and pft/bank_sync_gocardless.py /
     bank_sync_simplefin.py for the two shipped providers.
@@ -121,15 +148,22 @@ async def asyncio_detailed(
     guard - the same \"guarded by construction\" property notifications and
     imports already get for free.
 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[SyncConnection]]
+        Response[PaginatedSyncConnectionList]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        page=page,
+        page_size=page_size,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -139,7 +173,9 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-) -> list[SyncConnection] | None:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> PaginatedSyncConnectionList | None:
     r"""Bank sync connections - ROADMAP.md Phase 2. See pft/bank_sync.py for
     the provider-agnostic contract and pft/bank_sync_gocardless.py /
     bank_sync_simplefin.py for the two shipped providers.
@@ -150,16 +186,22 @@ async def asyncio(
     guard - the same \"guarded by construction\" property notifications and
     imports already get for free.
 
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[SyncConnection]
+        PaginatedSyncConnectionList
     """
 
     return (
         await asyncio_detailed(
             client=client,
+            page=page,
+            page_size=page_size,
         )
     ).parsed

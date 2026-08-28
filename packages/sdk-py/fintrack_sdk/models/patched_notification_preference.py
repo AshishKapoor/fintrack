@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -62,7 +62,11 @@ class PatchedNotificationPreference:
 
         webhook_enabled = self.webhook_enabled
 
-        webhook_url = self.webhook_url
+        webhook_url: str | Unset
+        if isinstance(self.webhook_url, Unset):
+            webhook_url = UNSET
+        else:
+            webhook_url = self.webhook_url
 
         budget_alerts_enabled = self.budget_alerts_enabled
 
@@ -131,7 +135,12 @@ class PatchedNotificationPreference:
 
         webhook_enabled = d.pop("webhook_enabled", UNSET)
 
-        webhook_url = d.pop("webhook_url", UNSET)
+        def _parse_webhook_url(data: object) -> str | Unset:
+            if isinstance(data, Unset):
+                return data
+            return cast(str | Unset, data)
+
+        webhook_url = _parse_webhook_url(d.pop("webhook_url", UNSET))
 
         budget_alerts_enabled = d.pop("budget_alerts_enabled", UNSET)
 

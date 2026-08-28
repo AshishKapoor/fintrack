@@ -37,6 +37,17 @@ test('inline quick-add, split transactions, and the payee combobox', async ({ pa
     await page.keyboard.press('Escape')
   })
 
+  await test.step('closing the add-transaction dialog returns focus to its trigger', async () => {
+    const trigger = page.getByRole('button', { name: 'Add Transaction' }).first()
+    await trigger.click()
+    await expect(page.getByRole('dialog', { name: 'Transaction' })).toBeVisible({
+      timeout: 10_000,
+    })
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog', { name: 'Transaction' })).toBeHidden()
+    await expect(trigger).toBeFocused()
+  })
+
   await test.step('the inline row creates a payee, and a transaction, without opening a dialog', async () => {
     await page.locator('input[type="number"]').first().fill('15.50')
     await page.getByRole('combobox', { name: 'Payee' }).first().click()

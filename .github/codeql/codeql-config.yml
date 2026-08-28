@@ -1,0 +1,18 @@
+name: FinTrack CodeQL
+
+# Generated API clients are regenerated from apps/web/schema/pft.yaml by orval
+# and the OpenAPI Python generator; findings in them cannot be fixed in place,
+# only in the generator or the schema. Same for build output. Excluding them
+# keeps the security tab about code someone can actually change.
+paths-ignore:
+  - apps/web/app/client/gen
+  - packages/sdk-ts/src/gen
+  - packages/sdk-py/fintrack_sdk
+  - "**/node_modules"
+  - "**/.next"
+  - "**/dist"
+  - "**/staticfiles"
+  - apps/api/pft/migrations
+
+queries:
+  - uses: security-and-quality

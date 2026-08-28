@@ -1,5 +1,7 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import { format } from 'date-fns'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,7 +9,6 @@ import { toast } from 'sonner'
 import useSWR from 'swr'
 
 import {
-  useV1FinanceCategoriesList,
   v1FinancePayeesSuggestedCategoryRetrieve,
   v1FinanceTransactionsCreate,
 } from '@/client/gen/pft/v1/v1'
@@ -55,7 +56,7 @@ export default function QuickAddPage() {
   const [suggestionSource, setSuggestionSource] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const { data: categories } = useV1FinanceCategoriesList()
+  const { data: categories } = useAllCategories()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 

@@ -7,10 +7,11 @@
 Track income, expenses, budgets, and financial goals on your own server —
 no subscriptions, no third-party services, no vendor lock-in.
 
+[![CI](https://github.com/AshishKapoor/fintrack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshishKapoor/fintrack/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Django](https://img.shields.io/badge/Django-5.x-092e20.svg)](https://www.djangoproject.com/)
+[![Django](https://img.shields.io/badge/Django-6.x-092e20.svg)](https://www.djangoproject.com/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![GitHub stars](https://img.shields.io/github/stars/AshishKapoor/fintrack?style=social)](https://github.com/AshishKapoor/fintrack/stargazers)
 
@@ -94,7 +95,7 @@ worth trying.
 | Layer | Technology |
 | --- | --- |
 | Frontend | [React 19](https://react.dev/), [Vite](https://vitejs.dev/), [TailwindCSS](https://tailwindcss.com/), [SWR](https://swr.vercel.app/), [pnpm](https://pnpm.io/) |
-| Backend | [Django 5](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
+| Backend | [Django 6](https://www.djangoproject.com/) + [Django REST Framework](https://www.django-rest-framework.org/), JWT auth, [uv](https://docs.astral.sh/uv/) |
 | Background jobs | [Celery](https://docs.celeryq.dev/) + [Redis](https://redis.io/) (imports/exports; falls back to inline without a broker) |
 | Database | [PostgreSQL](https://www.postgresql.org/) |
 | SDKs | [`@fintrack/sdk`](packages/sdk-ts) (TypeScript) and [`fintrack-sdk`](packages/sdk-py) (Python), generated from the OpenAPI schema |
@@ -132,6 +133,19 @@ images, and starts every service. Once it finishes, open:
 | API | http://localhost:8000 |
 | API docs (Swagger UI) | http://localhost:8000/api/docs/ |
 | API docs (ReDoc) | http://localhost:8000/api/redoc/ |
+
+Prefer not to build? Run the published images instead:
+
+```bash
+FINTRACK_VERSION=latest \
+  docker compose -f docker-compose.yml -f docker-compose.images.yml up -d
+```
+
+Pin `FINTRACK_VERSION` to a [released tag](https://github.com/AshishKapoor/fintrack/releases)
+for anything you care about — `latest` moves on every release, so an
+unattended pull can apply a major version and its migrations without you
+choosing to. Images carry build provenance you can check before running them;
+see [RELEASING.md](RELEASING.md).
 
 There is no default account. To get started:
 
@@ -255,6 +269,11 @@ cd apps/web && pnpm run test              # vitest units
 docker compose up -d && cd apps/web && pnpm exec playwright test   # e2e against the real stack
 ```
 
+The end-to-end suite includes `e2e/accessibility.spec.ts`, which runs axe over
+every page and both modal surfaces; it fails the build on a new violation. All of
+the above runs in CI, along with diff gates that fail if the committed schema,
+the web client, or either SDK drifts from the backend.
+
 Missing `.env` files are created automatically (via `./setup.sh configure`)
 before any Docker-based target runs — no separate bootstrap step is needed.
 
@@ -270,6 +289,16 @@ FinTrack is API-first. Interactive documentation is served by the backend at
   - `transactions`, `postings`, `scheduled-transactions`, `rules`
   - `budget-months`, `envelope-assignments`, `reports`
   - `exports`, `imports`, `backups`
+
+Every list endpoint is paginated and returns the envelope
+`{count, next, previous, results}` — never a bare array. Default page size is
+50; `?page_size=` raises it to at most 500, and a client that wants everything
+follows `next` until it is null.
+
+The flat `/api/v1/{transactions,categories,budgets}` endpoints that once sat
+alongside the ledger were retired in v1.0. Migration `0017` carries their rows
+into the ledger, so nothing recorded through them is lost — see
+[CHANGELOG.md](CHANGELOG.md) for the upgrade notes.
 
 ### Official SDKs
 
@@ -314,12 +343,16 @@ Contributions, issues, and feature requests are welcome! Please read the
 |---|---|
 | [ROADMAP.md](ROADMAP.md) | Where FinTrack is headed, phase by phase, and how to help |
 | [How double-entry works, for developers](docs/blog/double-entry-for-developers.md) | The mental model behind the ledger — start here |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and why there are two API surfaces |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | How the system fits together, and the reasoning behind the ledger |
 | [docs/self-hosting.md](docs/self-hosting.md) | Reverse proxy, TLS, backups, upgrades, monitoring |
 | [docs/one-click-deploy.md](docs/one-click-deploy.md) | Render, Railway, PikaPods, Unraid, TrueNAS SCALE |
 | [docs/demo.md](docs/demo.md) | Running a public, read-only demo instance |
 | [SECURITY.md](SECURITY.md) | Hardening checklist, private reporting, known limitations |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, conventions, good first issues |
+| [SUPPORT.md](SUPPORT.md) | Where to ask what — Discussions, issues, security reports |
+| [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) | Attribution for code vendored into this repo |
+| [CHANGELOG.md](CHANGELOG.md) | What changed per release, and what an upgrade needs |
+| [RELEASING.md](RELEASING.md) | The monthly release cadence and its checklist |
 | [docs/adr/](docs/adr/) | Architecture decision records, including [licensing](docs/adr/0001-licensing.md) |
 
 ---

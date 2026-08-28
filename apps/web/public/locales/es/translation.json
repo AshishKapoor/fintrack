@@ -35,6 +35,7 @@
       "errorInvalid": "Credenciales no válidas",
       "errorNetwork": "No se puede contactar con el servidor. ¿Está la API activa y accesible?",
       "noAccount": "¿No tienes una cuenta?",
+      "password": "Contraseña",
       "privacyLink": "Política de privacidad",
       "signUp": "Regístrate",
       "submit": "Iniciar sesión",
@@ -200,6 +201,15 @@
     },
     "title": "Ajustes"
   },
+  "themeSwitcher": {
+    "allThemes": "Todos los temas",
+    "default": "Predeterminado",
+    "favorites": "Favoritos",
+    "findTheme": "Buscar un tema…",
+    "label": "Cambiar tema",
+    "noThemeFound": "No se encontró ningún tema.",
+    "toggleFavorite": "Marcar como favorito"
+  },
   "topbar": {
     "logout": "Cerrar sesión",
     "notifications": "Notificaciones",
@@ -208,6 +218,7 @@
   },
   "transactions": {
     "addSplit": "Añadir división",
+    "kind": "Ingreso o gasto",
     "payee": "Beneficiario",
     "payeeCreate": "Añadir \"{{name}}\" como nuevo beneficiario",
     "payeePlaceholder": "Buscar o añadir un beneficiario…",

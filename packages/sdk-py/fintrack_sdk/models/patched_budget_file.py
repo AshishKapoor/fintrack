@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Mapping
-from typing import Any, TypeVar, cast
+from typing import Any, TypeVar
 
 from attrs import define as _attrs_define
 from attrs import field as _attrs_field
@@ -21,7 +21,7 @@ class PatchedBudgetFile:
         name (str | Unset):
         currency_code (str | Unset):
         is_default (bool | Unset):
-        organization (int | None | Unset):
+        organization (int | Unset):
         created_at (datetime.datetime | Unset):
         updated_at (datetime.datetime | Unset):
     """
@@ -30,7 +30,7 @@ class PatchedBudgetFile:
     name: str | Unset = UNSET
     currency_code: str | Unset = UNSET
     is_default: bool | Unset = UNSET
-    organization: int | None | Unset = UNSET
+    organization: int | Unset = UNSET
     created_at: datetime.datetime | Unset = UNSET
     updated_at: datetime.datetime | Unset = UNSET
     additional_properties: dict[str, Any] = _attrs_field(init=False, factory=dict)
@@ -44,11 +44,7 @@ class PatchedBudgetFile:
 
         is_default = self.is_default
 
-        organization: int | None | Unset
-        if isinstance(self.organization, Unset):
-            organization = UNSET
-        else:
-            organization = self.organization
+        organization = self.organization
 
         created_at: str | Unset = UNSET
         if not isinstance(self.created_at, Unset):
@@ -89,14 +85,7 @@ class PatchedBudgetFile:
 
         is_default = d.pop("is_default", UNSET)
 
-        def _parse_organization(data: object) -> int | None | Unset:
-            if data is None:
-                return data
-            if isinstance(data, Unset):
-                return data
-            return cast(int | None | Unset, data)
-
-        organization = _parse_organization(d.pop("organization", UNSET))
+        organization = d.pop("organization", UNSET)
 
         _created_at = d.pop("created_at", UNSET)
         created_at: datetime.datetime | Unset

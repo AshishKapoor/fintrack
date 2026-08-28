@@ -19,7 +19,11 @@ SECRET_KEY=$(openssl rand -base64 48)
 # 2. A real database password.
 POSTGRES_PASSWORD=<something long>
 
-# 3. Your own hostname.
+# 3. Your own hostname. Out of the box DJANGO_ALLOWED_HOSTS is "*" so the
+#    stack works on localhost, a LAN IP, or any hostname without edits - the
+#    browser only ever talks to the web container, which proxies /api/
+#    same-origin, so nothing here is reachable cross-origin anyway. Pin it
+#    once you have a real domain, as defense in depth.
 DJANGO_ALLOWED_HOSTS=fintrack.example.com
 CORS_ALLOWED_ORIGINS=https://fintrack.example.com
 CSRF_TRUSTED_ORIGINS=https://fintrack.example.com
@@ -271,8 +275,16 @@ gunzip -c fintrack-2026-08-12.sql.gz | docker compose exec -T db psql -U fintrac
 docker compose start api web
 ```
 
-Back up your `.env` too — specifically `SECRET_KEY`. Restoring a database with a
-different signing key invalidates every session and token.
+Back up your `.env` too — specifically `SECRET_KEY` **and
+`FINTRACK_SYNC_ENCRYPTION_KEY`**. Losing the latter is not recoverable from a
+database dump: every stored bank sync credential and BYOK LLM key is encrypted
+with it, and there is currently no rotation or re-encryption path, because the
+stored ciphertext carries no key version to migrate from. If it changes, those
+connections have to be set up again from scratch. FinTrack will tell you that
+is what happened rather than failing obscurely, but it cannot undo it.
+
+Restoring a database with a different `SECRET_KEY` invalidates every session
+and token — annoying, but recoverable by signing in again.
 
 ### Application-level backups
 
@@ -286,16 +298,41 @@ once.
 
 ## Upgrading
 
-```bash
-cd /srv/fintrack
-```
+How you upgrade depends on how you installed.
+
+**From source** (what `./setup.sh start` and the Quick Start give you):
 
 ```bash
+cd /srv/fintrack
 git pull && docker compose build && docker compose up -d
 ```
 
-Migrations run automatically: the `migrate` service executes before `api`
-starts, and `api` waits for it to complete.
+**From the published images**, if you started with
+`docker-compose.images.yml`:
+
+```bash
+cd /srv/fintrack
+git pull                      # compose files and migrations metadata
+FINTRACK_VERSION=0.3.0 docker compose \
+  -f docker-compose.yml -f docker-compose.images.yml pull
+FINTRACK_VERSION=0.3.0 docker compose \
+  -f docker-compose.yml -f docker-compose.images.yml up -d
+```
+
+Note that plain `docker compose pull` does nothing without that second file:
+the base compose sets `pull_policy: build` so a clone always runs its own
+working tree rather than silently swapping in a published tag.
+
+Before running an image you have just pulled, you can verify it was built by
+this repository rather than substituted somewhere in between:
+
+```bash
+gh attestation verify oci://ghcr.io/ashishkapoor/fintrack-api:0.3.0 \
+  --owner AshishKapoor
+```
+
+Either way, migrations run automatically: the `migrate` service executes before
+`api` starts, and `api` waits for it to complete.
 
 **Take a database dump before upgrading.** Migrations in this project are not
 reversible — the data migrations have no-op reverse functions — so rolling back
@@ -330,9 +367,15 @@ Running bare-metal without the `beat` process? Cron it yourself:
 
 ## Monitoring
 
-The stack runs five services: `web`, `api`, `worker` (imports and exports),
-`redis` (the job queue) and `db`. `docker compose logs worker` shows job
-processing.
+The stack runs six services: `web`, `api`, `worker` (imports and exports),
+`beat` (the scheduler behind everything in Housekeeping above, plus FX rates,
+budget alerts, reminders and bank sync), `redis` (the job queue) and `db`.
+`docker compose logs worker beat` shows job processing.
+
+`beat` is the one worth watching. Nothing surfaces its absence in the UI, so a
+`beat` container that died at 03:00 looks exactly like an instance where
+nothing happened to be due - while scheduled imports, alerts and the daily
+payload pruning all quietly stop.
 
 `/healthz/` returns `200` with `{"status": "ok", "database": "ok"}` when the API
 can reach Postgres, and `503` otherwise. It is unauthenticated and contains no
@@ -347,16 +390,27 @@ status rather than just "running".
 
 ## Troubleshooting
 
-**The stack starts but the web app cannot reach the API.** Check
-`CORS_ALLOWED_ORIGINS` matches the scheme and host you are actually browsing
-from, including the port if it is non-standard.
+**The stack starts but the web app cannot reach the API — signup or login
+fails on the first request.** In the shipped Docker stack this is almost never
+CORS: the browser talks only to the `web` container, whose nginx proxies
+`/api/` to the backend on the same origin, so no cross-origin request exists
+to be blocked. The usual cause is an `.env` created from an older
+`.env.example` that pins `DJANGO_ALLOWED_HOSTS` to localhost — Django then
+answers every API call with `400 DisallowedHost` when you browse via an IP or
+hostname, which the UI reports as a failed signup. Set
+`DJANGO_ALLOWED_HOSTS=*` (the current default) or add your host to it, then
+`docker compose up -d` again. `CORS_ALLOWED_ORIGINS` only matters if you
+serve the web app and API from *different* origins — then it must match the
+scheme, host, and port you are browsing from.
 
 **Redirect loop after enabling TLS.** Your proxy is not sending
 `X-Forwarded-Proto: https`, so Django thinks the request is plain HTTP and
 redirects again.
 
-**`DisallowedHost` errors.** Add your hostname to `DJANGO_ALLOWED_HOSTS`. It
-accepts spaces or commas as separators.
+**`DisallowedHost` errors.** Your `.env` overrides the default
+`DJANGO_ALLOWED_HOSTS=*` with a list that does not include the hostname you
+are browsing from. Add it (spaces or commas as separators), or set the value
+back to `*`.
 
 **Everyone was signed out after a restart.** `SECRET_KEY` was not set, so a new
 one was generated. Set it explicitly in `.env`.

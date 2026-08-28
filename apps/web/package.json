@@ -11,9 +11,17 @@
   "author": "Ashish Kapoor",
   "private": true,
   "license": "MIT",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "type": "module",
   "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "overrides": {
+      "js-yaml@4.1.1": "^4.3.2",
+      "lodash@~4.17.21": "^4.18.1",
+      "minimatch@^3.1.2": "^3.1.5",
+      "brace-expansion@^1.1.7": "^1.1.18"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
@@ -26,7 +34,7 @@
     "i18n:extract": "i18next-cli extract"
   },
   "dependencies": {
-    "@hookform/resolvers": "^5.4.0",
+    "@hookform/resolvers": "^5.9.1",
     "@radix-ui/react-accordion": "^1.2.20",
     "@radix-ui/react-alert-dialog": "^1.1.23",
     "@radix-ui/react-aspect-ratio": "^1.1.15",
@@ -66,9 +74,9 @@
     "framer-motion": "^13.0.0",
     "i18next": "^25.6.0",
     "i18next-browser-languagedetector": "^8.2.0",
-    "i18next-http-backend": "^3.0.2",
+    "i18next-http-backend": "^4.0.1",
     "input-otp": "^1.4.2",
-    "lucide": "^1.31.0",
+    "lucide": "^1.33.0",
     "lucide-react": "^0.487.0",
     "next-themes": "^0.4.6",
     "react": "^19.2.8",
@@ -76,7 +84,7 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
     "react-i18next": "^16.4.0",
-    "react-resizable-panels": "^4.12.2",
+    "react-resizable-panels": "^4.12.3",
     "react-router-dom": "^7.18.2",
     "recharts": "^2.15.2",
     "sonner": "^2.0.8",
@@ -89,6 +97,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.39.5",
     "@playwright/test": "^1.62.1",
     "@testing-library/jest-dom": "^7.0.1",
@@ -108,9 +117,9 @@
     "i18next-cli": "^1.11.0",
     "jsdom": "^30.0.1",
     "orval": "^7.8.0",
-    "typescript": "~5.8.3",
+    "typescript": "~5.9.3",
     "typescript-eslint": "^8.66.0",
-    "vite": "^6.2.0",
+    "vite": "^6.4.3",
     "vitest": "^4.1.10"
   }
 }

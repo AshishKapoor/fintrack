@@ -5,15 +5,13 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
-from .notifications import is_safe_local_service_url, is_safe_outbound_url
-
 from .models import (
     Account,
     AICategorizationSettings,
     BudgetFile,
     BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -21,6 +19,7 @@ from .models import (
     ImportJob,
     LedgerPosting,
     LedgerTransaction,
+    Membership,
     Payee,
     SavedReport,
     SavingsGoal,
@@ -31,6 +30,7 @@ from .models import (
     TransactionEvent,
     TransactionRule,
 )
+from .notifications import is_safe_local_service_url, is_safe_outbound_url
 
 
 class UserOwnedBudgetFileMixin:
@@ -49,6 +49,13 @@ class UserOwnedBudgetFileMixin:
 
 
 class BudgetFileSerializer(serializers.ModelSerializer):
+    # Per-caller, not a column: `is_default` used to live on BudgetFile, where
+    # it meant "the file its creator lands in" and any member's set-default
+    # stomped it for the whole workspace. It now reads from, and writes to, the
+    # requesting user's own Membership. The field name is kept so existing
+    # clients keep working.
+    is_default = serializers.BooleanField(required=False)
+
     class Meta:
         model = BudgetFile
         fields = [
@@ -61,7 +68,30 @@ class BudgetFileSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["created_at", "updated_at"]
-        extra_kwargs = {"organization": {"required": False, "allow_null": True}}
+        extra_kwargs = {"organization": {"required": False}}
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        data["is_default"] = bool(
+            request
+            and request.user.is_authenticated
+            and Membership.objects.filter(
+                user=request.user,
+                organization_id=instance.organization_id,
+                default_budget_file_id=instance.id,
+            ).exists()
+        )
+        return data
+
+    def update(self, instance, validated_data):
+        wants_default = validated_data.pop("is_default", None)
+        instance = super().update(instance, validated_data)
+        if wants_default:
+            from .tenancy import set_default_budget_file
+
+            set_default_budget_file(self.context["request"].user, instance)
+        return instance
 
     def validate_organization(self, value):
         """A budget file may only be created in an org the caller can write."""
@@ -137,7 +167,12 @@ class SavingsGoalSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixi
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["created_at", "updated_at", "current_amount", "progress_percent"]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "current_amount",
+            "progress_percent",
+        ]
 
     def get_current_amount(self, obj):
         return str(obj.account.current_balance)
@@ -149,12 +184,16 @@ class SavingsGoalSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixi
         # even if the account itself is temporarily overdrawn.
         if obj.target_amount <= 0:
             return None
-        percent = max(obj.account.current_balance / obj.target_amount * 100, Decimal("0"))
+        percent = max(
+            obj.account.current_balance / obj.target_amount * 100, Decimal("0")
+        )
         return float(percent.quantize(Decimal("0.1")))
 
     def validate_target_amount(self, value):
         if value <= 0:
-            raise serializers.ValidationError(_("Target amount must be greater than zero."))
+            raise serializers.ValidationError(
+                _("Target amount must be greater than zero.")
+            )
         return value
 
     def validate_budget_file(self, value):
@@ -163,15 +202,23 @@ class SavingsGoalSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixi
 
     def validate(self, attrs):
         account = attrs.get("account") or getattr(self.instance, "account", None)
-        budget_file = attrs.get("budget_file") or getattr(self.instance, "budget_file", None)
+        budget_file = attrs.get("budget_file") or getattr(
+            self.instance, "budget_file", None
+        )
         if account and budget_file and account.budget_file_id != budget_file.id:
             raise serializers.ValidationError(
-                {"account": _("Account must belong to the same budget file as the goal.")}
+                {
+                    "account": _(
+                        "Account must belong to the same budget file as the goal."
+                    )
+                }
             )
         return attrs
 
 
-class AICategorizationSettingsSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class AICategorizationSettingsSerializer(
+    serializers.ModelSerializer, UserOwnedBudgetFileMixin
+):
     # encrypted_api_key never appears here - see the model's docstring and
     # SyncConnectionSerializer's identical exclusion of secret_data. This is
     # the only signal the frontend gets that a key is already stored.
@@ -205,17 +252,25 @@ class AICategorizationSettingsSerializer(serializers.ModelSerializer, UserOwnedB
             return attrs
         provider = attrs.get("provider") or getattr(self.instance, "provider", None)
         is_ollama = provider == AICategorizationSettings.PROVIDER_OLLAMA
-        safe = is_safe_local_service_url(base_url) if is_ollama else is_safe_outbound_url(base_url)
+        safe = (
+            is_safe_local_service_url(base_url)
+            if is_ollama
+            else is_safe_outbound_url(base_url)
+        )
         if not safe:
             raise serializers.ValidationError(
-                {"base_url": _("This URL can't be reached, or points at an unsafe address.")}
+                {
+                    "base_url": _(
+                        "This URL can't be reached, or points at an unsafe address."
+                    )
+                }
             )
         return attrs
 
 
-class CategoryGroupV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class CategoryGroupSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
-        model = CategoryGroupV2
+        model = CategoryGroup
         fields = [
             "id",
             "budget_file",
@@ -231,9 +286,9 @@ class CategoryGroupV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFile
         return value
 
 
-class CategoryV2Serializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
+class CategorySerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     class Meta:
-        model = CategoryV2
+        model = Category
         fields = [
             "id",
             "budget_file",
@@ -383,7 +438,9 @@ class LedgerTransactionSerializer(
             category = posting.get("category")
             if bool(account) == bool(category):
                 raise serializers.ValidationError(
-                    _("Each posting must reference exactly one account or one category.")
+                    _(
+                        "Each posting must reference exactly one account or one category."
+                    )
                 )
 
             if account and account.budget_file_id != budget_file.id:
@@ -414,7 +471,9 @@ class LedgerTransactionSerializer(
 
         payee = attrs.get("payee")
         if payee and payee.budget_file_id != budget_file.id:
-            raise serializers.ValidationError(_("Payee must belong to same budget file."))
+            raise serializers.ValidationError(
+                _("Payee must belong to same budget file.")
+            )
 
         tags = attrs.get("tags") or []
         for tag in tags:
@@ -523,8 +582,13 @@ class EnvelopeAssignmentSerializer(serializers.ModelSerializer):
         budget_month = attrs.get("budget_month") or self.instance.budget_month
         category = attrs.get("category") or self.instance.category
 
+        # Membership, not ownership: this compared budget_file.user_id to the
+        # caller, which meant a member of a shared workspace could not touch
+        # an envelope in a file somebody else had created there.
+        from .tenancy import can_access
+
         request = self.context["request"]
-        if budget_month.budget_file.user_id != request.user.id:
+        if not can_access(request.user, budget_month.budget_file, write=True):
             raise serializers.ValidationError("Budget month not found.")
 
         if category.budget_file_id != budget_month.budget_file_id:
@@ -735,7 +799,9 @@ class SyncConnectionAccountSerializer(serializers.ModelSerializer):
 
 class SyncConnectionSerializer(serializers.ModelSerializer, UserOwnedBudgetFileMixin):
     linked_accounts = SyncConnectionAccountSerializer(many=True, read_only=True)
-    provider_label = serializers.CharField(source="get_provider_display", read_only=True)
+    provider_label = serializers.CharField(
+        source="get_provider_display", read_only=True
+    )
 
     class Meta:
         model = SyncConnection

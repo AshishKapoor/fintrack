@@ -33,7 +33,7 @@ from django.utils import timezone
 
 from .models import (
     BudgetMonth,
-    CategoryV2,
+    Category,
     LedgerPosting,
     NotificationLog,
     NotificationPreference,
@@ -136,7 +136,9 @@ def send_email(preference: NotificationPreference, subject: str, body: str) -> b
         )
         return True
     except (smtplib.SMTPException, OSError, ValueError) as exc:
-        logger.warning("email notification to user %s failed: %s", preference.user_id, exc)
+        logger.warning(
+            "email notification to user %s failed: %s", preference.user_id, exc
+        )
         return False
 
 
@@ -146,7 +148,10 @@ def send_ntfy(preference: NotificationPreference, subject: str, body: str) -> bo
     base = preference.ntfy_server_url.rstrip("/")
     url = f"{base}/{preference.ntfy_topic}"
     if not is_safe_outbound_url(url):
-        logger.warning("ntfy server URL for user %s is not a safe outbound target", preference.user_id)
+        logger.warning(
+            "ntfy server URL for user %s is not a safe outbound target",
+            preference.user_id,
+        )
         return False
     request = urllib.request.Request(
         url,
@@ -165,19 +170,29 @@ def send_ntfy(preference: NotificationPreference, subject: str, body: str) -> bo
             pass
         return True
     except (urllib.error.URLError, OSError) as exc:
-        logger.warning("ntfy notification to user %s failed: %s", preference.user_id, exc)
+        logger.warning(
+            "ntfy notification to user %s failed: %s", preference.user_id, exc
+        )
         return False
 
 
 def send_webhook(
-    preference: NotificationPreference, subject: str, body: str, *, extra: dict | None = None
+    preference: NotificationPreference,
+    subject: str,
+    body: str,
+    *,
+    extra: dict | None = None,
 ) -> bool:
     if not preference.webhook_enabled or not preference.webhook_url:
         return False
     if not is_safe_outbound_url(preference.webhook_url):
-        logger.warning("webhook URL for user %s is not a safe outbound target", preference.user_id)
+        logger.warning(
+            "webhook URL for user %s is not a safe outbound target", preference.user_id
+        )
         return False
-    payload = json.dumps({"title": subject, "body": body, **(extra or {})}).encode("utf-8")
+    payload = json.dumps({"title": subject, "body": body, **(extra or {})}).encode(
+        "utf-8"
+    )
     request = urllib.request.Request(
         preference.webhook_url,
         data=payload,
@@ -189,7 +204,9 @@ def send_webhook(
             pass
         return True
     except (urllib.error.URLError, OSError) as exc:
-        logger.warning("webhook notification to user %s failed: %s", preference.user_id, exc)
+        logger.warning(
+            "webhook notification to user %s failed: %s", preference.user_id, exc
+        )
         return False
 
 
@@ -277,14 +294,16 @@ def check_budget_threshold_alerts() -> tuple[int, list[tuple[int, str]]]:
                     percent = (spent / assigned) * 100
                     if percent < preference.budget_alert_threshold:
                         continue
-                    dedupe_key = f"{budget_file.id}:{year}-{month:02d}:{row['category_id']}"
+                    dedupe_key = (
+                        f"{budget_file.id}:{year}-{month:02d}:{row['category_id']}"
+                    )
                     if send_notification(
                         preference,
                         kind=NotificationLog.KIND_BUDGET_THRESHOLD,
                         dedupe_key=dedupe_key,
                         subject=f"Budget alert: {row['category']} is at {percent:.0f}%",
                         body=(
-                            f"{row['category']} in \"{budget_file.name}\" has used "
+                            f'{row["category"]} in "{budget_file.name}" has used '
                             f"{spent} of {assigned} ({percent:.0f}%) budgeted for "
                             f"{year}-{month:02d}."
                         ),
@@ -333,7 +352,7 @@ def send_scheduled_transaction_reminders() -> tuple[int, list[tuple[int, str]]]:
                     dedupe_key=dedupe_key,
                     subject=f"Upcoming: {schedule.name}",
                     body=(
-                        f"\"{schedule.name}\" in \"{schedule.budget_file.name}\" is "
+                        f'"{schedule.name}" in "{schedule.budget_file.name}" is '
                         f"scheduled to post on {schedule.next_run_date.isoformat()}."
                     ),
                     extra={"scheduled_transaction_id": schedule.id},
@@ -371,12 +390,12 @@ def send_weekly_digest() -> tuple[int, list[tuple[int, str]]]:
                 transaction__transaction_date__lte=today,
                 category__isnull=False,
             )
-            spent = postings.filter(
-                category__kind=CategoryV2.KIND_EXPENSE
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
-            income = postings.filter(
-                category__kind=CategoryV2.KIND_INCOME
-            ).aggregate(total=Sum("amount"))["total"] or Decimal("0.00")
+            spent = postings.filter(category__kind=Category.KIND_EXPENSE).aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
+            income = postings.filter(category__kind=Category.KIND_INCOME).aggregate(
+                total=Sum("amount")
+            )["total"] or Decimal("0.00")
 
             upcoming = list(
                 ScheduledTransaction.objects.filter(
@@ -396,7 +415,9 @@ def send_weekly_digest() -> tuple[int, list[tuple[int, str]]]:
             if upcoming:
                 body_lines.append("")
                 body_lines.append("Coming up in the next 7 days:")
-                body_lines.extend(f"- {name} on {due.isoformat()}" for name, due in upcoming)
+                body_lines.extend(
+                    f"- {name} on {due.isoformat()}" for name, due in upcoming
+                )
 
             if send_notification(
                 preference,

@@ -16,18 +16,20 @@ from django.test import TestCase
 from pft.finance_services import materialize_due_scheduled_transactions
 from pft.models import (
     Account,
-    BudgetFile,
-    CategoryV2,
+    Category,
     LedgerTransaction,
     ScheduledTransaction,
 )
 from pft.tasks import materialize_due_scheduled_transactions_task
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
 
 def _make_user(email):
-    return User.objects.create_user(email=email, username=email, password="StrongPass123!")
+    return User.objects.create_user(
+        email=email, username=email, password="StrongPass123!"
+    )
 
 
 def _schedule(budget_file, *, name, next_run_date, account, category, is_active=True):
@@ -59,17 +61,19 @@ def _unbalanced_schedule(budget_file, *, name, next_run_date, account):
         start_date=next_run_date,
         next_run_date=next_run_date,
         frequency=ScheduledTransaction.FREQ_MONTHLY,
-        transaction_template={"postings": [{"account_id": account.id, "amount": "-10.00"}]},
+        transaction_template={
+            "postings": [{"account_id": account.id, "amount": "-10.00"}]
+        },
     )
 
 
 class MaterializeDueScheduledTransactionsTests(TestCase):
     def setUp(self):
         self.user = _make_user("scheduler-user@example.com")
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def test_materializes_a_due_schedule_and_advances_next_run_date(self):
@@ -192,15 +196,17 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
 
     def _tenant(self, email):
         user = _make_user(email)
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         account = Account.objects.get(budget_file=budget_file, name="Cash")
-        category = CategoryV2.objects.filter(
-            budget_file=budget_file, kind=CategoryV2.KIND_EXPENSE
+        category = Category.objects.filter(
+            budget_file=budget_file, kind=Category.KIND_EXPENSE
         ).first()
         return budget_file, account, category
 
     def test_task_materializes_due_schedules_across_every_tenant(self):
-        alice_file, alice_account, alice_category = self._tenant("scheduler-alice@example.com")
+        alice_file, alice_account, alice_category = self._tenant(
+            "scheduler-alice@example.com"
+        )
         bob_file, bob_account, bob_category = self._tenant("scheduler-bob@example.com")
 
         alice_schedule = _schedule(
@@ -226,11 +232,18 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
         self.assertIsNotNone(bob_schedule.last_run_at)
 
     def test_a_broken_schedule_in_one_tenant_does_not_block_another(self):
-        alice_file, alice_account, _alice_category = self._tenant("scheduler-broken-alice@example.com")
-        bob_file, bob_account, bob_category = self._tenant("scheduler-broken-bob@example.com")
+        alice_file, alice_account, _alice_category = self._tenant(
+            "scheduler-broken-alice@example.com"
+        )
+        bob_file, bob_account, bob_category = self._tenant(
+            "scheduler-broken-bob@example.com"
+        )
 
         broken = _unbalanced_schedule(
-            alice_file, name="Broken", next_run_date=date(2026, 3, 1), account=alice_account
+            alice_file,
+            name="Broken",
+            next_run_date=date(2026, 3, 1),
+            account=alice_account,
         )
         good = _schedule(
             bob_file,

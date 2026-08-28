@@ -57,7 +57,7 @@ import {
   Trash,
   Upload,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -80,6 +80,10 @@ export default function TransactionsPage() {
   const [showAddTransaction, setShowAddTransaction] = useState(
     () => searchParams.get('new') === '1',
   )
+  // Handed to AddTransactionDialog so it can return focus here on close - the
+  // button lives outside the Dialog's own tree, so Radix has no trigger of
+  // its own to restore focus to.
+  const addTransactionTriggerRef = useRef<HTMLButtonElement>(null)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
   const [showImport, setShowImport] = useState(false)
   const [showEditTransaction, setShowEditTransaction] = useState(false)
@@ -93,14 +97,20 @@ export default function TransactionsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState('')
 
+  // Also has to run when ?new=1 arrives on a navigation that does not remount
+  // this page. Triggering the palette's action while already on /transactions
+  // only changes the search params, so the initializer above never re-runs and
+  // the dialog would otherwise stay shut. Depends on searchParams for exactly
+  // that case; deleting the param on the way through keeps it idempotent, and
+  // makes the setState a no-op when the initializer already opened the dialog.
   useEffect(() => {
     if (searchParams.get('new') === '1') {
+      setShowAddTransaction(true)
       const next = new URLSearchParams(searchParams)
       next.delete('new')
       setSearchParams(next, { replace: true })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [searchParams, setSearchParams])
 
   // Debounced so typing does not fire a request per keystroke.
   useEffect(() => {
@@ -194,7 +204,9 @@ export default function TransactionsPage() {
             <Repeat className='mr-2 h-4 w-4' />
             Add Transfer
           </Button>
-          <Button onClick={() => setShowAddTransaction(true)}>Add Transaction</Button>
+          <Button ref={addTransactionTriggerRef} onClick={() => setShowAddTransaction(true)}>
+            Add Transaction
+          </Button>
         </div>
       </div>
 
@@ -254,7 +266,7 @@ export default function TransactionsPage() {
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
           >
-            <SelectTrigger className='w-[180px]'>
+            <SelectTrigger aria-label='Sort by' className='w-[180px]'>
               <SelectValue placeholder='Sort by' />
             </SelectTrigger>
             <SelectContent>
@@ -268,6 +280,7 @@ export default function TransactionsPage() {
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='icon' className='h-9 w-9'>
                 <Download className='h-4 w-4' />
+                <span className='sr-only'>Export transactions</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
@@ -458,7 +471,11 @@ export default function TransactionsPage() {
         </div>
       </div>
 
-      <AddTransactionDialog open={showAddTransaction} onOpenChange={setShowAddTransaction} />
+      <AddTransactionDialog
+        open={showAddTransaction}
+        onOpenChange={setShowAddTransaction}
+        triggerRef={addTransactionTriggerRef}
+      />
       <ImportTransactionsDialog open={showImport} onOpenChange={setShowImport} />
       <AddTransferDialog
         open={showAddTransfer}

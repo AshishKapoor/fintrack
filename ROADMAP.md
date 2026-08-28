@@ -67,13 +67,13 @@ Explicitly *not* first: Plaid. If it ever lands, it lands as another adapter, be
 
 *Goal: a stable API contract and a codebase with no apologies.*
 
-- [ ] **Retire the legacy flat API** — remove the deprecated `/api/v1/{transactions,categories,budgets}` endpoints and models
-- [ ] **Rename `CategoryV2` / `CategoryGroupV2`** — drop the V2 suffix from the public schema before external consumers multiply
-- [ ] **Complete `BudgetFile.user` → organization migration** — finish the expand/contract already noted in the model
-- [ ] **Pagination on all list endpoints** — currently only transactions paginate
-- [ ] **Accessibility pass** — audit beyond Radix defaults, add axe checks to the Playwright suite
-- [ ] **Activate staged security workflows** — CodeQL, gitleaks, and PR title checks currently parked in `.github/workflows-pending/`
-- [ ] **Community infrastructure** — Matrix/Discord space, groomed `good-first-issue` backlog, monthly release cadence
+- [x] **Retire the legacy flat API** — the deprecated `/api/v1/{transactions,categories,budgets}` endpoints and their models are gone. Migration `0017` carries any rows they still held into the ledger first (stamped `match_key="legacy:<pk>"`, and checking `0005`'s `v1-<pk>` stamp too so nothing is carried twice), so nobody scripting against them loses data on upgrade
+- [x] **Rename `CategoryV2` / `CategoryGroupV2`** — `RenameModel` in `0018`, so the tables are renamed in place rather than copied. Old `AuditLog.entity_type` rows are rewritten to match, so filtering the audit log by `Category` still finds pre-rename history
+- [x] **Complete `BudgetFile.user` → organization migration** — `organization` is now NOT NULL and `user` is gone (`0019`–`0021`). The default-file choice moved to `Membership.default_budget_file`, which fixes one member's `set-default` moving everyone else's in a shared workspace; `created_by` is `SET_NULL`, which fixes a departing user cascading away a shared workspace's books
+- [x] **Pagination on all list endpoints** — set as `DEFAULT_PAGINATION_CLASS` rather than per-viewset, so a new resource cannot ship unpaginated by omission, and `test_pagination.py` fails when the router gains a resource nobody added to its list. The web app walks `next` wherever completeness matters — pickers, the workspace switcher, and the encrypted backup, where a silent truncation would restore cleanly and be missing most of the ledger
+- [x] **Accessibility pass** — `apps/web/e2e/accessibility.spec.ts` runs axe over every page and both modal surfaces at WCAG 2.1 A/AA, inside the normal Playwright job. It found an unnamed export button, 20 labels associated with nothing, a settings label pointing at an id that did not exist, and a `Tabs` used as a segmented control whose triggers advertised panels that were never rendered
+- [x] **Activate staged security workflows** — CodeQL (with the generated clients excluded, since findings there can only be fixed in the generator), gitleaks over the full history against a shared `.gitleaks.toml`, and Conventional-Commit PR titles
+- [~] **Community infrastructure** — issue forms that ask a self-hosted bug report for its deployment method and logs, [SUPPORT.md](SUPPORT.md), a [CHANGELOG.md](CHANGELOG.md), and a documented monthly cadence in [RELEASING.md](RELEASING.md). The `good first issue` backlog is groomed against the code. A Matrix/Discord space is the one step left, since — like the Phase 0 demo instance and the Phase 1 Weblate project — it needs an account only the maintainer can create
 
 ---
 
@@ -94,9 +94,10 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
 |---|---|
 | Translator | The i18n pipeline is live (see [docs/i18n.md](docs/i18n.md)) — once Weblate is connected, translating is the fastest path to contributor status; until then, PRs extending `t()`/`gettext_lazy` coverage to a page not yet listed there are just as welcome |
 | Frontend dev | Extend i18n coverage page by page — the new `/insights` page's own strings included |
-| Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`), Phase 4 hardening (retiring the legacy flat API, pagination on the remaining list endpoints) |
+| Backend dev | A third bank sync provider against the adapter interface (`pft/bank_sync.py`) — the contract and two reference implementations are already there |
 | Self-hosting enthusiast | Get FinTrack listed on [PikaPods](https://feedback.pikapods.com/) (upvote or help submit), stand up the actual public demo host, docs for reverse-proxy setups |
 | Designer | A demo GIF for the README, insights dashboard concepts |
+| Accessibility | axe covers every page now, but it catches maybe a third of WCAG failures — a screen-reader or keyboard-only pass over a real workflow would find what it cannot |
 | Anyone | Try the demo, file honest bug reports, tell us where week-three fatigue sets in |
 
 ## Changelog of this document
@@ -226,3 +227,28 @@ Contributions that map to this roadmap are especially welcome — see [CONTRIBUT
   test`'s throwaway database does, which briefly looked like a missing-table
   bug for the first of these features until `docker compose exec ... migrate`
   was run separately.
+- **2026-08-27** — Phase 4 complete except for a chat space (see above), which
+  needs an account only the maintainer can create. The API contract stops
+  moving here, so the breaking changes are deliberately concentrated in one
+  release: the flat `/api/v1/{transactions,categories,budgets}` resources are
+  retired, `CategoryV2`/`CategoryGroupV2` lose their suffix, `BudgetFile.user`
+  gives way to `organization`, and every list endpoint now returns
+  `{count, next, previous, results}` - see CHANGELOG.md for what an upgrade
+  needs. None of the four destroys data: migration `0017` carries the flat rows
+  into the ledger, `0018` renames tables in place rather than copying, and
+  `0019`-`0021` backfill before contracting. Three real bugs fell out of the
+  `BudgetFile` work rather than being looked for - `set-default` moved every
+  member's default rather than the caller's, an envelope assignment could not
+  be written by anyone but the file's creator, and deleting a user cascaded
+  away a shared workspace's books. The two that would have hurt most on upgrade
+  came from reading old migrations rather than from the test suite: `0005` had
+  already carried the pre-ledger flat rows across, so `0017` would have
+  duplicated every one of them, and Postgres refuses DDL on a table with
+  pending deferred trigger events, so the `BudgetFile` contract cannot be one
+  migration - a fresh test database has no rows, and therefore neither failure
+  can appear in CI. Also here: axe over every page and both modal surfaces,
+  which found an icon-only button with no name, twenty labels associated with
+  nothing, and a `Tabs` used as a segmented control that was telling screen
+  readers about panels that did not exist; CodeQL, gitleaks and PR-title checks
+  activated; and SUPPORT.md, RELEASING.md and CHANGELOG.md, so the monthly
+  cadence is something a self-hoster can rely on rather than a plan.

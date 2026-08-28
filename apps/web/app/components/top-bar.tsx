@@ -3,6 +3,7 @@
 import { CommandMenu } from '@/components/command-menu'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ModeToggle } from '@/components/mode-toggle'
+import { ThemeSwitcher } from '@/components/theme-switcher'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -68,8 +69,9 @@ export function TopBar({ onMenuClick }: TopBarProps) {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
         <LanguageSwitcher />
+        <ThemeSwitcher />
         <ModeToggle />
 
         <Link to='/settings?tab=notifications'>

@@ -35,6 +35,7 @@
       "errorInvalid": "Invalid credentials",
       "errorNetwork": "Cannot reach the server — is the API running and reachable?",
       "noAccount": "Don't have an account?",
+      "password": "Password",
       "privacyLink": "Privacy Policy",
       "signUp": "Sign up",
       "submit": "Login",
@@ -199,6 +200,15 @@
       "workspace": "Workspace"
     },
     "title": "Settings"
+  },
+  "themeSwitcher": {
+    "allThemes": "All themes",
+    "default": "Default",
+    "favorites": "Favorites",
+    "findTheme": "Find a theme…",
+    "label": "Switch theme",
+    "noThemeFound": "No theme found.",
+    "toggleFavorite": "Toggle favorite"
   },
   "topbar": {
     "logout": "Log out",

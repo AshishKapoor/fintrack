@@ -35,6 +35,7 @@
       "errorInvalid": "Credenciales no válidas",
       "errorNetwork": "No se puede contactar con el servidor. ¿Está la API activa y accesible?",
       "noAccount": "¿No tienes una cuenta?",
+      "password": "Contraseña",
       "privacyLink": "Política de privacidad",
       "signUp": "Regístrate",
       "submit": "Iniciar sesión",
@@ -199,6 +200,15 @@
       "workspace": "Espacio de trabajo"
     },
     "title": "Ajustes"
+  },
+  "themeSwitcher": {
+    "allThemes": "Todos los temas",
+    "default": "Predeterminado",
+    "favorites": "Favoritos",
+    "findTheme": "Buscar un tema…",
+    "label": "Cambiar tema",
+    "noThemeFound": "No se encontró ningún tema.",
+    "toggleFavorite": "Marcar como favorito"
   },
   "topbar": {
     "logout": "Cerrar sesión",

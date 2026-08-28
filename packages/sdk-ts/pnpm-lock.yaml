@@ -13,10 +13,10 @@ importers:
     devDependencies:
       orval:
         specifier: ^7.8.0
-        version: 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+        version: 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       typescript:
-        specifier: ~5.7.2
-        version: 5.7.3
+        specifier: ~5.9.3
+        version: 5.9.3
 
 packages:
 
@@ -1308,8 +1308,8 @@ packages:
     peerDependencies:
       typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x || 5.9.x || 6.0.x
 
-  typescript@5.7.3:
-    resolution: {integrity: sha512-84MVSjMEHP+FQRPy3pX9sTVV/INIex71s9TL2Gm5FG/WG1SqXeKyZ0k7/blY/4FdOzI12CBy1vGc4og/eus0fw==}
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -1554,25 +1554,25 @@ snapshots:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.20.1
 
-  '@orval/angular@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/angular@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
     transitivePeerDependencies:
       - encoding
       - openapi-types
       - supports-color
       - typescript
 
-  '@orval/axios@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/axios@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
     transitivePeerDependencies:
       - encoding
       - openapi-types
       - supports-color
       - typescript
 
-  '@orval/core@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/core@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
       '@apidevtools/swagger-parser': 12.1.0(openapi-types@12.1.3)
       '@ibm-cloud/openapi-ruleset': 1.33.13
@@ -1592,16 +1592,16 @@ snapshots:
       micromatch: 4.0.8
       openapi3-ts: 4.5.0
       swagger2openapi: 7.0.8
-      typedoc: 0.28.20(typescript@5.7.3)
+      typedoc: 0.28.20(typescript@5.9.3)
     transitivePeerDependencies:
       - encoding
       - openapi-types
       - supports-color
       - typescript
 
-  '@orval/fetch@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/fetch@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       openapi3-ts: 4.5.0
     transitivePeerDependencies:
       - encoding
@@ -1609,10 +1609,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@orval/hono@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/hono@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       fs-extra: 11.4.0
       lodash.uniq: 4.5.0
       openapi3-ts: 4.5.0
@@ -1622,11 +1622,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@orval/mcp@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/mcp@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       openapi3-ts: 4.5.0
     transitivePeerDependencies:
       - encoding
@@ -1634,9 +1634,9 @@ snapshots:
       - supports-color
       - typescript
 
-  '@orval/mock@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/mock@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       openapi3-ts: 4.5.0
     transitivePeerDependencies:
       - encoding
@@ -1644,10 +1644,10 @@ snapshots:
       - supports-color
       - typescript
 
-  '@orval/query@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/query@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       chalk: 4.1.2
       lodash.omitby: 4.6.0
     transitivePeerDependencies:
@@ -1656,19 +1656,19 @@ snapshots:
       - supports-color
       - typescript
 
-  '@orval/swr@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/swr@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
     transitivePeerDependencies:
       - encoding
       - openapi-types
       - supports-color
       - typescript
 
-  '@orval/zod@7.21.0(openapi-types@12.1.3)(typescript@5.7.3)':
+  '@orval/zod@7.21.0(openapi-types@12.1.3)(typescript@5.9.3)':
     dependencies:
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       lodash.uniq: 4.5.0
       openapi3-ts: 4.5.0
     transitivePeerDependencies:
@@ -2647,20 +2647,20 @@ snapshots:
     dependencies:
       yaml: 2.9.0
 
-  orval@7.21.0(openapi-types@12.1.3)(typescript@5.7.3):
+  orval@7.21.0(openapi-types@12.1.3)(typescript@5.9.3):
     dependencies:
       '@apidevtools/swagger-parser': 12.1.0(openapi-types@12.1.3)
       '@commander-js/extra-typings': 14.0.0(commander@14.0.3)
-      '@orval/angular': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/axios': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/hono': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/mcp': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/mock': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/query': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/swr': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
-      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.7.3)
+      '@orval/angular': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/axios': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/core': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/fetch': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/hono': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/mcp': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/mock': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/query': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/swr': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
+      '@orval/zod': 7.21.0(openapi-types@12.1.3)(typescript@5.9.3)
       chalk: 4.1.2
       chokidar: 4.0.3
       commander: 14.0.3
@@ -2673,10 +2673,10 @@ snapshots:
       lodash.uniq: 4.5.0
       openapi3-ts: 4.5.0
       string-argv: 0.3.2
-      tsconfck: 2.1.2(typescript@5.7.3)
-      typedoc: 0.28.20(typescript@5.7.3)
-      typedoc-plugin-coverage: 4.0.3(typedoc@0.28.20(typescript@5.7.3))
-      typedoc-plugin-markdown: 4.12.0(typedoc@0.28.20(typescript@5.7.3))
+      tsconfck: 2.1.2(typescript@5.9.3)
+      typedoc: 0.28.20(typescript@5.9.3)
+      typedoc-plugin-coverage: 4.0.3(typedoc@0.28.20(typescript@5.9.3))
+      typedoc-plugin-markdown: 4.12.0(typedoc@0.28.20(typescript@5.9.3))
     transitivePeerDependencies:
       - encoding
       - openapi-types
@@ -2924,9 +2924,9 @@ snapshots:
 
   tr46@0.0.3: {}
 
-  tsconfck@2.1.2(typescript@5.7.3):
+  tsconfck@2.1.2(typescript@5.9.3):
     optionalDependencies:
-      typescript: 5.7.3
+      typescript: 5.9.3
 
   tslib@1.14.1: {}
 
@@ -2965,24 +2965,24 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typedoc-plugin-coverage@4.0.3(typedoc@0.28.20(typescript@5.7.3)):
+  typedoc-plugin-coverage@4.0.3(typedoc@0.28.20(typescript@5.9.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@5.7.3)
+      typedoc: 0.28.20(typescript@5.9.3)
 
-  typedoc-plugin-markdown@4.12.0(typedoc@0.28.20(typescript@5.7.3)):
+  typedoc-plugin-markdown@4.12.0(typedoc@0.28.20(typescript@5.9.3)):
     dependencies:
-      typedoc: 0.28.20(typescript@5.7.3)
+      typedoc: 0.28.20(typescript@5.9.3)
 
-  typedoc@0.28.20(typescript@5.7.3):
+  typedoc@0.28.20(typescript@5.9.3):
     dependencies:
       '@gerrit0/mini-shiki': 3.23.0
       lunr: 2.3.9
       markdown-it: 14.3.0
       minimatch: 10.2.6
-      typescript: 5.7.3
+      typescript: 5.9.3
       yaml: 2.9.0
 
-  typescript@5.7.3: {}
+  typescript@5.9.3: {}
 
   uc.micro@2.1.0: {}
 

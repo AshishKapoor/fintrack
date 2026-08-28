@@ -8,7 +8,7 @@ from attrs import define as _attrs_define
 from attrs import field as _attrs_field
 from typing_extensions import Self
 
-from ..models.account_type_enum import AccountTypeEnum
+from ..models.type_enum import TypeEnum
 from ..types import UNSET, Unset
 
 T = TypeVar("T", bound="PatchedAccount")
@@ -21,7 +21,7 @@ class PatchedAccount:
         id (int | Unset):
         budget_file (int | Unset):
         name (str | Unset):
-        type_ (AccountTypeEnum | Unset): * `checking` - Checking
+        type_ (TypeEnum | Unset): * `checking` - Checking
             * `savings` - Savings
             * `cash` - Cash
             * `credit` - Credit Card
@@ -40,7 +40,7 @@ class PatchedAccount:
     id: int | Unset = UNSET
     budget_file: int | Unset = UNSET
     name: str | Unset = UNSET
-    type_: AccountTypeEnum | Unset = UNSET
+    type_: TypeEnum | Unset = UNSET
     opening_balance: str | Unset = UNSET
     currency_code: str | Unset = UNSET
     current_balance: str | Unset = UNSET
@@ -130,11 +130,11 @@ class PatchedAccount:
         name = d.pop("name", UNSET)
 
         _type_ = d.pop("type", UNSET)
-        type_: AccountTypeEnum | Unset
+        type_: TypeEnum | Unset
         if isinstance(_type_, Unset):
             type_ = UNSET
         else:
-            type_ = AccountTypeEnum(_type_)
+            type_ = TypeEnum(_type_)
 
         opening_balance = d.pop("opening_balance", UNSET)
 

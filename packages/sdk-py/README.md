@@ -36,6 +36,26 @@ for tx in page.results:
 Every operation has `sync`, `sync_detailed`, `asyncio` and `asyncio_detailed`
 variants; `*_detailed` returns the status code and parsed body.
 
+## Every list is paginated
+
+`*_list` returns a page object with `count`, `next`, `previous` and `results`,
+never a bare list. To read a whole resource, follow `next` until it is `None` -
+or raise `page_size` (the server caps it at 500) to cut the round trips:
+
+```python
+def all_rows(fetch_page, **kwargs):
+    page_number = 1
+    while True:
+        page = fetch_page.sync(client=client, page=page_number, page_size=500, **kwargs)
+        yield from page.results
+        if not page.next_:
+            return
+        page_number += 1
+
+for tx in all_rows(v1_finance_transactions_list):
+    print(tx.transaction_date, tx.memo)
+```
+
 ## Regenerating
 
 ```bash

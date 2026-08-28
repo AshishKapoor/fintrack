@@ -1,3 +1,4 @@
+import { useAllCategories } from '@/lib/finance-lists'
 import { format } from 'date-fns'
 import { Calendar as CalendarIcon, Check, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -7,7 +8,6 @@ import useSWR from 'swr'
 
 import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
 import {
-  useV1FinanceCategoriesList,
   v1FinanceTransactionsCreate,
   v1FinanceTransactionsUpdate,
 } from '@/client/gen/pft/v1/v1'
@@ -83,7 +83,7 @@ export function InlineTransactionRow({
   const [saving, setSaving] = useState(false)
   const amountRef = useRef<HTMLInputElement>(null)
 
-  const { data: categories } = useV1FinanceCategoriesList()
+  const { data: categories } = useAllCategories()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 
@@ -184,7 +184,7 @@ export function InlineTransactionRow({
               setDraft((d) => ({ ...d, kind: value as TransactionKind, categoryId: '' }))
             }
           >
-            <SelectTrigger className='w-28 shrink-0'>
+            <SelectTrigger aria-label={t('transactions.kind')} className='w-28 shrink-0'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

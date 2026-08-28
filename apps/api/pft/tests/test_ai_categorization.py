@@ -7,8 +7,9 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.ai_categorization import suggest_category_via_ai
-from pft.models import Account, AICategorizationSettings, BudgetFile, CategoryV2, Payee
+from pft.models import Account, AICategorizationSettings, Category, Payee
 from pft.notifications import is_safe_local_service_url
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -52,7 +53,7 @@ class SuggestCategoryViaAiTests(TestCase):
         self.user = User.objects.create_user(
             email="ai-user@example.com", username="ai-user@example.com", password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.candidates = [{"id": 1, "name": "Groceries"}, {"id": 2, "name": "Rent"}]
 
     def _settings(self, **overrides):
@@ -155,7 +156,7 @@ class AICategorizationSettingsApiTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def test_get_creates_lazily_with_sensible_defaults(self):
         self.assertFalse(AICategorizationSettings.objects.filter(budget_file=self.budget_file).exists())
@@ -241,10 +242,10 @@ class SuggestedCategoryAiFallbackTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.groceries = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE, name="Groceries"
+        self.groceries = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE, name="Groceries"
         ).first()
         self.payee = Payee.objects.create(budget_file=self.budget_file, name="New Payee")
 

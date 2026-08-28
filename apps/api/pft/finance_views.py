@@ -10,7 +10,6 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import filters, generics, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
@@ -29,8 +28,8 @@ from .finance_serializers import (
     BankSyncResultSerializer,
     BudgetFileSerializer,
     BudgetMonthSerializer,
-    CategoryGroupV2Serializer,
-    CategoryV2Serializer,
+    CategoryGroupSerializer,
+    CategorySerializer,
     EncryptedBackupBundleSerializer,
     EnvelopeAssignmentSerializer,
     ExportJobSerializer,
@@ -69,8 +68,8 @@ from .models import (
     AuditLog,
     BudgetFile,
     BudgetMonth,
-    CategoryGroupV2,
-    CategoryV2,
+    Category,
+    CategoryGroup,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -93,7 +92,13 @@ from .tasks import (
     run_export_job_task,
     sync_bank_connection_task,
 )
-from .tenancy import budget_file_q, can_access, personal_organization
+from .tenancy import (
+    budget_file_q,
+    can_access,
+    default_budget_file,
+    personal_organization,
+    set_default_budget_file,
+)
 
 
 def parse_iso_date(raw, field_name):
@@ -180,30 +185,33 @@ class BudgetFileViewSet(UserScopedModelViewSet):
         return BudgetFile.objects.filter(budget_file_q(self.request.user, prefix='pk')).order_by("id")
 
     def perform_create(self, serializer):
-        organization = serializer.validated_data.get("organization") or personal_organization(
-            self.request.user
+        organization = serializer.validated_data.get(
+            "organization"
+        ) or personal_organization(self.request.user)
+        wants_default = serializer.validated_data.pop("is_default", False)
+        budget_file = serializer.save(
+            created_by=self.request.user, organization=organization
         )
-        budget_file = serializer.save(user=self.request.user, organization=organization)
-        has_existing_default = BudgetFile.objects.filter(
-            user=self.request.user,
-            organization=budget_file.organization,
-            is_default=True,
-        ).exclude(id=budget_file.id)
-        if budget_file.is_default:
-            has_existing_default.update(is_default=False)
-        elif not has_existing_default.exists():
-            budget_file.is_default = True
-            budget_file.save(update_fields=["is_default", "updated_at"])
+        # Either the caller asked for it, or this is the first file they can
+        # see in that workspace and something has to be the landing place.
+        if wants_default or default_budget_file(self.request.user, organization) is None:
+            set_default_budget_file(self.request.user, budget_file)
 
     @action(detail=True, methods=["post"], url_path="set-default")
     def set_default(self, request, pk=None):
+        """Record this file as the caller's default in its workspace.
+
+        Per-caller, not per-file: before `is_default` moved onto Membership,
+        this cleared the flag across every budget file the caller could see,
+        so one member choosing a default silently changed it for everyone else
+        in a shared workspace - and for their other workspaces too.
+        """
         budget_file = self.get_object()
-        BudgetFile.objects.filter(budget_file_q(request.user, prefix='pk'), is_default=True).update(
-            is_default=False
+        if not set_default_budget_file(request.user, budget_file):
+            return Response({"detail": "Budget file not found."}, status=404)
+        return Response(
+            BudgetFileSerializer(budget_file, context={"request": request}).data
         )
-        budget_file.is_default = True
-        budget_file.save(update_fields=["is_default", "updated_at"])
-        return Response(BudgetFileSerializer(budget_file).data)
 
     @action(detail=True, methods=["get"], url_path="balances")
     def balances(self, request, pk=None):
@@ -319,21 +327,21 @@ class AICategorizationTestView(APIView):
 
 
 class CategoryGroupViewSet(UserScopedModelViewSet):
-    serializer_class = CategoryGroupV2Serializer
+    serializer_class = CategoryGroupSerializer
 
     def get_queryset(self):
-        queryset = CategoryGroupV2.objects.filter(budget_file_q(self.request.user)).order_by("sort_order", "id")
+        queryset = CategoryGroup.objects.filter(budget_file_q(self.request.user)).order_by("sort_order", "id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
         return queryset
 
 
-class CategoryV2ViewSet(UserScopedModelViewSet):
-    serializer_class = CategoryV2Serializer
+class CategoryViewSet(UserScopedModelViewSet):
+    serializer_class = CategorySerializer
 
     def get_queryset(self):
-        queryset = CategoryV2.objects.filter(budget_file_q(self.request.user)).order_by("id")
+        queryset = Category.objects.filter(budget_file_q(self.request.user)).order_by("id")
         budget_file = self.request.query_params.get("budget_file")
         if budget_file:
             queryset = queryset.filter(budget_file_id=budget_file)
@@ -392,7 +400,7 @@ class PayeeViewSet(UserScopedModelViewSet):
         ).first()
         if ai_settings:
             candidates = list(
-                CategoryV2.objects.filter(
+                Category.objects.filter(
                     budget_file=payee.budget_file, is_archived=False
                 ).values("id", "name")
             )
@@ -418,15 +426,8 @@ class TagViewSet(UserScopedModelViewSet):
         return queryset
 
 
-class LedgerTransactionPagination(PageNumberPagination):
-    page_size = 50
-    page_size_query_param = "page_size"
-    max_page_size = 500
-
-
 class LedgerTransactionViewSet(UserScopedModelViewSet):
     serializer_class = LedgerTransactionSerializer
-    pagination_class = LedgerTransactionPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["memo", "payee__name", "match_key"]
     # `amount` is annotated below: a ledger transaction has no amount column,
@@ -467,7 +468,7 @@ class LedgerTransactionViewSet(UserScopedModelViewSet):
         # Income and expense are a property of the category on the posting, not
         # of the transaction, so filtering by "type" filters on that category.
         tx_type = self.request.query_params.get("type")
-        if tx_type in {CategoryV2.KIND_INCOME, CategoryV2.KIND_EXPENSE}:
+        if tx_type in {Category.KIND_INCOME, Category.KIND_EXPENSE}:
             queryset = queryset.filter(postings__category__kind=tx_type).distinct()
 
         return queryset

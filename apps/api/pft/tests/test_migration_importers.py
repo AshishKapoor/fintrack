@@ -11,7 +11,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.finance_services import _parse_actual_rows, _parse_firefly3_rows
-from pft.models import BudgetFile, ImportJob, LedgerTransaction
+from pft.models import ImportJob, LedgerTransaction
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -62,7 +63,7 @@ class Firefly3ParserTests(APITestCase):
             email="firefly@example.com", username="firefly@example.com", password="StrongPass123!"
         )
         self.client.force_authenticate(user=user)
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
 
         create_response = self.client.post(
             "/api/v1/finance/imports/",
@@ -117,7 +118,7 @@ class ActualBudgetParserTests(APITestCase):
             email="actual@example.com", username="actual@example.com", password="StrongPass123!"
         )
         self.client.force_authenticate(user=user)
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
 
         create_response = self.client.post(
             "/api/v1/finance/imports/",

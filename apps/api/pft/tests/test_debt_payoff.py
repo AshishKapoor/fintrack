@@ -4,7 +4,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile
+from pft.models import Account
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -24,7 +25,7 @@ class DebtPayoffProjectionTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def _debt_account(self, name, balance, rate, minimum, account_type=Account.TYPE_CREDIT, currency=None):
         account = Account.objects.create(

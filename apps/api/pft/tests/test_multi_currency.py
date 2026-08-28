@@ -2,7 +2,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile
+from pft.models import Account
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -17,7 +18,7 @@ class AccountCurrencyDefaultingTests(APITestCase):
             email="currency@example.com", username="currency@example.com", password="StrongPass123!"
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def test_signup_seeded_cash_account_has_explicit_currency(self):
         cash = Account.objects.get(budget_file=self.budget_file, name="Cash")

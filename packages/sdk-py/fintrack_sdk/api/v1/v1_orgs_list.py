@@ -5,15 +5,28 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.organization import Organization
-from ...types import Response
+from ...models.paginated_organization_list import PaginatedOrganizationList
+from ...types import UNSET, Response, Unset
 
 
-def _get_kwargs() -> dict[str, Any]:
+def _get_kwargs(
+    *,
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> dict[str, Any]:
+
+    params: dict[str, Any] = {}
+
+    params["page"] = page
+
+    params["page_size"] = page_size
+
+    params = {k: v for k, v in params.items() if v is not UNSET and v is not None}
 
     _kwargs: dict[str, Any] = {
         "method": "get",
         "url": "/api/v1/orgs/",
+        "params": params,
     }
 
     return _kwargs
@@ -21,14 +34,9 @@ def _get_kwargs() -> dict[str, Any]:
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> list[Organization] | None:
+) -> PaginatedOrganizationList | None:
     if response.status_code == 200:
-        response_200 = []
-        _response_200 = response.json()
-        for response_200_item_data in _response_200:
-            response_200_item = Organization.from_dict(response_200_item_data)
-
-            response_200.append(response_200_item)
+        response_200 = PaginatedOrganizationList.from_dict(response.json())
 
         return response_200
 
@@ -40,7 +48,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[list[Organization]]:
+) -> Response[PaginatedOrganizationList]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -52,17 +60,26 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[Organization]]:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> Response[PaginatedOrganizationList]:
     """
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[Organization]]
+        Response[PaginatedOrganizationList]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        page=page,
+        page_size=page_size,
+    )
 
     response = client.get_httpx_client().request(
         **kwargs,
@@ -74,35 +91,52 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-) -> list[Organization] | None:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> PaginatedOrganizationList | None:
     """
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[Organization]
+        PaginatedOrganizationList
     """
 
     return sync_detailed(
         client=client,
+        page=page,
+        page_size=page_size,
     ).parsed
 
 
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-) -> Response[list[Organization]]:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> Response[PaginatedOrganizationList]:
     """
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[list[Organization]]
+        Response[PaginatedOrganizationList]
     """
 
-    kwargs = _get_kwargs()
+    kwargs = _get_kwargs(
+        page=page,
+        page_size=page_size,
+    )
 
     response = await client.get_async_httpx_client().request(**kwargs)
 
@@ -112,18 +146,26 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-) -> list[Organization] | None:
+    page: int | Unset = UNSET,
+    page_size: int | Unset = UNSET,
+) -> PaginatedOrganizationList | None:
     """
+    Args:
+        page (int | Unset):
+        page_size (int | Unset):
+
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        list[Organization]
+        PaginatedOrganizationList
     """
 
     return (
         await asyncio_detailed(
             client=client,
+            page=page,
+            page_size=page_size,
         )
     ).parsed

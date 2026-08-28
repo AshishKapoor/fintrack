@@ -126,6 +126,13 @@ function CommandSeparator({
   return (
     <CommandPrimitive.Separator
       data-slot="command-separator"
+      // cmdk gives this role="separator", but it sits inside CommandList's
+      // role="listbox", which may only contain options and groups - an
+      // aria-required-children failure. The rule is a hairline that means
+      // nothing to a screen reader anyway, so hide it from the tree rather
+      // than adding a role the listbox cannot hold.
+      role="presentation"
+      aria-hidden="true"
       className={cn("bg-border -mx-1 h-px", className)}
       {...props}
     />

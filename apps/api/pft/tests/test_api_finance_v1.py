@@ -8,11 +8,12 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     BudgetFile,
-    CategoryV2,
+    Category,
     ImportJob,
     LedgerPosting,
     LedgerTransaction,
 )
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -26,24 +27,29 @@ class FinanceApiV1Tests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.expense_category = CategoryV2.objects.filter(
+        self.expense_category = Category.objects.filter(
             budget_file=self.budget_file,
-            kind=CategoryV2.KIND_EXPENSE,
+            kind=Category.KIND_EXPENSE,
         ).first()
-        self.income_category = CategoryV2.objects.filter(
+        self.income_category = Category.objects.filter(
             budget_file=self.budget_file,
-            kind=CategoryV2.KIND_INCOME,
+            kind=Category.KIND_INCOME,
         ).first()
 
     def test_user_bootstrap_creates_default_finance_objects(self):
-        self.assertEqual(BudgetFile.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(
+            BudgetFile.objects.filter(
+                organization=self.budget_file.organization
+            ).count(),
+            1,
+        )
         self.assertEqual(
             Account.objects.filter(budget_file=self.budget_file).count(), 1
         )
         self.assertGreaterEqual(
-            CategoryV2.objects.filter(budget_file=self.budget_file).count(),
+            Category.objects.filter(budget_file=self.budget_file).count(),
             10,
         )
 
@@ -52,9 +58,10 @@ class FinanceApiV1Tests(APITestCase):
             f"/api/v1/finance/accounts/?budget_file={self.budget_file.id}"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.account.id)
-        self.assertEqual(response.data[0]["current_balance"], "0.00")
+        accounts = rows(response)
+        self.assertEqual(len(accounts), 1)
+        self.assertEqual(accounts[0]["id"], self.account.id)
+        self.assertEqual(accounts[0]["current_balance"], "0.00")
 
     def test_create_balanced_ledger_transaction(self):
         payload = {

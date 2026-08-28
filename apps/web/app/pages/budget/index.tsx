@@ -1,6 +1,7 @@
 'use client'
 
-import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
+import { useAllCategories } from '@/lib/finance-lists'
+
 import {
   runEnvelopeAction,
   upsertEnvelopeAssignment,
@@ -58,7 +59,7 @@ export default function BudgetsPage() {
   // Envelope-backed natively: the snapshot carries assigned and spent per
   // category, computed by the server - no client-side transaction summing.
   const { data: snapshot, isLoading: isLoadingBudgets } = useCurrentEnvelopeSnapshot()
-  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const { data: categories, isLoading: isLoadingCategories } = useAllCategories()
   const refreshLedger = useInvalidateLedger()
 
   const currentMonth = new Date()

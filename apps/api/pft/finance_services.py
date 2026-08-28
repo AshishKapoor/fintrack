@@ -21,7 +21,7 @@ from .models import (
     Account,
     BudgetFile,
     BudgetMonth,
-    CategoryV2,
+    Category,
     EncryptedBackupBundle,
     EnvelopeAssignment,
     ExportJob,
@@ -233,7 +233,7 @@ def compute_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date)
     expenses = Decimal("0.00")
     for row in category_rows:
         total = row["total"] or Decimal("0.00")
-        if row["category__kind"] == CategoryV2.KIND_INCOME:
+        if row["category__kind"] == Category.KIND_INCOME:
             income += abs(total)
         else:
             expenses += abs(total)
@@ -276,7 +276,7 @@ def compute_monthly_cash_flow(budget_file: BudgetFile, start_date: date, end_dat
             {"income": Decimal("0.00"), "expenses": Decimal("0.00")},
         )
         total = row["total"] or Decimal("0.00")
-        if row["category__kind"] == CategoryV2.KIND_INCOME:
+        if row["category__kind"] == Category.KIND_INCOME:
             bucket["income"] += abs(total)
         else:
             bucket["expenses"] += abs(total)
@@ -304,7 +304,7 @@ def compute_spending_trends(budget_file: BudgetFile, start_date: date, end_date:
             transaction__budget_file=budget_file,
             transaction__transaction_date__gte=start_date,
             transaction__transaction_date__lte=end_date,
-            category__kind=CategoryV2.KIND_EXPENSE,
+            category__kind=Category.KIND_EXPENSE,
         )
         .annotate(year=ExtractYear("transaction__transaction_date"))
         .annotate(month=ExtractMonth("transaction__transaction_date"))
@@ -361,7 +361,7 @@ def compute_cash_flow_sankey(  # noqa: C901 - top-N bucketing either side of the
             .values("category__name")
             .annotate(total=Sum("amount"))
         )
-        # category names are unique per budget_file (unique_category_v2_name_
+        # category names are unique per budget_file (unique_category_name_
         # per_budget_file), so grouping by name alone can't collide two
         # distinct categories together.
         return {row["category__name"]: abs(row["total"] or Decimal("0.00")) for row in rows}
@@ -374,8 +374,8 @@ def compute_cash_flow_sankey(  # noqa: C901 - top-N bucketing either side of the
         other_total = sum((amount for _, amount in ordered[top_n:]), Decimal("0.00"))
         return ordered[:top_n], other_total
 
-    income_totals = _category_totals(CategoryV2.KIND_INCOME)
-    expense_totals = _category_totals(CategoryV2.KIND_EXPENSE)
+    income_totals = _category_totals(Category.KIND_INCOME)
+    expense_totals = _category_totals(Category.KIND_EXPENSE)
     top_income, other_income = _top_and_other(income_totals)
     top_expense, other_expense = _top_and_other(expense_totals)
     total_income = sum(income_totals.values(), Decimal("0.00"))
@@ -869,7 +869,7 @@ def build_envelope_snapshot(budget_file: BudgetFile, year: int, month: int):
             transaction__budget_file=budget_file,
             transaction__transaction_date__gte=start_date,
             transaction__transaction_date__lte=end_date,
-            category__kind=CategoryV2.KIND_EXPENSE,
+            category__kind=Category.KIND_EXPENSE,
         )
         .values("category_id")
         .annotate(total=Sum("amount"))
@@ -1300,7 +1300,7 @@ def _validate_template_posting_targets(budget_file, postings: list[dict]):
 
     if category_ids:
         owned = set(
-            CategoryV2.objects.filter(
+            Category.objects.filter(
                 budget_file=budget_file, id__in=category_ids
             ).values_list("id", flat=True)
         )
@@ -1736,12 +1736,12 @@ def _default_import_account(budget_file: BudgetFile):
 def _import_category_for_amount(budget_file: BudgetFile, amount: Decimal):
     if amount >= 0:
         name = "Imported Income"
-        kind = CategoryV2.KIND_INCOME
+        kind = Category.KIND_INCOME
     else:
         name = "Imported Expense"
-        kind = CategoryV2.KIND_EXPENSE
+        kind = Category.KIND_EXPENSE
 
-    category, _ = CategoryV2.objects.get_or_create(
+    category, _ = Category.objects.get_or_create(
         budget_file=budget_file,
         name=name,
         defaults={"kind": kind},

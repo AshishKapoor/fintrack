@@ -245,7 +245,7 @@ export default function UserSettingsPage() {
                     />
                   </div>
                   <div className='space-y-2'>
-                    <Label htmlFor='phone'>{t('settings.profile.phone')}</Label>
+                    <Label htmlFor='phone_number'>{t('settings.profile.phone')}</Label>
                     <Input
                       id='phone_number'
                       value={profile?.phone_number || ''}

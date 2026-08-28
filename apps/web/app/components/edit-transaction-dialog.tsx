@@ -1,7 +1,9 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import type { LedgerTransaction } from '@/client/gen/pft/ledgerTransaction'
-import { useV1FinanceCategoriesList, v1FinanceTransactionsUpdate } from '@/client/gen/pft/v1/v1'
+import { v1FinanceTransactionsUpdate } from '@/client/gen/pft/v1/v1'
 import {
   buildSplitPostings,
   resolveDefaultAccountId,
@@ -61,7 +63,7 @@ export function EditTransactionDialog({
   const [splitMode, setSplitMode] = useState(false)
   const [splits, setSplits] = useState<SplitLeg[]>([{ categoryId: 0, amount: '' }])
 
-  const { data: categories, isLoading: isLoadingCategories } = useV1FinanceCategoriesList()
+  const { data: categories, isLoading: isLoadingCategories } = useAllCategories()
   const { data: activeFile } = useSWR('active-budget-file', getDefaultBudgetFile)
   const refreshLedger = useInvalidateLedger()
 

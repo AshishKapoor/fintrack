@@ -5,6 +5,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from pft.models import Account, BudgetFile, SavingsGoal
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -24,7 +25,7 @@ class SavingsGoalTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.cash = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.cash.opening_balance = Decimal("400.00")
         self.cash.save(update_fields=["opening_balance"])
@@ -104,7 +105,10 @@ class SavingsGoalTests(APITestCase):
             budget_file=self.budget_file, name="Other Budget File's Account (fixture)"
         )
         other_bf = BudgetFile.objects.create(
-            user=self.user, name="Second Budget File", currency_code="USD"
+            organization=self.budget_file.organization,
+            created_by=self.user,
+            name="Second Budget File",
+            currency_code="USD",
         )
         response = self.client.post(
             "/api/v1/finance/savings-goals/",

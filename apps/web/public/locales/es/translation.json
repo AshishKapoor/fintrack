@@ -208,6 +208,7 @@
   },
   "transactions": {
     "addSplit": "Añadir división",
+    "kind": "Ingreso o gasto",
     "payee": "Beneficiario",
     "payeeCreate": "Añadir \"{{name}}\" como nuevo beneficiario",
     "payeePlaceholder": "Buscar o añadir un beneficiario…",

@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from pft.models import Account, BudgetFile, CategoryV2, FxRate, LedgerTransaction, Payee
+from pft.models import Account, Category, FxRate, LedgerTransaction, Payee
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -26,16 +27,16 @@ class NetWorthSeriesTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.assertEqual(self.budget_file.currency_code, "USD")
         self.cash = Account.objects.get(budget_file=self.budget_file, name="Cash")
         self.cash.opening_balance = Decimal("0.00")
         self.cash.save(update_fields=["opening_balance"])
-        self.income_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_INCOME
+        self.income_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_INCOME
         ).first()
-        self.expense_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.expense_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def _post_account_leg(self, day, account, amount, category=None):
@@ -188,17 +189,17 @@ class CashFlowSankeyTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
 
     def _category(self, name):
-        return CategoryV2.objects.get(budget_file=self.budget_file, name=name)
+        return Category.objects.get(budget_file=self.budget_file, name=name)
 
     def _post(self, day, category_name, amount):
         """A balanced two-posting transaction against the category leg only -
         the account leg's own value never appears in the Sankey."""
         category = self._category(category_name)
-        sign = -1 if category.kind == CategoryV2.KIND_INCOME else 1
+        sign = -1 if category.kind == Category.KIND_INCOME else 1
         self.client.post(
             "/api/v1/finance/transactions/",
             {
@@ -318,10 +319,10 @@ class SubscriptionDetectionTests(APITestCase):
             password="StrongPass123!",
         )
         self.client.force_authenticate(user=self.user)
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.expense_category = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.expense_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
 
     def _payee(self, name):

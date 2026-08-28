@@ -143,6 +143,11 @@ INSTALLED_APPS = [
 # global here changes their response shape and needs a matching frontend change.
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Every list endpoint paginates. Set here rather than per-viewset so a new
+    # resource cannot ship unpaginated by omission - which is how all but two
+    # of them were returning unbounded arrays. See pft/pagination.py.
+    "DEFAULT_PAGINATION_CLASS": "pft.pagination.StandardPagination",
+    "PAGE_SIZE": 50,
     # JSON only. Advertising form and multipart in the schema made every
     # generated client emit three body encodings per operation, and the Python
     # generator picked multipart, which cannot carry nested postings.

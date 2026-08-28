@@ -13,12 +13,12 @@ from rest_framework.test import APITestCase
 
 from pft.models import (
     Account,
-    BudgetFile,
-    CategoryV2,
+    Category,
     LedgerPosting,
     LedgerTransaction,
     Payee,
 )
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -32,11 +32,11 @@ class SuggestedCategoryTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
 
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
         categories = list(
-            CategoryV2.objects.filter(
-                budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+            Category.objects.filter(
+                budget_file=self.budget_file, kind=Category.KIND_EXPENSE
             )[:2]
         )
         self.groceries, self.dining = categories

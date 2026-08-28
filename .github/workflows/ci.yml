@@ -232,23 +232,57 @@ jobs:
       - name: Web is served
         run: curl -fsS -o /dev/null http://localhost:5173
 
+      # Signup bootstraps a workspace, a budget file, a Cash account and the
+      # standard categories, so this reads those back and posts a real balanced
+      # ledger transaction against them. It also asserts the list envelope,
+      # which is the shape every list endpoint returns since pagination became
+      # the project default.
       - name: Register a user and create a transaction
         run: |
           set -euo pipefail
           EMAIL="ci-$(date +%s)@example.com"
           PASSWORD='Sup3rSecret!pass'
-          curl -fsS -X POST http://localhost:8000/api/v1/register/ \
+          API=http://localhost:8000
+
+          curl -fsS -X POST "$API/api/v1/register/" \
             -H 'Content-Type: application/json' \
             -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\",\"confirm_password\":\"$PASSWORD\"}" > /dev/null
-          TOKEN=$(curl -fsS -X POST http://localhost:8000/api/token/ \
+
+          TOKEN=$(curl -fsS -X POST "$API/api/token/" \
             -H 'Content-Type: application/json' \
             -d "{\"email\":\"$EMAIL\",\"password\":\"$PASSWORD\"}" \
             | python3 -c 'import sys,json; print(json.load(sys.stdin)["access"])')
-          curl -fsS -X POST http://localhost:8000/api/v1/transactions/ \
-            -H "Authorization: Bearer $TOKEN" \
-            -H 'Content-Type: application/json' \
-            -d '{"title":"CI coffee","amount":"12.34","type":"expense","transaction_date":"2026-01-01"}' > /dev/null
-          echo "End-to-end register -> token -> transaction OK"
+          AUTH="Authorization: Bearer $TOKEN"
+
+          # `first_id` doubles as the envelope assertion: a bare array, or a
+          # response missing `results`, fails here rather than silently.
+          first_id() {
+            python3 -c 'import sys,json; print(json.load(sys.stdin)["results"][0]["id"])'
+          }
+
+          BUDGET_FILE=$(curl -fsS -H "$AUTH" "$API/api/v1/finance/budget-files/" | first_id)
+          ACCOUNT=$(curl -fsS -H "$AUTH" \
+            "$API/api/v1/finance/accounts/?budget_file=$BUDGET_FILE" | first_id)
+          CATEGORY=$(curl -fsS -H "$AUTH" \
+            "$API/api/v1/finance/categories/?budget_file=$BUDGET_FILE" | first_id)
+
+          # Two postings summing to zero - anything else is rejected by the
+          # serializer and, behind it, migration 0006's deferred DB trigger.
+          curl -fsS -X POST "$API/api/v1/finance/transactions/" \
+            -H "$AUTH" -H 'Content-Type: application/json' \
+            -d "{\"budget_file\": $BUDGET_FILE,
+                 \"transaction_date\": \"2026-01-01\",
+                 \"memo\": \"CI coffee\",
+                 \"postings\": [
+                   {\"account\": $ACCOUNT, \"amount\": \"-12.34\", \"sort_order\": 0},
+                   {\"category\": $CATEGORY, \"amount\": \"12.34\", \"sort_order\": 1}
+                 ]}" > /dev/null
+
+          curl -fsS -H "$AUTH" \
+            "$API/api/v1/finance/transactions/?budget_file=$BUDGET_FILE" \
+            | python3 -c 'import sys,json; page=json.load(sys.stdin); assert page["count"]==1, page; assert page["results"][0]["memo"]=="CI coffee", page'
+
+          echo "End-to-end register -> token -> ledger transaction OK"
 
       - name: Assert no placeholder secret is in use
         run: |

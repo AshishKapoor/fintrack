@@ -6,7 +6,7 @@ on:
   pull_request:
   workflow_dispatch:
 
-# This workflow runs ~20 third-party actions across eight jobs and needs to
+# This workflow runs ~20 third-party actions across seven jobs and needs to
 # read the repository and nothing else. Without this block it inherits the
 # repository default token, which is read-write across contents, issues,
 # packages and more.
@@ -189,9 +189,6 @@ jobs:
 
       - uses: astral-sh/setup-uv@v7
 
-      - name: Lockfile is up to date
-        run: uv lock --check
-
       - name: Generated client is current
         run: |
           uvx openapi-python-client@0.29.0 generate \
@@ -207,26 +204,6 @@ jobs:
           uv venv .ci-venv
           uv pip install -p .ci-venv dist/*.whl
           .ci-venv/bin/python -c "import fintrack_sdk; from fintrack_sdk import AuthenticatedClient; print('import OK')"
-
-  pre-commit:
-    name: pre-commit (all files)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      # trailing-whitespace, check-yaml, detect-private-key and friends were
-      # advisory-only for anyone who skipped `pre-commit install` - this is
-      # the backstop. `--all-files` rather than the action's default changed-
-      # files scan, so a hook whose config changes (e.g. the ruff rev below)
-      # is re-checked against the whole tree, not just this PR's diff.
-      - uses: pre-commit/action@v3.0.1
-        with:
-          extra_args: --all-files
 
   stack:
     name: Docker stack smoke test

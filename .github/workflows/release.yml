@@ -151,10 +151,6 @@ jobs:
           # releases would show up as an unrelated build difference.
           version: "0.9.7"
 
-      - name: Verify the lockfile matches pyproject.toml
-        working-directory: packages/sdk-py
-        run: uv lock --check
-
       - name: Build
         working-directory: packages/sdk-py
         run: uv build

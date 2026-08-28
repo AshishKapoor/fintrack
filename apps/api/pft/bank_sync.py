@@ -295,7 +295,9 @@ def sync_connection(connection: SyncConnection) -> dict:
         connection.last_error = "; ".join(totals["errors"])[:2000]
     else:
         connection.status = SyncConnection.STATUS_ACTIVE
-        connection.last_error = "; ".join(totals["errors"])[:2000] if totals["errors"] else ""
+        connection.last_error = (
+            "; ".join(totals["errors"])[:2000] if totals["errors"] else ""
+        )
     connection.save(
         update_fields=["status", "last_error", "last_synced_at", "updated_at"]
     )

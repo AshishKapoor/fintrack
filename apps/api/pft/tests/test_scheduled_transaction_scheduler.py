@@ -27,7 +27,9 @@ User = get_user_model()
 
 
 def _make_user(email):
-    return User.objects.create_user(email=email, username=email, password="StrongPass123!")
+    return User.objects.create_user(
+        email=email, username=email, password="StrongPass123!"
+    )
 
 
 def _schedule(budget_file, *, name, next_run_date, account, category, is_active=True):
@@ -59,7 +61,9 @@ def _unbalanced_schedule(budget_file, *, name, next_run_date, account):
         start_date=next_run_date,
         next_run_date=next_run_date,
         frequency=ScheduledTransaction.FREQ_MONTHLY,
-        transaction_template={"postings": [{"account_id": account.id, "amount": "-10.00"}]},
+        transaction_template={
+            "postings": [{"account_id": account.id, "amount": "-10.00"}]
+        },
     )
 
 
@@ -200,7 +204,9 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
         return budget_file, account, category
 
     def test_task_materializes_due_schedules_across_every_tenant(self):
-        alice_file, alice_account, alice_category = self._tenant("scheduler-alice@example.com")
+        alice_file, alice_account, alice_category = self._tenant(
+            "scheduler-alice@example.com"
+        )
         bob_file, bob_account, bob_category = self._tenant("scheduler-bob@example.com")
 
         alice_schedule = _schedule(
@@ -226,11 +232,18 @@ class MaterializeDueScheduledTransactionsTaskTests(TestCase):
         self.assertIsNotNone(bob_schedule.last_run_at)
 
     def test_a_broken_schedule_in_one_tenant_does_not_block_another(self):
-        alice_file, alice_account, _alice_category = self._tenant("scheduler-broken-alice@example.com")
-        bob_file, bob_account, bob_category = self._tenant("scheduler-broken-bob@example.com")
+        alice_file, alice_account, _alice_category = self._tenant(
+            "scheduler-broken-alice@example.com"
+        )
+        bob_file, bob_account, bob_category = self._tenant(
+            "scheduler-broken-bob@example.com"
+        )
 
         broken = _unbalanced_schedule(
-            alice_file, name="Broken", next_run_date=date(2026, 3, 1), account=alice_account
+            alice_file,
+            name="Broken",
+            next_run_date=date(2026, 3, 1),
+            account=alice_account,
         )
         good = _schedule(
             bob_file,

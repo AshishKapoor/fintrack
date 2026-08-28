@@ -147,7 +147,9 @@ def sync_bank_connection_task(connection_id: int) -> None:
     try:
         connection = SyncConnection.objects.get(pk=connection_id)
     except SyncConnection.DoesNotExist:
-        logger.warning("sync connection %s vanished before the worker saw it", connection_id)
+        logger.warning(
+            "sync connection %s vanished before the worker saw it", connection_id
+        )
         return
 
     result = sync_connection(connection)
@@ -186,7 +188,9 @@ def sync_bank_connections_task() -> None:
             failed += 1
             logger.exception("bank sync failed for connection %s", connection.id)
     if synced or failed:
-        logger.info("bank sync sweep: %d connection(s) synced, %d failed", synced, failed)
+        logger.info(
+            "bank sync sweep: %d connection(s) synced, %d failed", synced, failed
+        )
 
 
 @shared_task

@@ -136,7 +136,9 @@ def _trailing_month_start(end_date: date, months: int) -> date:
 
 
 def compute_net_worth_series(
-    budget_file: BudgetFile, start_date: date | None = None, end_date: date | None = None
+    budget_file: BudgetFile,
+    start_date: date | None = None,
+    end_date: date | None = None,
 ):
     """Net worth at each calendar month-end between start_date and end_date
     (default: the trailing 12 months, ending today), from a single pass over
@@ -186,7 +188,9 @@ def compute_net_worth_series(
 
     points = []
     for boundary in boundaries:
-        while pending is not None and pending["transaction__transaction_date"] <= boundary:
+        while (
+            pending is not None and pending["transaction__transaction_date"] <= boundary
+        ):
             running_balance[pending["account_id"]] += pending["amount"]
             pending = next(posting_iter, None)
 
@@ -205,7 +209,11 @@ def compute_net_worth_series(
             else:
                 total += converted
         points.append(
-            {"date": boundary.isoformat(), "total": str(total), "missing_rate": missing_rate}
+            {
+                "date": boundary.isoformat(),
+                "total": str(total),
+                "missing_rate": missing_rate,
+            }
         )
 
     return {
@@ -248,7 +256,9 @@ def compute_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date)
     }
 
 
-def compute_monthly_cash_flow(budget_file: BudgetFile, start_date: date, end_date: date):
+def compute_monthly_cash_flow(
+    budget_file: BudgetFile, start_date: date, end_date: date
+):
     """Income and expenses per calendar month, from the category legs.
 
     The dashboard chart wants both series in one call. Signs follow the ledger
@@ -364,7 +374,9 @@ def compute_cash_flow_sankey(  # noqa: C901 - top-N bucketing either side of the
         # category names are unique per budget_file (unique_category_name_
         # per_budget_file), so grouping by name alone can't collide two
         # distinct categories together.
-        return {row["category__name"]: abs(row["total"] or Decimal("0.00")) for row in rows}
+        return {
+            row["category__name"]: abs(row["total"] or Decimal("0.00")) for row in rows
+        }
 
     def _top_and_other(totals):
         # Amount descending, category name ascending as a tiebreak - without
@@ -481,7 +493,9 @@ def compute_subscriptions(budget_file: BudgetFile):
 
     by_payee: dict[int, dict] = {}
     for row in rows:
-        entry = by_payee.setdefault(row["payee_id"], {"name": row["payee__name"], "rows": []})
+        entry = by_payee.setdefault(
+            row["payee_id"], {"name": row["payee__name"], "rows": []}
+        )
         entry["rows"].append((row["transaction_date"], row["amount"]))
 
     subscriptions = []
@@ -507,18 +521,23 @@ def compute_subscriptions(budget_file: BudgetFile):
         # A price change shouldn't break detection - a fixed floor keeps the
         # band from collapsing to nothing on a cheap, exactly-flat charge.
         amount_tolerance = max(median_amount * Decimal("0.15"), Decimal("1.00"))
-        amount_matches = sum(1 for amount in amounts if abs(amount - median_amount) <= amount_tolerance)
+        amount_matches = sum(
+            1 for amount in amounts if abs(amount - median_amount) <= amount_tolerance
+        )
         amount_fit = amount_matches / len(amounts)
 
         # Both dimensions must independently clear the bar - averaging them
         # would let a payee with perfectly regular timing but wildly random
         # amounts (or vice versa) slip through on the other one's strength.
-        if best_gap_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD or amount_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD:
+        if (
+            best_gap_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD
+            or amount_fit < _SUBSCRIPTION_CONFIDENCE_THRESHOLD
+        ):
             continue
 
-        monthly_equivalent = (median_amount * _MONTHLY_EQUIVALENT_FACTOR[best_cadence]).quantize(
-            Decimal("0.01")
-        )
+        monthly_equivalent = (
+            median_amount * _MONTHLY_EQUIVALENT_FACTOR[best_cadence]
+        ).quantize(Decimal("0.01"))
         subscriptions.append(
             {
                 "payee_id": payee_id,
@@ -532,7 +551,9 @@ def compute_subscriptions(budget_file: BudgetFile):
             }
         )
 
-    subscriptions.sort(key=lambda item: Decimal(item["monthly_equivalent"]), reverse=True)
+    subscriptions.sort(
+        key=lambda item: Decimal(item["monthly_equivalent"]), reverse=True
+    )
     total_monthly_equivalent = sum(
         (Decimal(item["monthly_equivalent"]) for item in subscriptions), Decimal("0.00")
     )
@@ -551,7 +572,9 @@ _DEBT_PAYOFF_MAX_MONTHS = 600
 
 
 def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation loop
-    budget_file: BudgetFile, strategy: str = "avalanche", extra_payment: Decimal | None = None
+    budget_file: BudgetFile,
+    strategy: str = "avalanche",
+    extra_payment: Decimal | None = None,
 ):
     """A month-by-month snowball/avalanche payoff simulation across every
     credit/liability account with a balance.
@@ -603,11 +626,18 @@ def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation lo
             native_balance, account.effective_currency_code, home_currency, as_of=today
         )
         converted_minimum = convert_amount(
-            account.minimum_payment, account.effective_currency_code, home_currency, as_of=today
+            account.minimum_payment,
+            account.effective_currency_code,
+            home_currency,
+            as_of=today,
         )
         if converted_balance is None or converted_minimum is None:
             excluded.append(
-                {"account_id": account.id, "account": account.name, "reason": "missing_fx_rate"}
+                {
+                    "account_id": account.id,
+                    "account": account.name,
+                    "reason": "missing_fx_rate",
+                }
             )
             continue
         debts.append(
@@ -639,7 +669,9 @@ def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation lo
         }
 
     remaining = {d["account_id"]: d["balance"] for d in debts}
-    monthly_rate = {d["account_id"]: d["rate"] / Decimal("100") / Decimal("12") for d in debts}
+    monthly_rate = {
+        d["account_id"]: d["rate"] / Decimal("100") / Decimal("12") for d in debts
+    }
     minimum_payment = {d["account_id"]: d["minimum_payment"] for d in debts}
     interest_paid = {d["account_id"]: Decimal("0.00") for d in debts}
     payoff_month: dict[int, int] = {}
@@ -647,10 +679,17 @@ def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation lo
     schedule = []
     total_interest = Decimal("0.00")
     month = 0
-    while any(balance > 0 for balance in remaining.values()) and month < _DEBT_PAYOFF_MAX_MONTHS:
+    while (
+        any(balance > 0 for balance in remaining.values())
+        and month < _DEBT_PAYOFF_MAX_MONTHS
+    ):
         month += 1
         freed_up_minimums = sum(
-            (minimum_payment[d["account_id"]] for d in debts if remaining[d["account_id"]] <= 0),
+            (
+                minimum_payment[d["account_id"]]
+                for d in debts
+                if remaining[d["account_id"]] <= 0
+            ),
             Decimal("0.00"),
         )
         available_extra = extra_payment + freed_up_minimums
@@ -662,7 +701,9 @@ def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation lo
             acc_id = d["account_id"]
             if remaining[acc_id] <= 0:
                 continue
-            interest = (remaining[acc_id] * monthly_rate[acc_id]).quantize(Decimal("0.01"))
+            interest = (remaining[acc_id] * monthly_rate[acc_id]).quantize(
+                Decimal("0.01")
+            )
             remaining[acc_id] += interest
             total_interest += interest
             interest_paid[acc_id] += interest
@@ -691,9 +732,16 @@ def compute_debt_payoff_projection(  # noqa: C901 - month-by-month simulation lo
             "account_id": d["account_id"],
             "account": d["account"],
             "payoff_month": payoff_month.get(d["account_id"]),
-            "interest_paid": str(interest_paid[d["account_id"]].quantize(Decimal("0.01"))),
+            "interest_paid": str(
+                interest_paid[d["account_id"]].quantize(Decimal("0.01"))
+            ),
         }
-        for d in sorted(debts, key=lambda d: payoff_month.get(d["account_id"], _DEBT_PAYOFF_MAX_MONTHS + 1))
+        for d in sorted(
+            debts,
+            key=lambda d: payoff_month.get(
+                d["account_id"], _DEBT_PAYOFF_MAX_MONTHS + 1
+            ),
+        )
     ]
 
     return {
@@ -1354,7 +1402,9 @@ def materialize_scheduled_transaction(schedule: ScheduledTransaction):
     return ledger_tx
 
 
-def materialize_due_scheduled_transactions(queryset, *, run_date=None, on_error="raise"):
+def materialize_due_scheduled_transactions(
+    queryset, *, run_date=None, on_error="raise"
+):
     """Materialize every active schedule in `queryset` whose next_run_date is due.
 
     Shared by the on-demand `run-due` API action and the unattended Celery

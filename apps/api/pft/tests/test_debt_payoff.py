@@ -27,7 +27,15 @@ class DebtPayoffProjectionTests(APITestCase):
         self.client.force_authenticate(user=self.user)
         self.budget_file = personal_budget_file(self.user)
 
-    def _debt_account(self, name, balance, rate, minimum, account_type=Account.TYPE_CREDIT, currency=None):
+    def _debt_account(
+        self,
+        name,
+        balance,
+        rate,
+        minimum,
+        account_type=Account.TYPE_CREDIT,
+        currency=None,
+    ):
         account = Account.objects.create(
             budget_file=self.budget_file,
             name=name,
@@ -44,7 +52,11 @@ class DebtPayoffProjectionTests(APITestCase):
     def _run(self, **payload):
         response = self.client.post(
             "/api/v1/finance/reports/run/",
-            {"budget_file": self.budget_file.id, "report_type": "debt_payoff", **payload},
+            {
+                "budget_file": self.budget_file.id,
+                "report_type": "debt_payoff",
+                **payload,
+            },
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
@@ -66,8 +78,12 @@ class DebtPayoffProjectionTests(APITestCase):
         self.assertEqual(data["schedule"][-1]["total_balance"], "0.00")
 
     def test_snowball_and_avalanche_choose_different_priority_debts(self):
-        self._debt_account("Small Low Rate", Decimal("300.00"), Decimal("10"), Decimal("50.00"))
-        self._debt_account("Big High Rate", Decimal("2000.00"), Decimal("20"), Decimal("60.00"))
+        self._debt_account(
+            "Small Low Rate", Decimal("300.00"), Decimal("10"), Decimal("50.00")
+        )
+        self._debt_account(
+            "Big High Rate", Decimal("2000.00"), Decimal("20"), Decimal("60.00")
+        )
 
         snowball = self._run(strategy="snowball", extra_payment="100")
         avalanche = self._run(strategy="avalanche", extra_payment="100")
@@ -84,7 +100,9 @@ class DebtPayoffProjectionTests(APITestCase):
         # real signal that avalanche re-targeted is "Small Low Rate" (now
         # getting only its own minimum) paying off *later* than it did under
         # snowball: month 7 here vs month 3 there.
-        avalanche_payoff_by_account = {row["account"]: row["payoff_month"] for row in avalanche["payoff_order"]}
+        avalanche_payoff_by_account = {
+            row["account"]: row["payoff_month"] for row in avalanche["payoff_order"]
+        }
         self.assertEqual(avalanche_payoff_by_account["Small Low Rate"], 7)
         self.assertEqual(avalanche_payoff_by_account["Big High Rate"], 13)
 
@@ -92,10 +110,15 @@ class DebtPayoffProjectionTests(APITestCase):
         # total interest paid than snowball.
         self.assertEqual(snowball["total_interest_paid"], "282.61")
         self.assertEqual(avalanche["total_interest_paid"], "254.46")
-        self.assertLess(Decimal(avalanche["total_interest_paid"]), Decimal(snowball["total_interest_paid"]))
+        self.assertLess(
+            Decimal(avalanche["total_interest_paid"]),
+            Decimal(snowball["total_interest_paid"]),
+        )
 
     def test_minimum_payment_below_interest_never_pays_off(self):
-        self._debt_account("Underwater Card", Decimal("5000.00"), Decimal("24"), Decimal("90.00"))
+        self._debt_account(
+            "Underwater Card", Decimal("5000.00"), Decimal("24"), Decimal("90.00")
+        )
         data = self._run(strategy="avalanche", extra_payment="0")
         self.assertIsNone(data["months_to_debt_free"])
         # Still a real (very large) number, not silently dropped - the
@@ -113,7 +136,9 @@ class DebtPayoffProjectionTests(APITestCase):
         self.assertEqual(data["payoff_order"], [])
         self.assertEqual(len(data["excluded"]), 1)
         self.assertEqual(data["excluded"][0]["account"], "Unconfigured Card")
-        self.assertEqual(data["excluded"][0]["reason"], "missing_interest_rate_or_minimum_payment")
+        self.assertEqual(
+            data["excluded"][0]["reason"], "missing_interest_rate_or_minimum_payment"
+        )
 
     def test_a_paid_off_debt_is_not_included(self):
         # A credit account with a positive (or zero) balance - nothing owed.
@@ -134,7 +159,9 @@ class DebtPayoffProjectionTests(APITestCase):
             budget_file=self.budget_file,
             name="Everyday Checking",
             type=Account.TYPE_CHECKING,
-            opening_balance=Decimal("-100.00"),  # overdrawn, but not a debt account type
+            opening_balance=Decimal(
+                "-100.00"
+            ),  # overdrawn, but not a debt account type
             interest_rate=Decimal("19.99"),
             minimum_payment=Decimal("10.00"),
         )
@@ -144,7 +171,11 @@ class DebtPayoffProjectionTests(APITestCase):
 
     def test_excludes_a_debt_with_no_fx_rate_for_its_currency(self):
         self._debt_account(
-            "Foreign Card", Decimal("500.00"), Decimal("15"), Decimal("50.00"), currency="JPY"
+            "Foreign Card",
+            Decimal("500.00"),
+            Decimal("15"),
+            Decimal("50.00"),
+            currency="JPY",
         )
         # No FxRate rows at all - JPY can't be converted to the budget
         # file's USD.
@@ -156,7 +187,11 @@ class DebtPayoffProjectionTests(APITestCase):
     def test_invalid_strategy_is_rejected(self):
         response = self.client.post(
             "/api/v1/finance/reports/run/",
-            {"budget_file": self.budget_file.id, "report_type": "debt_payoff", "strategy": "bogus"},
+            {
+                "budget_file": self.budget_file.id,
+                "report_type": "debt_payoff",
+                "strategy": "bogus",
+            },
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

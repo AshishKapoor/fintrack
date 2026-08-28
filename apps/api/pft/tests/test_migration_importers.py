@@ -60,7 +60,9 @@ class Firefly3ParserTests(APITestCase):
 
     def test_end_to_end_via_import_api(self):
         user = User.objects.create_user(
-            email="firefly@example.com", username="firefly@example.com", password="StrongPass123!"
+            email="firefly@example.com",
+            username="firefly@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=user)
         budget_file = personal_budget_file(user)
@@ -78,10 +80,14 @@ class Firefly3ParserTests(APITestCase):
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
         job_id = create_response.data["id"]
 
-        preview = self.client.post(f"/api/v1/finance/imports/{job_id}/preview/", {}, format="json")
+        preview = self.client.post(
+            f"/api/v1/finance/imports/{job_id}/preview/", {}, format="json"
+        )
         self.assertEqual(preview.data["detected_rows"], 3)
 
-        self.client.post(f"/api/v1/finance/imports/{job_id}/execute/", {}, format="json")
+        self.client.post(
+            f"/api/v1/finance/imports/{job_id}/execute/", {}, format="json"
+        )
         job = self.client.get(f"/api/v1/finance/imports/{job_id}/")
         self.assertEqual(job.data["status"], ImportJob.STATUS_COMPLETED)
         self.assertEqual(job.data["preview_summary"]["created"], 3)
@@ -115,7 +121,9 @@ class ActualBudgetParserTests(APITestCase):
 
     def test_end_to_end_via_import_api(self):
         user = User.objects.create_user(
-            email="actual@example.com", username="actual@example.com", password="StrongPass123!"
+            email="actual@example.com",
+            username="actual@example.com",
+            password="StrongPass123!",
         )
         self.client.force_authenticate(user=user)
         budget_file = personal_budget_file(user)
@@ -133,8 +141,12 @@ class ActualBudgetParserTests(APITestCase):
         self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
         job_id = create_response.data["id"]
 
-        self.client.post(f"/api/v1/finance/imports/{job_id}/preview/", {}, format="json")
-        self.client.post(f"/api/v1/finance/imports/{job_id}/execute/", {}, format="json")
+        self.client.post(
+            f"/api/v1/finance/imports/{job_id}/preview/", {}, format="json"
+        )
+        self.client.post(
+            f"/api/v1/finance/imports/{job_id}/execute/", {}, format="json"
+        )
         job = self.client.get(f"/api/v1/finance/imports/{job_id}/")
         self.assertEqual(job.data["status"], ImportJob.STATUS_COMPLETED)
         self.assertEqual(job.data["preview_summary"]["created"], 2)

@@ -33,4 +33,3 @@ No parity findings.
 ## Active Backend Endpoints Missing From Schema
 
 - None
-

@@ -201,6 +201,15 @@
     },
     "title": "Settings"
   },
+  "themeSwitcher": {
+    "allThemes": "All themes",
+    "default": "Default",
+    "favorites": "Favorites",
+    "findTheme": "Find a theme…",
+    "label": "Switch theme",
+    "noThemeFound": "No theme found.",
+    "toggleFavorite": "Toggle favorite"
+  },
   "topbar": {
     "logout": "Log out",
     "notifications": "Notifications",

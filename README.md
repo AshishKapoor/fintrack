@@ -7,6 +7,7 @@
 Track income, expenses, budgets, and financial goals on your own server —
 no subscriptions, no third-party services, no vendor lock-in.
 
+[![CI](https://github.com/AshishKapoor/fintrack/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AshishKapoor/fintrack/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
@@ -268,6 +269,11 @@ cd apps/web && pnpm run test              # vitest units
 docker compose up -d && cd apps/web && pnpm exec playwright test   # e2e against the real stack
 ```
 
+The end-to-end suite includes `e2e/accessibility.spec.ts`, which runs axe over
+every page and both modal surfaces; it fails the build on a new violation. All of
+the above runs in CI, along with diff gates that fail if the committed schema,
+the web client, or either SDK drifts from the backend.
+
 Missing `.env` files are created automatically (via `./setup.sh configure`)
 before any Docker-based target runs — no separate bootstrap step is needed.
 
@@ -283,6 +289,16 @@ FinTrack is API-first. Interactive documentation is served by the backend at
   - `transactions`, `postings`, `scheduled-transactions`, `rules`
   - `budget-months`, `envelope-assignments`, `reports`
   - `exports`, `imports`, `backups`
+
+Every list endpoint is paginated and returns the envelope
+`{count, next, previous, results}` — never a bare array. Default page size is
+50; `?page_size=` raises it to at most 500, and a client that wants everything
+follows `next` until it is null.
+
+The flat `/api/v1/{transactions,categories,budgets}` endpoints that once sat
+alongside the ledger were retired in v1.0. Migration `0017` carries their rows
+into the ledger, so nothing recorded through them is lost — see
+[CHANGELOG.md](CHANGELOG.md) for the upgrade notes.
 
 ### Official SDKs
 

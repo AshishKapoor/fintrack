@@ -10,7 +10,7 @@ whole procedure.
 
 The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [1.0.0] — 2026-08-28
 
 The v1.0.0 hardening pass ([ROADMAP.md](ROADMAP.md) Phase 4). This is where the
 API contract stops moving, so it is deliberately where the breaking changes are
@@ -138,5 +138,6 @@ first** — the encrypted backup in the app covers the ledger, and a
 The first release: the double-entry ledger, envelope budgeting, seven import
 formats, the rules engine, scheduled transactions, and reports.
 
+[1.0.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v1.0.0
 [0.2.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v0.2.0
 [0.1.0]: https://github.com/AshishKapoor/fintrack/releases/tag/v0.1.0

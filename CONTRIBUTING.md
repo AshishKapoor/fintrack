@@ -147,6 +147,10 @@ four.
 - Backend changes need tests. `apps/api/pft/tests/` has suites for API smoke,
   the finance domain, ledger invariants, filtering, tenant isolation,
   organizations, the audit log, auth hardening, and account deletion.
+- New list endpoints paginate. `pft/pagination.py`'s `StandardPagination` is
+  applied everywhere, so a list response is always
+  `{count, next, previous, results}`; `tests/test_pagination.py` asserts it for
+  every route, and a viewset that opts out will fail there.
 - **Anything that touches a queryset, serializer or permission must have a
   cross-tenant test** in `apps/api/pft/tests/test_tenant_isolation.py`. This is a
   multi-user finance app; "user B cannot see or change user A's data" is the

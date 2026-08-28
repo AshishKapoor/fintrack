@@ -41,8 +41,32 @@ first** — the encrypted backup in the app covers the ledger, and a
   is stored on their `Membership`, so two members of a shared workspace
   legitimately see different values for the same row.
 
+### Security
+
+- **PyJWT upgraded from 2.9.0 to 2.13.0.** The pinned version dated from August
+  2024 and carries CVE-2026-48526, an authentication bypass via forged JSON Web
+  Tokens. It reaches the image transitively through
+  `djangorestframework-simplejwt`, which issues and validates every session
+  token. `sqlparse` 0.5.3 → 0.6.0 alongside it. Nothing else was needed: both
+  are drop-in.
+- Both container images now patch their base OS packages at build time,
+  clearing a CRITICAL in `libgnutls30` and HIGHs across krb5 and `libcap2` that
+  were shipping in the published images.
+- Container images now carry an SBOM and signed build provenance. Verify before
+  you run one:
+  `gh attestation verify oci://ghcr.io/ashishkapoor/fintrack-api:<version> --owner AshishKapoor`
+- Dependency scanning added to CI (`osv-scanner` over the lockfiles, `trivy`
+  over the images). Dependabot's ecosystem for `/apps/api` was wrong — `pip`
+  for a uv-managed project — so the API's dependencies had never once been
+  updated automatically, which is how the PyJWT advisory went unnoticed. Fixed,
+  and `packages/sdk-ts`, `packages/sdk-py` and the compose images are now
+  covered too.
+
 ### Added
 
+- `docker-compose.images.yml`, so the published images can actually be run.
+  The base compose sets `pull_policy: build`, which made `docker compose pull`
+  a silent no-op — the procedure this file previously documented did nothing.
 - CodeQL, gitleaks and Conventional-Commit PR title checks in CI, with a
   `.gitleaks.toml` shared by CI and the pre-commit hook.
 - An axe accessibility gate over every page and both modal surfaces
@@ -53,6 +77,20 @@ first** — the encrypted backup in the app covers the ledger, and a
 
 ### Fixed
 
+- **Offline changes could be silently destroyed.** The replay queue kept only
+  the request that failed and dropped every queued change behind it, after the
+  UI had said "Change queued and will sync when connection returns". It now
+  keeps the whole untried remainder, and distinguishes a request the server
+  refused (skipped, and reported) from one it could not answer (retried later).
+- **Server errors were invisible.** A 5xx or a 429 produced no toast and no
+  error state — just a spinner that stopped — while the API throttles at
+  10/min on login and 30/hour on bank sync. Both are handled now, as is a 401
+  that survives a token refresh.
+- **A render error blanked the whole app.** There was no error boundary; there
+  is one now, and `bootstrap()` no longer fails silently into an empty page.
+- **"Sync now" returned a 500 after `FINTRACK_SYNC_ENCRYPTION_KEY` changed.**
+  `DecryptionError` escaped `sync_connection`, which caught only
+  `BankSyncError`. The error now names the environment variable responsible.
 - `set-default` on a budget file cleared the default across every file the
   caller could see, so in a shared workspace one member's choice moved
   everyone else's — and their own, in their other workspaces.

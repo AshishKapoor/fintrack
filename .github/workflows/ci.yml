@@ -6,6 +6,13 @@ on:
   pull_request:
   workflow_dispatch:
 
+# This workflow runs ~20 third-party actions across seven jobs and needs to
+# read the repository and nothing else. Without this block it inherits the
+# repository default token, which is read-write across contents, issues,
+# packages and more.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   # Cancel superseded PR runs, but never a run on main: back-to-back merges
@@ -184,7 +191,7 @@ jobs:
 
       - name: Generated client is current
         run: |
-          uvx openapi-python-client generate \
+          uvx openapi-python-client@0.29.0 generate \
             --path ../../apps/web/schema/pft.yaml \
             --output-path fintrack_sdk --meta none --overwrite
           python3 post_generate.py

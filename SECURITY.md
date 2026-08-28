@@ -76,9 +76,13 @@ These are real and tracked, not hidden:
   these automatically once a day (`CELERY_BEAT_SCHEDULE`); bare-metal installs
   without it should cron `manage.py prune_finance_jobs` themselves - see
   [docs/self-hosting.md](docs/self-hosting.md).
-- **Most finance list endpoints are unpaginated** (transactions are the
-  exception), so a large ledger's accounts, categories, or payees return in one
-  response.
+- ~~Most finance list endpoints are unpaginated~~ **Fixed:** every list
+  endpoint now paginates through a single `DEFAULT_PAGINATION_CLASS`
+  (`pft/pagination.py`), 50 rows a page with `?page_size=` up to 500. Set
+  project-wide rather than per-viewset precisely because per-viewset is how all
+  but two of them ended up unbounded in the first place, and
+  `tests/test_pagination.py` fails if the router gains a resource nobody added
+  to its list.
 - **Bank sync credentials are encrypted at rest, not zero-knowledge.**
   `SyncConnection.secret_data` (a GoCardless requisition reference, a
   SimpleFIN access URL) is encrypted with a server-held key

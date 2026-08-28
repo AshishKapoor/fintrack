@@ -37,35 +37,36 @@ explained in full below.
 - `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
   self-hosted stack and is not referenced by `docker-compose.yml`.
 
-## The two API surfaces
+## The API surface
 
 This is the part worth reading before changing anything.
 
-### `/api/v1/*` — the original flat model
+FinTrack shipped two parallel data models for most of its life: a flat
+`Category`/`Transaction`/`Budget` trio owned directly by a user, and the
+double-entry ledger under `/api/v1/finance/*`. Both were live, both were seeded
+on signup, and nothing kept them in sync. The flat one could not represent a
+transfer between two accounts without double-counting and had no concept of an
+account balance, so the ledger is the one that was kept. **Migration `0017`
+retired the flat models and their endpoints**, carrying any rows they still
+held into the ledger first (`Transaction` → a balanced `LedgerTransaction`,
+`Budget` → an `EnvelopeAssignment`), stamped `match_key="legacy:<pk>"` so the
+provenance survives in the database.
 
-Three models, each owned directly by a user:
-
-| Model | Meaning |
-|---|---|
-| `Category` | a name plus `income`/`expense`. `user` may be NULL, meaning a global category shared by everyone (readable by all, writable by none). |
-| `Transaction` | a single signed amount with a title, type and date. |
-| `Budget` | a spending limit for one category in one month/year. |
-
-Simple, and adequate for "track what I spent". It cannot represent a transfer
-between two accounts without double-counting, and it has no concept of an
-account balance.
+Everything below describes the one surface that remains.
 
 ### `/api/v1/finance/*` — the double-entry ledger
 
-Added later, this is a proper accounting model. The tenant root is
-`BudgetFile` (a user can have several; exactly one is the default):
+The tenant root is
+`BudgetFile`, which belongs to an `Organization` - never to a user. A person
+reaches one through their `Membership`, and their membership also records
+which file they open by default:
 
 ```
-User
- └── BudgetFile                    (currency, is_default)
+Organization
+ └── BudgetFile                    (organization-owned; currency)
       ├── Account                  (checking / savings / cash / credit / asset / liability, own currency_code)
-      ├── CategoryGroupV2
-      │    └── CategoryV2          (income / expense)
+      ├── CategoryGroup
+      │    └── Category            (income / expense)
       ├── Payee, Tag
       ├── LedgerTransaction        (date, payee, memo, cleared, source_type)
       │    └── LedgerPosting       (amount, and exactly one of account XOR category)
@@ -144,12 +145,13 @@ triangulates through EUR at read time. `finance_services.account_balances`/
 currency, returning `None` (never a guessed number) for a pair with no rate
 fetched yet.
 
-### How the two relate
+### How the pieces connect
 
-Both are live and routed at the same time. On signup, `pft/signals.py` seeds
-**both** trees: the ten legacy `Category` rows *and* a default `BudgetFile`, a
-"Cash" account, two category groups and ten `CategoryV2` rows. Nothing keeps
-them in sync afterwards.
+On signup, `pft/signals.py` creates the user's personal `Organization`, their
+owner `Membership`, and one default `BudgetFile`. The budget file's own
+`post_save` seeds it - a "Cash" account, two category groups and ten
+`Category` rows - so a workspace created later gets the same treatment
+without duplicating the logic.
 
 The web app talks to the finance API **directly**. The generated orval client
 in `apps/web/app/client/gen/` (tracked in git, regenerated with `pnpm orval`,
@@ -158,30 +160,38 @@ guarded by a CI diff gate) provides the typed calls, and
 top: building balanced postings from form input, display helpers, and SWR
 invalidation. The old read-legacy/write-finance adapter is gone.
 
-### Where this is going
-
-The ledger model is the one to keep.
-
-`/api/v1/{transactions,categories,budgets}` are **deprecated**. They keep
-working, but every response now carries deprecation headers naming the
-successor, so anything scripting against them finds out before they are removed:
-
-```http
-Deprecation: @1786492800
-Link: </api/v1/finance/>; rel="successor-version"
-Warning: 299 - "This endpoint is deprecated and will be removed in v1.0.0..."
-```
-
-The remaining steps:
+### Where this went
 
 1. ~~Move the UI onto `/api/v1/finance/*` directly~~ — done; the adapter is
    deleted and the UI runs on the generated client.
-2. Remove the legacy endpoints and models in `v1.0.0`.
-3. Rename `CategoryV2` and `CategoryGroupV2` — the "V2" suffix is an accident of
-   history that is currently baked into the public schema.
+2. ~~Remove the legacy endpoints and models~~ — done in migration `0017`
+   (ROADMAP.md Phase 4). They spent a release announcing themselves with RFC
+   9745 `Deprecation`/`Link`/`Warning` headers before being dropped.
+3. ~~Rename `CategoryV2` and `CategoryGroupV2`~~ — done in migration `0018`.
+   The "V2" suffix existed only to distinguish them from the flat `Category`
+   model, so it stopped meaning anything the moment `0017` dropped that model.
+   `RenameModel` renames the tables in place; nothing is copied. Old
+   `AuditLog.entity_type` values are rewritten to match, so filtering the
+   audit log by `Category` still finds pre-rename history (the human-readable
+   `summary` is left alone - that records what the system called the thing at
+   the time).
 
-Until then, when you add a feature: **add it to the finance domain.** The legacy
-endpoints are maintained, not extended.
+### Pagination
+
+Every list endpoint paginates, through a single `DEFAULT_PAGINATION_CLASS`
+(`pft/pagination.py`) rather than a `pagination_class` per viewset - set
+per-viewset, a new resource ships unpaginated by omission, which is how all
+but two of them were returning unbounded arrays. A list response is always
+`{count, next, previous, results}`, 50 rows at a time, `?page_size=` up to 500.
+
+The frontend consequence is in `apps/web/app/lib/paginated.ts`. Most lists here
+are pickers and dashboards that need the *whole* set, so `fetchAllPages` /
+`useAllPages` walk `next` to the end; a category dropdown showing 50 of 63 is
+worse than a slow one, because nothing tells the user the rest exist. The
+transaction register, where the user is genuinely paging, uses the
+page-at-a-time hook directly. The encrypted backup path
+(`apps/web/app/lib/backup.ts`) walks every list it reads - a backup that
+stopped at page one would restore cleanly and be missing most of the ledger.
 
 ## Request lifecycle
 
@@ -214,12 +224,28 @@ personal case) or by an `Organization`. Membership carries a role:
 `Membership`. Manager-visible activity is recorded via `pft/audit.py` and
 served read-only (with CSV export) at `/api/v1/audit-log/`.
 
+`Membership.default_budget_file` records which of the workspace's files that
+person lands in. It is a property of the person, not of the file: it used to
+be `BudgetFile.is_default`, where one member calling `set-default` cleared the
+flag on every file they could see, so in a shared workspace their choice moved
+everyone else's - and their own, in their other workspaces. The API still
+exposes it as `is_default` on a budget file; the value is computed per caller
+(`BudgetFileSerializer.to_representation`), so two members legitimately see
+different values for the same row.
+
+`BudgetFile.created_by` is provenance only, nullable and `SET_NULL`. Access
+never consults it. The column it replaced was `user`, `ON DELETE CASCADE`,
+which meant the person who first created a shared workspace's budget file
+destroyed that workspace's books by closing their own account. What does clean
+up now is `pft/signals.py`: deleting a user deletes the organizations they
+were the last member of, which cascades into the files those held.
+
 ### Tenant scoping: one Q object, used everywhere
 
 All finance querysets are scoped through `pft/tenancy.py`:
 
 ```python
-# read access: personal files + files in any org you belong to
+# read access: files in any org you belong to
 Account.objects.filter(budget_file_q(request.user))
 
 # write access: viewer role is excluded
@@ -325,6 +351,34 @@ Data fetching is SWR keyed on URL-ish strings. Note that global revalidation is
 switched off in `main.tsx`, so data refreshes on explicit mutation rather than
 on focus or reconnect.
 
+## Accessibility
+
+Radix supplies the interactive primitives - roles, focus management, keyboard
+behaviour - so the parts most projects get wrong are correct by construction.
+What Radix cannot know is anything about *this* app, and that is where the
+failures were: an icon-only export button with no name, `<Label>` elements
+floating free of the controls they described (one pointed at `phone`, the
+input was `phone_number`), and a `Tabs` used as a segmented control, whose
+triggers advertised `aria-controls` panels that were never rendered.
+
+`apps/web/e2e/accessibility.spec.ts` runs axe over every page and both modal
+surfaces at WCAG 2.1 A/AA, as part of the normal Playwright job rather than an
+optional extra. Two things it does that are easy to get wrong:
+
+- It waits for animations to finish before scanning. Mid-fade, axe composites a
+  half-transparent element against what is behind it and reports contrast
+  failures no user ever sees.
+- It scans modals scoped to `[role="dialog"]`, because a modal makes the page
+  behind it inert.
+
+`SegmentedControl` (`components/ui/segmented-control.tsx`) exists because of
+the third failure above: use `Tabs` when there are real panels, and this when
+the selection just changes what the surrounding component renders.
+
+axe catches roughly a third of WCAG failures, so a green run is not a claim
+that the app is accessible - it is a claim that nothing automatically
+detectable regressed, which is the part CI can actually hold true.
+
 ## Authentication
 
 - `POST /api/token/` → `{access, refresh}`. Rate limited.
@@ -368,9 +422,22 @@ out (`database_config_from_env()`, `app/settings/base.py`). See
 abandoned SaaS direction and `0003` deletes all nine — 240 lines that net to
 zero, kept only because rewriting history is not worth it. `0005` creates the
 entire finance domain and backfills existing v1 rows into it, marking them with
-`match_key="v1-<id>"`.
+`match_key="v1-<id>"`. `0007` is the expand half of the user->organization
+move (nullable `BudgetFile.organization`, backfilled); `0019`-`0021` are the
+contract half - and they are three migrations rather than one because Postgres
+refuses DDL on a table with pending deferred trigger events, so a backfill and
+an `ALTER`/`CREATE INDEX` on the same table cannot share a transaction. `0017`
+retires the flat models, carrying anything
+written through them *after* `0005` ran into the ledger as `legacy:<id>` -
+both stamps are checked, so a pre-`0005` row is not carried twice. `0018`
+renames `CategoryV2`/`CategoryGroupV2`, which is why it has to come after
+`0017` frees up the `pft_category` table name.
 
-Migrations are not reversible: the data migrations have no-op reverse functions.
+Data migrations have no-op reverse functions, so unapplying one restores the
+schema but not the rows. Schema operations do reverse: `migrate pft 0016`
+works, which is what makes migration 0017's carry-over testable at all
+(`test_legacy_api_retirement.py` runs the real migration backwards and
+forwards against seeded rows).
 
 ## Testing
 
@@ -391,12 +458,23 @@ apps/api/pft/tests/
 ├── test_bank_sync.py         crypto, ingest/dedup, both providers (mocked HTTP), the API
 ├── test_fx_rates.py          rate fetch/store, EUR-triangulated conversion, the API
 ├── test_multi_currency.py    per-account currency defaulting and the balances endpoint
-└── test_migration_importers.py  Firefly III / Actual Budget parsers, end-to-end import
+├── test_migration_importers.py  Firefly III / Actual Budget parsers, end-to-end import
+├── test_insights_reports.py  net worth series, cash-flow Sankey, spending trends
+├── test_savings_goals.py     goal progress read from live account balances
+├── test_debt_payoff.py       snowball / avalanche projections
+├── test_ai_categorization.py BYOK + Ollama suggestion path and its SSRF guard
+├── test_demo_mode.py         read-only demo enforcement and the reset task
+├── test_prune_finance_jobs.py  import/export payload pruning
+├── test_database_url_config.py DATABASE_URL parsing
+├── test_legacy_api_retirement.py  migration 0017's carry-over into the ledger
+├── test_budget_file_ownership.py  organization ownership, per-person defaults
+├── test_budget_file_contract_migration.py  migrations 0019-0021 against real rows
+└── test_pagination.py        every list route paginates, and `count` respects tenancy
 ```
 
 The frontend has vitest units (`apps/web/**/*.test.ts`) and a Playwright
-end-to-end suite (`apps/web/e2e/`) that drives the real Docker stack through
-nginx — login, transactions, budgets, import, backup/restore, notification
+end-to-end suite (`apps/web/e2e/`), including `accessibility.spec.ts`'s axe
+pass, that drives the real Docker stack through nginx — login, transactions, budgets, import, backup/restore, notification
 preferences, keyboard-first register entry (splits, the inline row), quick
 add, accounts (per-currency CRUD), the bank sync connect dialog as far as it
 goes without a live provider, and a two-browser shared-workspace scenario.

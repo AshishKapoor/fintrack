@@ -9,16 +9,12 @@ import type {
   AICategorizationSettings,
   Account,
   AuditLog,
-  BankSyncInstitution,
   BankSyncLinkResult,
-  BankSyncProvider,
   BankSyncResult,
-  Budget,
   BudgetFile,
   BudgetMonth,
   Category,
-  CategoryGroupV2,
-  CategoryV2,
+  CategoryGroup,
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
@@ -29,19 +25,36 @@ import type {
   LedgerTransaction,
   NotificationPreference,
   Organization,
+  PaginatedAccountList,
   PaginatedAuditLogList,
-  PaginatedBudgetList,
+  PaginatedBankSyncInstitutionList,
+  PaginatedBankSyncProviderList,
+  PaginatedBudgetFileList,
+  PaginatedBudgetMonthList,
+  PaginatedCategoryGroupList,
   PaginatedCategoryList,
+  PaginatedEncryptedBackupBundleList,
+  PaginatedEnvelopeAssignmentList,
+  PaginatedExportJobList,
+  PaginatedFxRateList,
+  PaginatedImportJobList,
+  PaginatedLedgerPostingReadList,
   PaginatedLedgerTransactionList,
-  PaginatedTransactionList,
+  PaginatedOrganizationList,
+  PaginatedPayeeList,
+  PaginatedSavedReportList,
+  PaginatedSavingsGoalList,
+  PaginatedScheduledTransactionList,
+  PaginatedSyncConnectionAccountList,
+  PaginatedSyncConnectionList,
+  PaginatedTagList,
+  PaginatedTransactionRuleList,
   PatchedAICategorizationSettings,
   PatchedAccount,
-  PatchedBudget,
   PatchedBudgetFile,
   PatchedBudgetMonth,
   PatchedCategory,
-  PatchedCategoryGroupV2,
-  PatchedCategoryV2,
+  PatchedCategoryGroup,
   PatchedEncryptedBackupBundle,
   PatchedEnvelopeAssignment,
   PatchedExportJob,
@@ -55,7 +68,6 @@ import type {
   PatchedScheduledTransaction,
   PatchedSyncConnection,
   PatchedTag,
-  PatchedTransaction,
   PatchedTransactionRule,
   PatchedUserProfile,
   Payee,
@@ -68,15 +80,33 @@ import type {
   Tag,
   TokenObtainPair,
   TokenRefresh,
-  Transaction,
   TransactionRule,
   UserProfile,
   UserRegistration,
   V1AuditLogListParams,
-  V1BudgetsListParams,
-  V1CategoriesListParams,
+  V1FinanceAccountsListParams,
+  V1FinanceBackupsListParams,
+  V1FinanceBudgetFilesListParams,
+  V1FinanceBudgetMonthsListParams,
+  V1FinanceCategoriesListParams,
+  V1FinanceCategoryGroupsListParams,
+  V1FinanceEnvelopeAssignmentsListParams,
+  V1FinanceExportsListParams,
+  V1FinanceFxRatesListParams,
+  V1FinanceImportsListParams,
+  V1FinancePayeesListParams,
+  V1FinancePostingsListParams,
+  V1FinanceReportsListParams,
+  V1FinanceRulesListParams,
+  V1FinanceSavingsGoalsListParams,
+  V1FinanceScheduledTransactionsListParams,
+  V1FinanceSyncConnectionAccountsListParams,
+  V1FinanceSyncConnectionsInstitutionsListParams,
+  V1FinanceSyncConnectionsListParams,
+  V1FinanceSyncConnectionsProvidersListParams,
+  V1FinanceTagsListParams,
   V1FinanceTransactionsListParams,
-  V1TransactionsListParams
+  V1OrgsListParams
 } from './model';
 
 import { fintrackFetch } from '../mutator';
@@ -343,474 +373,6 @@ export const v1AuditLogExportRetrieve = async ( options?: RequestInit): Promise<
 
 
 /**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsListResponse200 = {
-  data: PaginatedBudgetList
-  status: 200
-}
-    
-export type v1BudgetsListResponseSuccess = (v1BudgetsListResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsListResponse = (v1BudgetsListResponseSuccess)
-
-export const getV1BudgetsListUrl = (params?: V1BudgetsListParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/budgets/?${stringifiedParams}` : `/api/v1/budgets/`
-}
-
-export const v1BudgetsList = async (params?: V1BudgetsListParams, options?: RequestInit): Promise<v1BudgetsListResponse> => {
-  
-  return fintrackFetch<v1BudgetsListResponse>(getV1BudgetsListUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsCreateResponse201 = {
-  data: Budget
-  status: 201
-}
-    
-export type v1BudgetsCreateResponseSuccess = (v1BudgetsCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsCreateResponse = (v1BudgetsCreateResponseSuccess)
-
-export const getV1BudgetsCreateUrl = () => {
-
-
-  
-
-  return `/api/v1/budgets/`
-}
-
-export const v1BudgetsCreate = async (budget: NonReadonly<Budget>, options?: RequestInit): Promise<v1BudgetsCreateResponse> => {
-  
-  return fintrackFetch<v1BudgetsCreateResponse>(getV1BudgetsCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      budget,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsRetrieveResponse200 = {
-  data: Budget
-  status: 200
-}
-    
-export type v1BudgetsRetrieveResponseSuccess = (v1BudgetsRetrieveResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsRetrieveResponse = (v1BudgetsRetrieveResponseSuccess)
-
-export const getV1BudgetsRetrieveUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/budgets/${id}/`
-}
-
-export const v1BudgetsRetrieve = async (id: string, options?: RequestInit): Promise<v1BudgetsRetrieveResponse> => {
-  
-  return fintrackFetch<v1BudgetsRetrieveResponse>(getV1BudgetsRetrieveUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsUpdateResponse200 = {
-  data: Budget
-  status: 200
-}
-    
-export type v1BudgetsUpdateResponseSuccess = (v1BudgetsUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsUpdateResponse = (v1BudgetsUpdateResponseSuccess)
-
-export const getV1BudgetsUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/budgets/${id}/`
-}
-
-export const v1BudgetsUpdate = async (id: string,
-    budget: NonReadonly<Budget>, options?: RequestInit): Promise<v1BudgetsUpdateResponse> => {
-  
-  return fintrackFetch<v1BudgetsUpdateResponse>(getV1BudgetsUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      budget,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsPartialUpdateResponse200 = {
-  data: Budget
-  status: 200
-}
-    
-export type v1BudgetsPartialUpdateResponseSuccess = (v1BudgetsPartialUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsPartialUpdateResponse = (v1BudgetsPartialUpdateResponseSuccess)
-
-export const getV1BudgetsPartialUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/budgets/${id}/`
-}
-
-export const v1BudgetsPartialUpdate = async (id: string,
-    patchedBudget: NonReadonly<PatchedBudget>, options?: RequestInit): Promise<v1BudgetsPartialUpdateResponse> => {
-  
-  return fintrackFetch<v1BudgetsPartialUpdateResponse>(getV1BudgetsPartialUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      patchedBudget,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1BudgetsDestroyResponse204 = {
-  data: void
-  status: 204
-}
-    
-export type v1BudgetsDestroyResponseSuccess = (v1BudgetsDestroyResponse204) & {
-  headers: Headers;
-};
-;
-
-export type v1BudgetsDestroyResponse = (v1BudgetsDestroyResponseSuccess)
-
-export const getV1BudgetsDestroyUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/budgets/${id}/`
-}
-
-export const v1BudgetsDestroy = async (id: string, options?: RequestInit): Promise<v1BudgetsDestroyResponse> => {
-  
-  return fintrackFetch<v1BudgetsDestroyResponse>(getV1BudgetsDestroyUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesListResponse200 = {
-  data: PaginatedCategoryList
-  status: 200
-}
-    
-export type v1CategoriesListResponseSuccess = (v1CategoriesListResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesListResponse = (v1CategoriesListResponseSuccess)
-
-export const getV1CategoriesListUrl = (params?: V1CategoriesListParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/categories/?${stringifiedParams}` : `/api/v1/categories/`
-}
-
-export const v1CategoriesList = async (params?: V1CategoriesListParams, options?: RequestInit): Promise<v1CategoriesListResponse> => {
-  
-  return fintrackFetch<v1CategoriesListResponse>(getV1CategoriesListUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesCreateResponse201 = {
-  data: Category
-  status: 201
-}
-    
-export type v1CategoriesCreateResponseSuccess = (v1CategoriesCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesCreateResponse = (v1CategoriesCreateResponseSuccess)
-
-export const getV1CategoriesCreateUrl = () => {
-
-
-  
-
-  return `/api/v1/categories/`
-}
-
-export const v1CategoriesCreate = async (category: NonReadonly<Category>, options?: RequestInit): Promise<v1CategoriesCreateResponse> => {
-  
-  return fintrackFetch<v1CategoriesCreateResponse>(getV1CategoriesCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      category,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesRetrieveResponse200 = {
-  data: Category
-  status: 200
-}
-    
-export type v1CategoriesRetrieveResponseSuccess = (v1CategoriesRetrieveResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesRetrieveResponse = (v1CategoriesRetrieveResponseSuccess)
-
-export const getV1CategoriesRetrieveUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/categories/${id}/`
-}
-
-export const v1CategoriesRetrieve = async (id: string, options?: RequestInit): Promise<v1CategoriesRetrieveResponse> => {
-  
-  return fintrackFetch<v1CategoriesRetrieveResponse>(getV1CategoriesRetrieveUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesUpdateResponse200 = {
-  data: Category
-  status: 200
-}
-    
-export type v1CategoriesUpdateResponseSuccess = (v1CategoriesUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesUpdateResponse = (v1CategoriesUpdateResponseSuccess)
-
-export const getV1CategoriesUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/categories/${id}/`
-}
-
-export const v1CategoriesUpdate = async (id: string,
-    category: NonReadonly<Category>, options?: RequestInit): Promise<v1CategoriesUpdateResponse> => {
-  
-  return fintrackFetch<v1CategoriesUpdateResponse>(getV1CategoriesUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      category,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesPartialUpdateResponse200 = {
-  data: Category
-  status: 200
-}
-    
-export type v1CategoriesPartialUpdateResponseSuccess = (v1CategoriesPartialUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesPartialUpdateResponse = (v1CategoriesPartialUpdateResponseSuccess)
-
-export const getV1CategoriesPartialUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/categories/${id}/`
-}
-
-export const v1CategoriesPartialUpdate = async (id: string,
-    patchedCategory: NonReadonly<PatchedCategory>, options?: RequestInit): Promise<v1CategoriesPartialUpdateResponse> => {
-  
-  return fintrackFetch<v1CategoriesPartialUpdateResponse>(getV1CategoriesPartialUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      patchedCategory,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1CategoriesDestroyResponse204 = {
-  data: void
-  status: 204
-}
-    
-export type v1CategoriesDestroyResponseSuccess = (v1CategoriesDestroyResponse204) & {
-  headers: Headers;
-};
-;
-
-export type v1CategoriesDestroyResponse = (v1CategoriesDestroyResponseSuccess)
-
-export const getV1CategoriesDestroyUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/categories/${id}/`
-}
-
-export const v1CategoriesDestroy = async (id: string, options?: RequestInit): Promise<v1CategoriesDestroyResponse> => {
-  
-  return fintrackFetch<v1CategoriesDestroyResponse>(getV1CategoriesDestroyUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
-  }
-);}
-
-
-
-/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -819,7 +381,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceAccountsListResponse200 = {
-  data: Account[]
+  data: PaginatedAccountList
   status: 200
 }
     
@@ -830,17 +392,24 @@ export type v1FinanceAccountsListResponseSuccess = (v1FinanceAccountsListRespons
 
 export type v1FinanceAccountsListResponse = (v1FinanceAccountsListResponseSuccess)
 
-export const getV1FinanceAccountsListUrl = () => {
+export const getV1FinanceAccountsListUrl = (params?: V1FinanceAccountsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/accounts/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/accounts/?${stringifiedParams}` : `/api/v1/finance/accounts/`
 }
 
-export const v1FinanceAccountsList = async ( options?: RequestInit): Promise<v1FinanceAccountsListResponse> => {
+export const v1FinanceAccountsList = async (params?: V1FinanceAccountsListParams, options?: RequestInit): Promise<v1FinanceAccountsListResponse> => {
   
-  return fintrackFetch<v1FinanceAccountsListResponse>(getV1FinanceAccountsListUrl(),
+  return fintrackFetch<v1FinanceAccountsListResponse>(getV1FinanceAccountsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -1276,7 +845,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceBackupsListResponse200 = {
-  data: EncryptedBackupBundle[]
+  data: PaginatedEncryptedBackupBundleList
   status: 200
 }
     
@@ -1287,17 +856,24 @@ export type v1FinanceBackupsListResponseSuccess = (v1FinanceBackupsListResponse2
 
 export type v1FinanceBackupsListResponse = (v1FinanceBackupsListResponseSuccess)
 
-export const getV1FinanceBackupsListUrl = () => {
+export const getV1FinanceBackupsListUrl = (params?: V1FinanceBackupsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/backups/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/backups/?${stringifiedParams}` : `/api/v1/finance/backups/`
 }
 
-export const v1FinanceBackupsList = async ( options?: RequestInit): Promise<v1FinanceBackupsListResponse> => {
+export const v1FinanceBackupsList = async (params?: V1FinanceBackupsListParams, options?: RequestInit): Promise<v1FinanceBackupsListResponse> => {
   
-  return fintrackFetch<v1FinanceBackupsListResponse>(getV1FinanceBackupsListUrl(),
+  return fintrackFetch<v1FinanceBackupsListResponse>(getV1FinanceBackupsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -1568,7 +1144,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceBudgetFilesListResponse200 = {
-  data: BudgetFile[]
+  data: PaginatedBudgetFileList
   status: 200
 }
     
@@ -1579,17 +1155,24 @@ export type v1FinanceBudgetFilesListResponseSuccess = (v1FinanceBudgetFilesListR
 
 export type v1FinanceBudgetFilesListResponse = (v1FinanceBudgetFilesListResponseSuccess)
 
-export const getV1FinanceBudgetFilesListUrl = () => {
+export const getV1FinanceBudgetFilesListUrl = (params?: V1FinanceBudgetFilesListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/budget-files/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/budget-files/?${stringifiedParams}` : `/api/v1/finance/budget-files/`
 }
 
-export const v1FinanceBudgetFilesList = async ( options?: RequestInit): Promise<v1FinanceBudgetFilesListResponse> => {
+export const v1FinanceBudgetFilesList = async (params?: V1FinanceBudgetFilesListParams, options?: RequestInit): Promise<v1FinanceBudgetFilesListResponse> => {
   
-  return fintrackFetch<v1FinanceBudgetFilesListResponse>(getV1FinanceBudgetFilesListUrl(),
+  return fintrackFetch<v1FinanceBudgetFilesListResponse>(getV1FinanceBudgetFilesListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -1852,12 +1435,12 @@ export const v1FinanceBudgetFilesBalancesRetrieve = async (id: string, options?:
 
 
 /**
- * Base class for the finance viewsets.
+ * Record this file as the caller's default in its workspace.
 
-Enforces authentication and, on unsafe methods, that the target budget
-file admits writes for this user (viewers are read-only). Every subclass
-remains responsible for scoping its own get_queryset() through
-tenancy.budget_file_q - see ARCHITECTURE.md.
+Per-caller, not per-file: before `is_default` moved onto Membership,
+this cleared the flag across every budget file the caller could see,
+so one member choosing a default silently changed it for everyone else
+in a shared workspace - and for their other workspaces too.
  */
 export type v1FinanceBudgetFilesSetDefaultCreateResponse200 = {
   data: BudgetFile
@@ -1903,7 +1486,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceBudgetMonthsListResponse200 = {
-  data: BudgetMonth[]
+  data: PaginatedBudgetMonthList
   status: 200
 }
     
@@ -1914,17 +1497,24 @@ export type v1FinanceBudgetMonthsListResponseSuccess = (v1FinanceBudgetMonthsLis
 
 export type v1FinanceBudgetMonthsListResponse = (v1FinanceBudgetMonthsListResponseSuccess)
 
-export const getV1FinanceBudgetMonthsListUrl = () => {
+export const getV1FinanceBudgetMonthsListUrl = (params?: V1FinanceBudgetMonthsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/budget-months/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/budget-months/?${stringifiedParams}` : `/api/v1/finance/budget-months/`
 }
 
-export const v1FinanceBudgetMonthsList = async ( options?: RequestInit): Promise<v1FinanceBudgetMonthsListResponse> => {
+export const v1FinanceBudgetMonthsList = async (params?: V1FinanceBudgetMonthsListParams, options?: RequestInit): Promise<v1FinanceBudgetMonthsListResponse> => {
   
-  return fintrackFetch<v1FinanceBudgetMonthsListResponse>(getV1FinanceBudgetMonthsListUrl(),
+  return fintrackFetch<v1FinanceBudgetMonthsListResponse>(getV1FinanceBudgetMonthsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -2324,7 +1914,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesListResponse200 = {
-  data: CategoryV2[]
+  data: PaginatedCategoryList
   status: 200
 }
     
@@ -2335,17 +1925,24 @@ export type v1FinanceCategoriesListResponseSuccess = (v1FinanceCategoriesListRes
 
 export type v1FinanceCategoriesListResponse = (v1FinanceCategoriesListResponseSuccess)
 
-export const getV1FinanceCategoriesListUrl = () => {
+export const getV1FinanceCategoriesListUrl = (params?: V1FinanceCategoriesListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/categories/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/categories/?${stringifiedParams}` : `/api/v1/finance/categories/`
 }
 
-export const v1FinanceCategoriesList = async ( options?: RequestInit): Promise<v1FinanceCategoriesListResponse> => {
+export const v1FinanceCategoriesList = async (params?: V1FinanceCategoriesListParams, options?: RequestInit): Promise<v1FinanceCategoriesListResponse> => {
   
-  return fintrackFetch<v1FinanceCategoriesListResponse>(getV1FinanceCategoriesListUrl(),
+  return fintrackFetch<v1FinanceCategoriesListResponse>(getV1FinanceCategoriesListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -2365,7 +1962,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesCreateResponse201 = {
-  data: CategoryV2
+  data: Category
   status: 201
 }
     
@@ -2384,7 +1981,7 @@ export const getV1FinanceCategoriesCreateUrl = () => {
   return `/api/v1/finance/categories/`
 }
 
-export const v1FinanceCategoriesCreate = async (categoryV2: NonReadonly<CategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesCreateResponse> => {
+export const v1FinanceCategoriesCreate = async (category: NonReadonly<Category>, options?: RequestInit): Promise<v1FinanceCategoriesCreateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesCreateResponse>(getV1FinanceCategoriesCreateUrl(),
   {      
@@ -2392,7 +1989,7 @@ export const v1FinanceCategoriesCreate = async (categoryV2: NonReadonly<Category
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryV2,)
+      category,)
   }
 );}
 
@@ -2407,7 +2004,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesRetrieveResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -2448,7 +2045,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesUpdateResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -2468,7 +2065,7 @@ export const getV1FinanceCategoriesUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoriesUpdate = async (id: string,
-    categoryV2: NonReadonly<CategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesUpdateResponse> => {
+    category: NonReadonly<Category>, options?: RequestInit): Promise<v1FinanceCategoriesUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesUpdateResponse>(getV1FinanceCategoriesUpdateUrl(id),
   {      
@@ -2476,7 +2073,7 @@ export const v1FinanceCategoriesUpdate = async (id: string,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryV2,)
+      category,)
   }
 );}
 
@@ -2491,7 +2088,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoriesPartialUpdateResponse200 = {
-  data: CategoryV2
+  data: Category
   status: 200
 }
     
@@ -2511,7 +2108,7 @@ export const getV1FinanceCategoriesPartialUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoriesPartialUpdate = async (id: string,
-    patchedCategoryV2: NonReadonly<PatchedCategoryV2>, options?: RequestInit): Promise<v1FinanceCategoriesPartialUpdateResponse> => {
+    patchedCategory: NonReadonly<PatchedCategory>, options?: RequestInit): Promise<v1FinanceCategoriesPartialUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoriesPartialUpdateResponse>(getV1FinanceCategoriesPartialUpdateUrl(id),
   {      
@@ -2519,7 +2116,7 @@ export const v1FinanceCategoriesPartialUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      patchedCategoryV2,)
+      patchedCategory,)
   }
 );}
 
@@ -2575,7 +2172,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsListResponse200 = {
-  data: CategoryGroupV2[]
+  data: PaginatedCategoryGroupList
   status: 200
 }
     
@@ -2586,17 +2183,24 @@ export type v1FinanceCategoryGroupsListResponseSuccess = (v1FinanceCategoryGroup
 
 export type v1FinanceCategoryGroupsListResponse = (v1FinanceCategoryGroupsListResponseSuccess)
 
-export const getV1FinanceCategoryGroupsListUrl = () => {
+export const getV1FinanceCategoryGroupsListUrl = (params?: V1FinanceCategoryGroupsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/category-groups/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/category-groups/?${stringifiedParams}` : `/api/v1/finance/category-groups/`
 }
 
-export const v1FinanceCategoryGroupsList = async ( options?: RequestInit): Promise<v1FinanceCategoryGroupsListResponse> => {
+export const v1FinanceCategoryGroupsList = async (params?: V1FinanceCategoryGroupsListParams, options?: RequestInit): Promise<v1FinanceCategoryGroupsListResponse> => {
   
-  return fintrackFetch<v1FinanceCategoryGroupsListResponse>(getV1FinanceCategoryGroupsListUrl(),
+  return fintrackFetch<v1FinanceCategoryGroupsListResponse>(getV1FinanceCategoryGroupsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -2616,7 +2220,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsCreateResponse201 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 201
 }
     
@@ -2635,7 +2239,7 @@ export const getV1FinanceCategoryGroupsCreateUrl = () => {
   return `/api/v1/finance/category-groups/`
 }
 
-export const v1FinanceCategoryGroupsCreate = async (categoryGroupV2: NonReadonly<CategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsCreateResponse> => {
+export const v1FinanceCategoryGroupsCreate = async (categoryGroup: NonReadonly<CategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsCreateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsCreateResponse>(getV1FinanceCategoryGroupsCreateUrl(),
   {      
@@ -2643,7 +2247,7 @@ export const v1FinanceCategoryGroupsCreate = async (categoryGroupV2: NonReadonly
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryGroupV2,)
+      categoryGroup,)
   }
 );}
 
@@ -2658,7 +2262,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsRetrieveResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2699,7 +2303,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsUpdateResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2719,7 +2323,7 @@ export const getV1FinanceCategoryGroupsUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoryGroupsUpdate = async (id: string,
-    categoryGroupV2: NonReadonly<CategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsUpdateResponse> => {
+    categoryGroup: NonReadonly<CategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsUpdateResponse>(getV1FinanceCategoryGroupsUpdateUrl(id),
   {      
@@ -2727,7 +2331,7 @@ export const v1FinanceCategoryGroupsUpdate = async (id: string,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      categoryGroupV2,)
+      categoryGroup,)
   }
 );}
 
@@ -2742,7 +2346,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceCategoryGroupsPartialUpdateResponse200 = {
-  data: CategoryGroupV2
+  data: CategoryGroup
   status: 200
 }
     
@@ -2762,7 +2366,7 @@ export const getV1FinanceCategoryGroupsPartialUpdateUrl = (id: string,) => {
 }
 
 export const v1FinanceCategoryGroupsPartialUpdate = async (id: string,
-    patchedCategoryGroupV2: NonReadonly<PatchedCategoryGroupV2>, options?: RequestInit): Promise<v1FinanceCategoryGroupsPartialUpdateResponse> => {
+    patchedCategoryGroup: NonReadonly<PatchedCategoryGroup>, options?: RequestInit): Promise<v1FinanceCategoryGroupsPartialUpdateResponse> => {
   
   return fintrackFetch<v1FinanceCategoryGroupsPartialUpdateResponse>(getV1FinanceCategoryGroupsPartialUpdateUrl(id),
   {      
@@ -2770,7 +2374,7 @@ export const v1FinanceCategoryGroupsPartialUpdate = async (id: string,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
-      patchedCategoryGroupV2,)
+      patchedCategoryGroup,)
   }
 );}
 
@@ -2826,7 +2430,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceEnvelopeAssignmentsListResponse200 = {
-  data: EnvelopeAssignment[]
+  data: PaginatedEnvelopeAssignmentList
   status: 200
 }
     
@@ -2837,17 +2441,24 @@ export type v1FinanceEnvelopeAssignmentsListResponseSuccess = (v1FinanceEnvelope
 
 export type v1FinanceEnvelopeAssignmentsListResponse = (v1FinanceEnvelopeAssignmentsListResponseSuccess)
 
-export const getV1FinanceEnvelopeAssignmentsListUrl = () => {
+export const getV1FinanceEnvelopeAssignmentsListUrl = (params?: V1FinanceEnvelopeAssignmentsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/envelope-assignments/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/envelope-assignments/?${stringifiedParams}` : `/api/v1/finance/envelope-assignments/`
 }
 
-export const v1FinanceEnvelopeAssignmentsList = async ( options?: RequestInit): Promise<v1FinanceEnvelopeAssignmentsListResponse> => {
+export const v1FinanceEnvelopeAssignmentsList = async (params?: V1FinanceEnvelopeAssignmentsListParams, options?: RequestInit): Promise<v1FinanceEnvelopeAssignmentsListResponse> => {
   
-  return fintrackFetch<v1FinanceEnvelopeAssignmentsListResponse>(getV1FinanceEnvelopeAssignmentsListUrl(),
+  return fintrackFetch<v1FinanceEnvelopeAssignmentsListResponse>(getV1FinanceEnvelopeAssignmentsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3077,7 +2688,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceExportsListResponse200 = {
-  data: ExportJob[]
+  data: PaginatedExportJobList
   status: 200
 }
     
@@ -3088,17 +2699,24 @@ export type v1FinanceExportsListResponseSuccess = (v1FinanceExportsListResponse2
 
 export type v1FinanceExportsListResponse = (v1FinanceExportsListResponseSuccess)
 
-export const getV1FinanceExportsListUrl = () => {
+export const getV1FinanceExportsListUrl = (params?: V1FinanceExportsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/exports/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/exports/?${stringifiedParams}` : `/api/v1/finance/exports/`
 }
 
-export const v1FinanceExportsList = async ( options?: RequestInit): Promise<v1FinanceExportsListResponse> => {
+export const v1FinanceExportsList = async (params?: V1FinanceExportsListParams, options?: RequestInit): Promise<v1FinanceExportsListResponse> => {
   
-  return fintrackFetch<v1FinanceExportsListResponse>(getV1FinanceExportsListUrl(),
+  return fintrackFetch<v1FinanceExportsListResponse>(getV1FinanceExportsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3365,7 +2983,7 @@ export const v1FinanceExportsDownloadRetrieve = async (id: string, options?: Req
 not scoped to any one budget file. See pft/fx_rates.py.
  */
 export type v1FinanceFxRatesListResponse200 = {
-  data: FxRate[]
+  data: PaginatedFxRateList
   status: 200
 }
     
@@ -3376,17 +2994,24 @@ export type v1FinanceFxRatesListResponseSuccess = (v1FinanceFxRatesListResponse2
 
 export type v1FinanceFxRatesListResponse = (v1FinanceFxRatesListResponseSuccess)
 
-export const getV1FinanceFxRatesListUrl = () => {
+export const getV1FinanceFxRatesListUrl = (params?: V1FinanceFxRatesListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/fx-rates/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/fx-rates/?${stringifiedParams}` : `/api/v1/finance/fx-rates/`
 }
 
-export const v1FinanceFxRatesList = async ( options?: RequestInit): Promise<v1FinanceFxRatesListResponse> => {
+export const v1FinanceFxRatesList = async (params?: V1FinanceFxRatesListParams, options?: RequestInit): Promise<v1FinanceFxRatesListResponse> => {
   
-  return fintrackFetch<v1FinanceFxRatesListResponse>(getV1FinanceFxRatesListUrl(),
+  return fintrackFetch<v1FinanceFxRatesListResponse>(getV1FinanceFxRatesListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3481,7 +3106,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceImportsListResponse200 = {
-  data: ImportJob[]
+  data: PaginatedImportJobList
   status: 200
 }
     
@@ -3492,17 +3117,24 @@ export type v1FinanceImportsListResponseSuccess = (v1FinanceImportsListResponse2
 
 export type v1FinanceImportsListResponse = (v1FinanceImportsListResponseSuccess)
 
-export const getV1FinanceImportsListUrl = () => {
+export const getV1FinanceImportsListUrl = (params?: V1FinanceImportsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/imports/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/imports/?${stringifiedParams}` : `/api/v1/finance/imports/`
 }
 
-export const v1FinanceImportsList = async ( options?: RequestInit): Promise<v1FinanceImportsListResponse> => {
+export const v1FinanceImportsList = async (params?: V1FinanceImportsListParams, options?: RequestInit): Promise<v1FinanceImportsListResponse> => {
   
-  return fintrackFetch<v1FinanceImportsListResponse>(getV1FinanceImportsListUrl(),
+  return fintrackFetch<v1FinanceImportsListResponse>(getV1FinanceImportsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -3818,7 +3450,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinancePayeesListResponse200 = {
-  data: Payee[]
+  data: PaginatedPayeeList
   status: 200
 }
     
@@ -3829,17 +3461,24 @@ export type v1FinancePayeesListResponseSuccess = (v1FinancePayeesListResponse200
 
 export type v1FinancePayeesListResponse = (v1FinancePayeesListResponseSuccess)
 
-export const getV1FinancePayeesListUrl = () => {
+export const getV1FinancePayeesListUrl = (params?: V1FinancePayeesListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/payees/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/payees/?${stringifiedParams}` : `/api/v1/finance/payees/`
 }
 
-export const v1FinancePayeesList = async ( options?: RequestInit): Promise<v1FinancePayeesListResponse> => {
+export const v1FinancePayeesList = async (params?: V1FinancePayeesListParams, options?: RequestInit): Promise<v1FinancePayeesListResponse> => {
   
-  return fintrackFetch<v1FinancePayeesListResponse>(getV1FinancePayeesListUrl(),
+  return fintrackFetch<v1FinancePayeesListResponse>(getV1FinancePayeesListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4115,7 +3754,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinancePostingsListResponse200 = {
-  data: LedgerPostingRead[]
+  data: PaginatedLedgerPostingReadList
   status: 200
 }
     
@@ -4126,17 +3765,24 @@ export type v1FinancePostingsListResponseSuccess = (v1FinancePostingsListRespons
 
 export type v1FinancePostingsListResponse = (v1FinancePostingsListResponseSuccess)
 
-export const getV1FinancePostingsListUrl = () => {
+export const getV1FinancePostingsListUrl = (params?: V1FinancePostingsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/postings/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/postings/?${stringifiedParams}` : `/api/v1/finance/postings/`
 }
 
-export const v1FinancePostingsList = async ( options?: RequestInit): Promise<v1FinancePostingsListResponse> => {
+export const v1FinancePostingsList = async (params?: V1FinancePostingsListParams, options?: RequestInit): Promise<v1FinancePostingsListResponse> => {
   
-  return fintrackFetch<v1FinancePostingsListResponse>(getV1FinancePostingsListUrl(),
+  return fintrackFetch<v1FinancePostingsListResponse>(getV1FinancePostingsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4197,7 +3843,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceReportsListResponse200 = {
-  data: SavedReport[]
+  data: PaginatedSavedReportList
   status: 200
 }
     
@@ -4208,17 +3854,24 @@ export type v1FinanceReportsListResponseSuccess = (v1FinanceReportsListResponse2
 
 export type v1FinanceReportsListResponse = (v1FinanceReportsListResponseSuccess)
 
-export const getV1FinanceReportsListUrl = () => {
+export const getV1FinanceReportsListUrl = (params?: V1FinanceReportsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/reports/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/reports/?${stringifiedParams}` : `/api/v1/finance/reports/`
 }
 
-export const v1FinanceReportsList = async ( options?: RequestInit): Promise<v1FinanceReportsListResponse> => {
+export const v1FinanceReportsList = async (params?: V1FinanceReportsListParams, options?: RequestInit): Promise<v1FinanceReportsListResponse> => {
   
-  return fintrackFetch<v1FinanceReportsListResponse>(getV1FinanceReportsListUrl(),
+  return fintrackFetch<v1FinanceReportsListResponse>(getV1FinanceReportsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4533,7 +4186,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceRulesListResponse200 = {
-  data: TransactionRule[]
+  data: PaginatedTransactionRuleList
   status: 200
 }
     
@@ -4544,17 +4197,24 @@ export type v1FinanceRulesListResponseSuccess = (v1FinanceRulesListResponse200) 
 
 export type v1FinanceRulesListResponse = (v1FinanceRulesListResponseSuccess)
 
-export const getV1FinanceRulesListUrl = () => {
+export const getV1FinanceRulesListUrl = (params?: V1FinanceRulesListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/rules/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/rules/?${stringifiedParams}` : `/api/v1/finance/rules/`
 }
 
-export const v1FinanceRulesList = async ( options?: RequestInit): Promise<v1FinanceRulesListResponse> => {
+export const v1FinanceRulesList = async (params?: V1FinanceRulesListParams, options?: RequestInit): Promise<v1FinanceRulesListResponse> => {
   
-  return fintrackFetch<v1FinanceRulesListResponse>(getV1FinanceRulesListUrl(),
+  return fintrackFetch<v1FinanceRulesListResponse>(getV1FinanceRulesListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -4826,7 +4486,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceSavingsGoalsListResponse200 = {
-  data: SavingsGoal[]
+  data: PaginatedSavingsGoalList
   status: 200
 }
     
@@ -4837,17 +4497,24 @@ export type v1FinanceSavingsGoalsListResponseSuccess = (v1FinanceSavingsGoalsLis
 
 export type v1FinanceSavingsGoalsListResponse = (v1FinanceSavingsGoalsListResponseSuccess)
 
-export const getV1FinanceSavingsGoalsListUrl = () => {
+export const getV1FinanceSavingsGoalsListUrl = (params?: V1FinanceSavingsGoalsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/savings-goals/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/savings-goals/?${stringifiedParams}` : `/api/v1/finance/savings-goals/`
 }
 
-export const v1FinanceSavingsGoalsList = async ( options?: RequestInit): Promise<v1FinanceSavingsGoalsListResponse> => {
+export const v1FinanceSavingsGoalsList = async (params?: V1FinanceSavingsGoalsListParams, options?: RequestInit): Promise<v1FinanceSavingsGoalsListResponse> => {
   
-  return fintrackFetch<v1FinanceSavingsGoalsListResponse>(getV1FinanceSavingsGoalsListUrl(),
+  return fintrackFetch<v1FinanceSavingsGoalsListResponse>(getV1FinanceSavingsGoalsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -5077,7 +4744,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceScheduledTransactionsListResponse200 = {
-  data: ScheduledTransaction[]
+  data: PaginatedScheduledTransactionList
   status: 200
 }
     
@@ -5088,17 +4755,24 @@ export type v1FinanceScheduledTransactionsListResponseSuccess = (v1FinanceSchedu
 
 export type v1FinanceScheduledTransactionsListResponse = (v1FinanceScheduledTransactionsListResponseSuccess)
 
-export const getV1FinanceScheduledTransactionsListUrl = () => {
+export const getV1FinanceScheduledTransactionsListUrl = (params?: V1FinanceScheduledTransactionsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/scheduled-transactions/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/scheduled-transactions/?${stringifiedParams}` : `/api/v1/finance/scheduled-transactions/`
 }
 
-export const v1FinanceScheduledTransactionsList = async ( options?: RequestInit): Promise<v1FinanceScheduledTransactionsListResponse> => {
+export const v1FinanceScheduledTransactionsList = async (params?: V1FinanceScheduledTransactionsListParams, options?: RequestInit): Promise<v1FinanceScheduledTransactionsListResponse> => {
   
-  return fintrackFetch<v1FinanceScheduledTransactionsListResponse>(getV1FinanceScheduledTransactionsListUrl(),
+  return fintrackFetch<v1FinanceScheduledTransactionsListResponse>(getV1FinanceScheduledTransactionsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -5370,7 +5044,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceSyncConnectionAccountsListResponse200 = {
-  data: SyncConnectionAccount[]
+  data: PaginatedSyncConnectionAccountList
   status: 200
 }
     
@@ -5381,17 +5055,24 @@ export type v1FinanceSyncConnectionAccountsListResponseSuccess = (v1FinanceSyncC
 
 export type v1FinanceSyncConnectionAccountsListResponse = (v1FinanceSyncConnectionAccountsListResponseSuccess)
 
-export const getV1FinanceSyncConnectionAccountsListUrl = () => {
+export const getV1FinanceSyncConnectionAccountsListUrl = (params?: V1FinanceSyncConnectionAccountsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/sync-connection-accounts/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/sync-connection-accounts/?${stringifiedParams}` : `/api/v1/finance/sync-connection-accounts/`
 }
 
-export const v1FinanceSyncConnectionAccountsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsListResponse> => {
+export const v1FinanceSyncConnectionAccountsList = async (params?: V1FinanceSyncConnectionAccountsListParams, options?: RequestInit): Promise<v1FinanceSyncConnectionAccountsListResponse> => {
   
-  return fintrackFetch<v1FinanceSyncConnectionAccountsListResponse>(getV1FinanceSyncConnectionAccountsListUrl(),
+  return fintrackFetch<v1FinanceSyncConnectionAccountsListResponse>(getV1FinanceSyncConnectionAccountsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -5579,7 +5260,7 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export type v1FinanceSyncConnectionsListResponse200 = {
-  data: SyncConnection[]
+  data: PaginatedSyncConnectionList
   status: 200
 }
     
@@ -5590,17 +5271,24 @@ export type v1FinanceSyncConnectionsListResponseSuccess = (v1FinanceSyncConnecti
 
 export type v1FinanceSyncConnectionsListResponse = (v1FinanceSyncConnectionsListResponseSuccess)
 
-export const getV1FinanceSyncConnectionsListUrl = () => {
+export const getV1FinanceSyncConnectionsListUrl = (params?: V1FinanceSyncConnectionsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/sync-connections/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/sync-connections/?${stringifiedParams}` : `/api/v1/finance/sync-connections/`
 }
 
-export const v1FinanceSyncConnectionsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsListResponse> => {
+export const v1FinanceSyncConnectionsList = async (params?: V1FinanceSyncConnectionsListParams, options?: RequestInit): Promise<v1FinanceSyncConnectionsListResponse> => {
   
-  return fintrackFetch<v1FinanceSyncConnectionsListResponse>(getV1FinanceSyncConnectionsListUrl(),
+  return fintrackFetch<v1FinanceSyncConnectionsListResponse>(getV1FinanceSyncConnectionsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6018,7 +5706,7 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export type v1FinanceSyncConnectionsInstitutionsListResponse200 = {
-  data: BankSyncInstitution[]
+  data: PaginatedBankSyncInstitutionList
   status: 200
 }
     
@@ -6029,17 +5717,24 @@ export type v1FinanceSyncConnectionsInstitutionsListResponseSuccess = (v1Finance
 
 export type v1FinanceSyncConnectionsInstitutionsListResponse = (v1FinanceSyncConnectionsInstitutionsListResponseSuccess)
 
-export const getV1FinanceSyncConnectionsInstitutionsListUrl = () => {
+export const getV1FinanceSyncConnectionsInstitutionsListUrl = (params?: V1FinanceSyncConnectionsInstitutionsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/sync-connections/institutions/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/sync-connections/institutions/?${stringifiedParams}` : `/api/v1/finance/sync-connections/institutions/`
 }
 
-export const v1FinanceSyncConnectionsInstitutionsList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsInstitutionsListResponse> => {
+export const v1FinanceSyncConnectionsInstitutionsList = async (params?: V1FinanceSyncConnectionsInstitutionsListParams, options?: RequestInit): Promise<v1FinanceSyncConnectionsInstitutionsListResponse> => {
   
-  return fintrackFetch<v1FinanceSyncConnectionsInstitutionsListResponse>(getV1FinanceSyncConnectionsInstitutionsListUrl(),
+  return fintrackFetch<v1FinanceSyncConnectionsInstitutionsListResponse>(getV1FinanceSyncConnectionsInstitutionsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6062,7 +5757,7 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export type v1FinanceSyncConnectionsProvidersListResponse200 = {
-  data: BankSyncProvider[]
+  data: PaginatedBankSyncProviderList
   status: 200
 }
     
@@ -6073,17 +5768,24 @@ export type v1FinanceSyncConnectionsProvidersListResponseSuccess = (v1FinanceSyn
 
 export type v1FinanceSyncConnectionsProvidersListResponse = (v1FinanceSyncConnectionsProvidersListResponseSuccess)
 
-export const getV1FinanceSyncConnectionsProvidersListUrl = () => {
+export const getV1FinanceSyncConnectionsProvidersListUrl = (params?: V1FinanceSyncConnectionsProvidersListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/sync-connections/providers/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/sync-connections/providers/?${stringifiedParams}` : `/api/v1/finance/sync-connections/providers/`
 }
 
-export const v1FinanceSyncConnectionsProvidersList = async ( options?: RequestInit): Promise<v1FinanceSyncConnectionsProvidersListResponse> => {
+export const v1FinanceSyncConnectionsProvidersList = async (params?: V1FinanceSyncConnectionsProvidersListParams, options?: RequestInit): Promise<v1FinanceSyncConnectionsProvidersListResponse> => {
   
-  return fintrackFetch<v1FinanceSyncConnectionsProvidersListResponse>(getV1FinanceSyncConnectionsProvidersListUrl(),
+  return fintrackFetch<v1FinanceSyncConnectionsProvidersListResponse>(getV1FinanceSyncConnectionsProvidersListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6103,7 +5805,7 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export type v1FinanceTagsListResponse200 = {
-  data: Tag[]
+  data: PaginatedTagList
   status: 200
 }
     
@@ -6114,17 +5816,24 @@ export type v1FinanceTagsListResponseSuccess = (v1FinanceTagsListResponse200) & 
 
 export type v1FinanceTagsListResponse = (v1FinanceTagsListResponseSuccess)
 
-export const getV1FinanceTagsListUrl = () => {
+export const getV1FinanceTagsListUrl = (params?: V1FinanceTagsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/finance/tags/`
+  return stringifiedParams.length > 0 ? `/api/v1/finance/tags/?${stringifiedParams}` : `/api/v1/finance/tags/`
 }
 
-export const v1FinanceTagsList = async ( options?: RequestInit): Promise<v1FinanceTagsListResponse> => {
+export const v1FinanceTagsList = async (params?: V1FinanceTagsListParams, options?: RequestInit): Promise<v1FinanceTagsListResponse> => {
   
-  return fintrackFetch<v1FinanceTagsListResponse>(getV1FinanceTagsListUrl(),
+  return fintrackFetch<v1FinanceTagsListResponse>(getV1FinanceTagsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -6880,7 +6589,7 @@ export const v1NotificationsTestCreate = async ( options?: RequestInit): Promise
 
 
 export type v1OrgsListResponse200 = {
-  data: Organization[]
+  data: PaginatedOrganizationList
   status: 200
 }
     
@@ -6891,17 +6600,24 @@ export type v1OrgsListResponseSuccess = (v1OrgsListResponse200) & {
 
 export type v1OrgsListResponse = (v1OrgsListResponseSuccess)
 
-export const getV1OrgsListUrl = () => {
+export const getV1OrgsListUrl = (params?: V1OrgsListParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : value.toString())
+    }
+  });
 
-  
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/orgs/`
+  return stringifiedParams.length > 0 ? `/api/v1/orgs/?${stringifiedParams}` : `/api/v1/orgs/`
 }
 
-export const v1OrgsList = async ( options?: RequestInit): Promise<v1OrgsListResponse> => {
+export const v1OrgsList = async (params?: V1OrgsListParams, options?: RequestInit): Promise<v1OrgsListResponse> => {
   
-  return fintrackFetch<v1OrgsListResponse>(getV1OrgsListUrl(),
+  return fintrackFetch<v1OrgsListResponse>(getV1OrgsListUrl(params),
   {      
     ...options,
     method: 'GET'
@@ -7459,239 +7175,5 @@ export const v1RegisterCreate = async (userRegistration: UserRegistration, optio
     headers: { 'Content-Type': 'application/json', ...options?.headers },
     body: JSON.stringify(
       userRegistration,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsListResponse200 = {
-  data: PaginatedTransactionList
-  status: 200
-}
-    
-export type v1TransactionsListResponseSuccess = (v1TransactionsListResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsListResponse = (v1TransactionsListResponseSuccess)
-
-export const getV1TransactionsListUrl = (params?: V1TransactionsListParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-    
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : value.toString())
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/transactions/?${stringifiedParams}` : `/api/v1/transactions/`
-}
-
-export const v1TransactionsList = async (params?: V1TransactionsListParams, options?: RequestInit): Promise<v1TransactionsListResponse> => {
-  
-  return fintrackFetch<v1TransactionsListResponse>(getV1TransactionsListUrl(params),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsCreateResponse201 = {
-  data: Transaction
-  status: 201
-}
-    
-export type v1TransactionsCreateResponseSuccess = (v1TransactionsCreateResponse201) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsCreateResponse = (v1TransactionsCreateResponseSuccess)
-
-export const getV1TransactionsCreateUrl = () => {
-
-
-  
-
-  return `/api/v1/transactions/`
-}
-
-export const v1TransactionsCreate = async (transaction: NonReadonly<Transaction>, options?: RequestInit): Promise<v1TransactionsCreateResponse> => {
-  
-  return fintrackFetch<v1TransactionsCreateResponse>(getV1TransactionsCreateUrl(),
-  {      
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      transaction,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsRetrieveResponse200 = {
-  data: Transaction
-  status: 200
-}
-    
-export type v1TransactionsRetrieveResponseSuccess = (v1TransactionsRetrieveResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsRetrieveResponse = (v1TransactionsRetrieveResponseSuccess)
-
-export const getV1TransactionsRetrieveUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/transactions/${id}/`
-}
-
-export const v1TransactionsRetrieve = async (id: string, options?: RequestInit): Promise<v1TransactionsRetrieveResponse> => {
-  
-  return fintrackFetch<v1TransactionsRetrieveResponse>(getV1TransactionsRetrieveUrl(id),
-  {      
-    ...options,
-    method: 'GET'
-    
-    
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsUpdateResponse200 = {
-  data: Transaction
-  status: 200
-}
-    
-export type v1TransactionsUpdateResponseSuccess = (v1TransactionsUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsUpdateResponse = (v1TransactionsUpdateResponseSuccess)
-
-export const getV1TransactionsUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/transactions/${id}/`
-}
-
-export const v1TransactionsUpdate = async (id: string,
-    transaction: NonReadonly<Transaction>, options?: RequestInit): Promise<v1TransactionsUpdateResponse> => {
-  
-  return fintrackFetch<v1TransactionsUpdateResponse>(getV1TransactionsUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      transaction,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsPartialUpdateResponse200 = {
-  data: Transaction
-  status: 200
-}
-    
-export type v1TransactionsPartialUpdateResponseSuccess = (v1TransactionsPartialUpdateResponse200) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsPartialUpdateResponse = (v1TransactionsPartialUpdateResponseSuccess)
-
-export const getV1TransactionsPartialUpdateUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/transactions/${id}/`
-}
-
-export const v1TransactionsPartialUpdate = async (id: string,
-    patchedTransaction: NonReadonly<PatchedTransaction>, options?: RequestInit): Promise<v1TransactionsPartialUpdateResponse> => {
-  
-  return fintrackFetch<v1TransactionsPartialUpdateResponse>(getV1TransactionsPartialUpdateUrl(id),
-  {      
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    body: JSON.stringify(
-      patchedTransaction,)
-  }
-);}
-
-
-
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export type v1TransactionsDestroyResponse204 = {
-  data: void
-  status: 204
-}
-    
-export type v1TransactionsDestroyResponseSuccess = (v1TransactionsDestroyResponse204) & {
-  headers: Headers;
-};
-;
-
-export type v1TransactionsDestroyResponse = (v1TransactionsDestroyResponseSuccess)
-
-export const getV1TransactionsDestroyUrl = (id: string,) => {
-
-
-  
-
-  return `/api/v1/transactions/${id}/`
-}
-
-export const v1TransactionsDestroy = async (id: string, options?: RequestInit): Promise<v1TransactionsDestroyResponse> => {
-  
-  return fintrackFetch<v1TransactionsDestroyResponse>(getV1TransactionsDestroyUrl(id),
-  {      
-    ...options,
-    method: 'DELETE'
-    
-    
   }
 );}

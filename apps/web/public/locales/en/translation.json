@@ -208,6 +208,7 @@
   },
   "transactions": {
     "addSplit": "Add split",
+    "kind": "Income or expense",
     "payee": "Payee",
     "payeeCreate": "Add \"{{name}}\" as a new payee",
     "payeePlaceholder": "Search or add a payee…",

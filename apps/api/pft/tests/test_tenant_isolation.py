@@ -18,10 +18,7 @@ from rest_framework.test import APITestCase
 from pft.models import (
     Account,
     AICategorizationSettings,
-    Budget,
-    BudgetFile,
     Category,
-    CategoryV2,
     LedgerPosting,
     LedgerTransaction,
     NotificationPreference,
@@ -30,9 +27,8 @@ from pft.models import (
     ScheduledTransaction,
     SyncConnection,
     SyncConnectionAccount,
-    Transaction,
 )
-from pft.views import LEGACY_DEPRECATED_AT
+from pft.tests.helpers import personal_budget_file, rows
 
 User = get_user_model()
 
@@ -44,29 +40,11 @@ class TenantFixture:
         self.user = User.objects.create_user(
             email=email, username=email, password="StrongPass123!"
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
         self.account = Account.objects.get(budget_file=self.budget_file, name="Cash")
-        self.category_v2 = CategoryV2.objects.filter(
-            budget_file=self.budget_file, kind=CategoryV2.KIND_EXPENSE
+        self.category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_EXPENSE
         ).first()
-        self.category = Category.objects.create(
-            user=self.user, name=f"Private {email}", type="expense"
-        )
-        self.transaction = Transaction.objects.create(
-            user=self.user,
-            title=f"Private transaction for {email}",
-            amount="42.00",
-            type="expense",
-            category=self.category,
-            transaction_date=date(2026, 3, 10),
-        )
-        self.budget = Budget.objects.create(
-            user=self.user,
-            category=self.category,
-            month=3,
-            year=2026,
-            amount_limit="500.00",
-        )
         self.payee = Payee.objects.create(
             budget_file=self.budget_file, name=f"Payee {email}"
         )
@@ -91,147 +69,6 @@ class TenantIsolationTestCase(APITestCase):
         self.client.force_authenticate(user=self.bob.user)
 
 
-class LegacyApiIsolationTests(TenantIsolationTestCase):
-    """/api/v1/* - the transaction/category/budget endpoints."""
-
-    def test_transaction_list_excludes_other_users(self):
-        response = self.client.get("/api/v1/transactions/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        returned_ids = {row["id"] for row in response.data["results"]}
-        self.assertNotIn(self.alice.transaction.id, returned_ids)
-        self.assertIn(self.bob.transaction.id, returned_ids)
-
-    def test_cannot_retrieve_other_users_transaction(self):
-        response = self.client.get(f"/api/v1/transactions/{self.alice.transaction.id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_cannot_update_other_users_transaction(self):
-        response = self.client.patch(
-            f"/api/v1/transactions/{self.alice.transaction.id}/",
-            {"title": "hijacked"},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.alice.transaction.refresh_from_db()
-        self.assertNotEqual(self.alice.transaction.title, "hijacked")
-
-    def test_cannot_delete_other_users_transaction(self):
-        response = self.client.delete(
-            f"/api/v1/transactions/{self.alice.transaction.id}/"
-        )
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(
-            Transaction.objects.filter(id=self.alice.transaction.id).exists()
-        )
-
-    def test_cannot_reassign_own_transaction_to_another_user(self):
-        """Regression: `user` used to be writable, so a PUT could donate a row."""
-        response = self.client.put(
-            f"/api/v1/transactions/{self.bob.transaction.id}/",
-            {
-                "user": self.alice.user.id,
-                "title": "still mine",
-                "amount": "42.00",
-                "type": "expense",
-                "transaction_date": "2026-03-10",
-            },
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.bob.transaction.refresh_from_db()
-        self.assertEqual(self.bob.transaction.user_id, self.bob.user.id)
-
-    def test_create_transaction_does_not_require_user_field(self):
-        response = self.client.post(
-            "/api/v1/transactions/",
-            {
-                "title": "Coffee",
-                "amount": "12.34",
-                "type": "expense",
-                "transaction_date": "2026-03-10",
-            },
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(
-            Transaction.objects.get(id=response.data["id"]).user_id, self.bob.user.id
-        )
-
-    def test_cannot_attach_another_users_category_to_a_transaction(self):
-        response = self.client.post(
-            "/api/v1/transactions/",
-            {
-                "title": "Sneaky",
-                "amount": "1.00",
-                "type": "expense",
-                "category": self.alice.category.id,
-                "transaction_date": "2026-03-10",
-            },
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_cannot_retrieve_other_users_category(self):
-        response = self.client.get(f"/api/v1/categories/{self.alice.category.id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_cannot_delete_other_users_category(self):
-        response = self.client.delete(f"/api/v1/categories/{self.alice.category.id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Category.objects.filter(id=self.alice.category.id).exists())
-
-    def test_global_categories_are_readable_but_not_writable(self):
-        """Regression: global (user IS NULL) rows were editable by everyone."""
-        shared = Category.objects.create(
-            user=None, name="Shared Global", type="expense"
-        )
-
-        listed = self.client.get("/api/v1/categories/")
-        self.assertIn(shared.id, {row["id"] for row in listed.data["results"]})
-
-        for method, kwargs in (
-            ("patch", {"data": {"name": "hijacked"}, "format": "json"}),
-            ("delete", {}),
-        ):
-            response = getattr(self.client, method)(
-                f"/api/v1/categories/{shared.id}/", **kwargs
-            )
-            self.assertEqual(
-                response.status_code,
-                status.HTTP_404_NOT_FOUND,
-                msg=f"{method.upper()} on a global category should not be allowed",
-            )
-
-        shared.refresh_from_db()
-        self.assertEqual(shared.name, "Shared Global")
-
-    def test_renaming_a_category_to_its_own_name_is_allowed(self):
-        """Regression: the uniqueness check did not exclude the instance."""
-        response = self.client.patch(
-            f"/api/v1/categories/{self.bob.category.id}/",
-            {"name": self.bob.category.name},
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_cannot_retrieve_other_users_budget(self):
-        response = self.client.get(f"/api/v1/budgets/{self.alice.budget.id}/")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_cannot_budget_against_another_users_category(self):
-        response = self.client.post(
-            "/api/v1/budgets/",
-            {
-                "category": self.alice.category.id,
-                "month": 4,
-                "year": 2026,
-                "amount_limit": "100.00",
-            },
-            format="json",
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
 class FinanceApiIsolationTests(TenantIsolationTestCase):
     """/api/v1/finance/* - the double-entry ledger endpoints."""
 
@@ -240,7 +77,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
         return {
             "budget-files": f"/api/v1/finance/budget-files/{alice.budget_file.id}/",
             "accounts": f"/api/v1/finance/accounts/{alice.account.id}/",
-            "categories": f"/api/v1/finance/categories/{alice.category_v2.id}/",
+            "categories": f"/api/v1/finance/categories/{alice.category.id}/",
             "payees": f"/api/v1/finance/payees/{alice.payee.id}/",
             "savings-goals": f"/api/v1/finance/savings-goals/{alice.savings_goal.id}/",
         }
@@ -275,7 +112,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             with self.subTest(resource=resource):
                 response = self.client.get(f"/api/v1/finance/{resource}/")
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
-                returned = {row["id"] for row in response.data}
+                returned = {row["id"] for row in rows(response)}
                 self.assertIn(mine, returned)
                 self.assertNotIn(theirs, returned)
 
@@ -287,7 +124,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
             "postings": [
                 {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
                 {
-                    "category": self.alice.category_v2.id,
+                    "category": self.alice.category.id,
                     "amount": "5.00",
                     "sort_order": 1,
                 },
@@ -333,7 +170,7 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
                 "memo": "Rent",
                 "postings": [
                     {"account_id": self.alice.account.id, "amount": "-100.00"},
-                    {"category_id": self.bob.category_v2.id, "amount": "100.00"},
+                    {"category_id": self.bob.category.id, "amount": "100.00"},
                 ],
             },
         )
@@ -368,7 +205,10 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
 
     def test_ai_categorization_settings_are_not_reachable_for_another_tenant(self):
         for method, url in (
-            ("get", f"/api/v1/finance/ai-categorization/settings/?budget_file={self.alice.budget_file.id}"),
+            (
+                "get",
+                f"/api/v1/finance/ai-categorization/settings/?budget_file={self.alice.budget_file.id}",
+            ),
             ("post", "/api/v1/finance/ai-categorization/set-api-key/"),
             ("post", "/api/v1/finance/ai-categorization/test/"),
         ):
@@ -381,7 +221,9 @@ class FinanceApiIsolationTests(TenantIsolationTestCase):
                     )
                 self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertFalse(
-            AICategorizationSettings.objects.filter(budget_file=self.alice.budget_file).exists(),
+            AICategorizationSettings.objects.filter(
+                budget_file=self.alice.budget_file
+            ).exists(),
             msg="a 404 must not have side-effect-created a settings row for another tenant's budget file",
         )
 
@@ -429,9 +271,6 @@ class UnauthenticatedAccessTests(APITestCase):
 
     PROTECTED_URLS = [
         "/api/v1/me/",
-        "/api/v1/transactions/",
-        "/api/v1/categories/",
-        "/api/v1/budgets/",
         "/api/v1/finance/budget-files/",
         "/api/v1/finance/accounts/",
         "/api/v1/finance/categories/",
@@ -461,30 +300,6 @@ class UnauthenticatedAccessTests(APITestCase):
         self.assertEqual(self.client.get("/healthz/").status_code, status.HTTP_200_OK)
 
 
-class LegacyDeprecationTests(TenantIsolationTestCase):
-    """The flat v1 resources announce that they are on the way out."""
-
-    LEGACY_URLS = [
-        "/api/v1/transactions/",
-        "/api/v1/categories/",
-        "/api/v1/budgets/",
-    ]
-
-    def test_legacy_endpoints_are_marked_deprecated(self):
-        for url in self.LEGACY_URLS:
-            with self.subTest(url=url):
-                response = self.client.get(url)
-                self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertEqual(response.headers["Deprecation"], LEGACY_DEPRECATED_AT)
-                self.assertIn("successor-version", response.headers["Link"])
-                self.assertIn("/api/v1/finance/", response.headers["Link"])
-
-    def test_finance_endpoints_are_not_marked_deprecated(self):
-        response = self.client.get("/api/v1/finance/transactions/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertNotIn("Deprecation", response.headers)
-
-
 class OrganizationSharingTests(TenantIsolationTestCase):
     """The new boundary: sharing happens through org membership and roles."""
 
@@ -499,9 +314,7 @@ class OrganizationSharingTests(TenantIsolationTestCase):
 
     def test_membership_grants_read(self):
         self.add_bob_to_alices_org(role="member")
-        response = self.client.get(
-            f"/api/v1/finance/accounts/{self.alice.account.id}/"
-        )
+        response = self.client.get(f"/api/v1/finance/accounts/{self.alice.account.id}/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_membership_grants_write(self):
@@ -513,9 +326,13 @@ class OrganizationSharingTests(TenantIsolationTestCase):
                 "transaction_date": "2026-03-10",
                 "memo": "Shared entry",
                 "postings": [
-                    {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
                     {
-                        "category": self.alice.category_v2.id,
+                        "account": self.alice.account.id,
+                        "amount": "-5.00",
+                        "sort_order": 0,
+                    },
+                    {
+                        "category": self.alice.category.id,
                         "amount": "5.00",
                         "sort_order": 1,
                     },
@@ -538,9 +355,13 @@ class OrganizationSharingTests(TenantIsolationTestCase):
                 "transaction_date": "2026-03-10",
                 "memo": "Viewer trespass",
                 "postings": [
-                    {"account": self.alice.account.id, "amount": "-5.00", "sort_order": 0},
                     {
-                        "category": self.alice.category_v2.id,
+                        "account": self.alice.account.id,
+                        "amount": "-5.00",
+                        "sort_order": 0,
+                    },
+                    {
+                        "category": self.alice.category.id,
                         "amount": "5.00",
                         "sort_order": 1,
                     },
@@ -557,9 +378,7 @@ class OrganizationSharingTests(TenantIsolationTestCase):
 
     def test_non_membership_still_hides_everything(self):
         # Bob has no membership in Alice's org: unchanged 404s.
-        response = self.client.get(
-            f"/api/v1/finance/accounts/{self.alice.account.id}/"
-        )
+        response = self.client.get(f"/api/v1/finance/accounts/{self.alice.account.id}/")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_leaving_revokes_access(self):
@@ -640,15 +459,20 @@ class BankSyncIsolationTests(TenantIsolationTestCase):
 
     def test_detail_and_actions_hide_other_tenants_connection(self):
         detail_url = f"/api/v1/finance/sync-connections/{self.alice_connection.id}/"
-        self.assertEqual(self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
-            self.client.post(f"{detail_url}sync/").status_code, status.HTTP_404_NOT_FOUND
+            self.client.get(detail_url).status_code, status.HTTP_404_NOT_FOUND
+        )
+        self.assertEqual(
+            self.client.post(f"{detail_url}sync/").status_code,
+            status.HTTP_404_NOT_FOUND,
         )
         self.assertEqual(
             self.client.post(f"{detail_url}disconnect/").status_code,
             status.HTTP_404_NOT_FOUND,
         )
-        self.assertEqual(self.client.delete(detail_url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(
+            self.client.delete(detail_url).status_code, status.HTTP_404_NOT_FOUND
+        )
 
     def test_list_only_returns_own_connections(self):
         SyncConnection.objects.create(
@@ -656,7 +480,7 @@ class BankSyncIsolationTests(TenantIsolationTestCase):
         )
         response = self.client.get("/api/v1/finance/sync-connections/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        returned_ids = {row["id"] for row in response.data}
+        returned_ids = {row["id"] for row in rows(response)}
         self.assertNotIn(self.alice_connection.id, returned_ids)
 
     def test_cannot_map_another_tenants_linked_account(self):

@@ -20,8 +20,9 @@ repos:
         files: ^apps/api/
 
   # A committed SECRET_KEY is how this project shipped a public signing key for
-  # months. This hook is the backstop.
+  # months. This hook is the backstop, and it reads the same .gitleaks.toml the
+  # Secrets Scan workflow uses, so local and CI agree on what counts as a leak.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.24.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks

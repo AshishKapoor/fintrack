@@ -1,0 +1,81 @@
+# Gitleaks configuration for FinTrack.
+#
+# Extends the upstream default ruleset and adds the allowlists this repository
+# needs. Everything allowlisted here is a placeholder, a generated build
+# artifact, or an ORM keyword argument that merely reads like a credential.
+# Real credentials never enter the repo - bank sync tokens and BYOK LLM keys
+# are encrypted at rest with FINTRACK_SYNC_ENCRYPTION_KEY (see SECURITY.md),
+# and every .env is gitignored.
+#
+# Verify locally before pushing:
+#   gitleaks git  -c .gitleaks.toml .   # full history, what CI runs
+#   gitleaks dir  -c .gitleaks.toml .   # working tree
+
+title = "FinTrack"
+
+[extend]
+useDefault = true
+
+# --- Project-specific rule -------------------------------------------------
+
+[[rules]]
+# The one credential shape unique to this project: a SimpleFIN access URL,
+# where the embedded username:password pair IS the credential. The default
+# ruleset's generic curl-auth rule does not fire in every context we embed
+# these in (JSON blobs, Python dicts), so catch it explicitly.
+id = "fintrack-simplefin-access-url"
+description = "SimpleFIN access URL with embedded credentials"
+regex = '''https://[A-Za-z0-9._~-]+:[A-Za-z0-9._~-]+@[A-Za-z0-9.-]*(simplefin|bridge)[A-Za-z0-9.-]*'''
+tags = ["credential", "simplefin"]
+
+  [[rules.allowlists]]
+  description = "Test doubles - the fixtures the redaction assertions chew on"
+  regexTarget = "match"
+  regexes = [
+    '''https://(demo-user:demo-pass|user:pass|u:p)@''',
+  ]
+
+# --- Global allowlists -----------------------------------------------------
+
+[[allowlists]]
+description = "Files whose every secret-shaped value is a placeholder or generated"
+paths = [
+  '''\.env\.example$''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)uv\.lock$''',
+  # Generated API clients and the schema they come from: these describe the
+  # shape of auth headers and carry no values.
+  '''apps/web/schema/pft\.yaml$''',
+  '''apps/web/app/client/gen/''',
+  '''packages/sdk-ts/src/gen/''',
+  '''packages/sdk-py/fintrack_sdk/''',
+  # Local build output and agent worktrees. Gitignored, so `gitleaks git`
+  # never sees them; this keeps a bare `gitleaks dir` usable too.
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.claude/worktrees/''',
+]
+
+[[allowlists]]
+description = "Django ORM keyword arguments that read like credentials"
+# Match on the whole line: the flagged "secret" is the identifier sitting next
+# to the word `token`, so only the surrounding line disambiguates it.
+regexTarget = "line"
+regexes = [
+  # pft/org_views.py's invitation lookup: `.get(token=token, accepted_at__isnull=True)`
+  '''accepted_at__isnull''',
+  # `token=token` / `token = RefreshToken(...)` style rebinding, never a literal.
+  '''token\s*=\s*(token|refresh|serializer|self)\b''',
+]
+
+[[allowlists]]
+description = "Documented placeholders a self-hoster is told to replace"
+regexTarget = "line"
+regexes = [
+  '''(?i)(changeme|your[-_][a-z-]*key|replace[-_]me|example[-_]secret)''',
+  '''(?i)<(your|the)[- ][a-z -]+>''',
+  # docker-compose's local dev database, which only listens on the compose
+  # network and is recreated by `make clean`.
+  '''(?i)(POSTGRES|DATABASE)_PASSWORD=(fintrack|postgres)\b''',
+]

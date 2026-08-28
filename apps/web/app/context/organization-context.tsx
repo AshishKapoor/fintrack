@@ -1,6 +1,7 @@
 'use client'
 
 import type { Organization } from '@/client/gen/pft/organization'
+import { fetchAllPages } from '@/lib/paginated'
 import { v1OrgsList } from '@/client/gen/pft/v1/v1'
 import { isLoggedIn } from '@/lib/auth'
 import { clearBudgetFileCache } from '@/lib/finance-client'
@@ -41,7 +42,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const load = useCallback(async () => {
     if (!isLoggedIn()) return
     try {
-      const rows = await v1OrgsList()
+      // Walk every page: the workspace switcher must show all of them, and a
+      // silently truncated list would strand the user out of a workspace.
+      const rows = await fetchAllPages((params) => v1OrgsList(params))
       setOrganizations(rows)
       const storedId = Number(localStorage.getItem(STORAGE_KEY) ?? NaN)
       const stored = rows.find((row) => row.id === storedId)

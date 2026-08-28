@@ -1,6 +1,6 @@
 # API/UI Parity Report
 
-Generated on `2026-08-24` by `scripts/feature_audit.py`.
+Generated on `2026-08-27` by `scripts/feature_audit.py`.
 
 ## Matrix Validation
 

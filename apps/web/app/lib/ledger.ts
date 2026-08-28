@@ -14,6 +14,7 @@ import {
   v1FinanceReportsRunCreate,
 } from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
+import { fetchAllPages } from '@/lib/paginated'
 import useSWR, { useSWRConfig } from 'swr'
 
 /**
@@ -71,7 +72,7 @@ let accountCache: number | null = null
 export async function resolveDefaultAccountId(): Promise<number> {
   if (accountCache) return accountCache
   const budgetFileId = await getDefaultBudgetFileId()
-  const accounts = await v1FinanceAccountsList()
+  const accounts = await fetchAllPages((params) => v1FinanceAccountsList(params))
   let account = accounts.find((item) => item.budget_file === budgetFileId && !item.is_archived)
   if (!account) {
     account = await v1FinanceAccountsCreate({
@@ -372,7 +373,7 @@ export function useCurrentEnvelopeSnapshot() {
   const year = now.getFullYear()
   const month = now.getMonth() + 1
   return useSWR(['envelope-snapshot', year, month] as const, async () => {
-    const months = await v1FinanceBudgetMonthsList()
+    const months = await fetchAllPages((params) => v1FinanceBudgetMonthsList(params))
     const current = months.find((item) => item.year === year && item.month === month)
     if (!current) return null
     return (await v1FinanceBudgetMonthsSnapshotRetrieve(
@@ -388,7 +389,7 @@ export async function getOrCreateCurrentBudgetMonth(): Promise<number> {
   const now = new Date()
   const year = now.getFullYear()
   const month = now.getMonth() + 1
-  const months = await v1FinanceBudgetMonthsList()
+  const months = await fetchAllPages((params) => v1FinanceBudgetMonthsList(params))
   const existing = months.find((item) => item.year === year && item.month === month)
   if (existing) return existing.id
 
@@ -407,7 +408,9 @@ export async function getOrCreateCurrentBudgetMonth(): Promise<number> {
  */
 export async function upsertEnvelopeAssignment(categoryId: number, amount: string) {
   const budgetMonthId = await getOrCreateCurrentBudgetMonth()
-  const assignments = await v1FinanceEnvelopeAssignmentsList()
+  const assignments = await fetchAllPages((params) =>
+    v1FinanceEnvelopeAssignmentsList(params),
+  )
   const existing = assignments.find(
     (item) => item.budget_month === budgetMonthId && item.category === categoryId,
   )

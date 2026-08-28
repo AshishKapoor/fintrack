@@ -14,8 +14,9 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
-from pft.models import AuditLog, BudgetFile, ExportJob, ImportJob, Organization
+from pft.models import AuditLog, ExportJob, ImportJob, Organization
 from pft.tasks import prune_finance_jobs_task
+from pft.tests.helpers import personal_budget_file
 
 User = get_user_model()
 
@@ -27,7 +28,7 @@ class PruneFinanceJobsCommandTests(TestCase):
             username="prune-user@example.com",
             password="StrongPass123!",
         )
-        self.budget_file = BudgetFile.objects.get(user=self.user, is_default=True)
+        self.budget_file = personal_budget_file(self.user)
 
     def _backdated_import(self, days_old, payload="account,amount\nCash,12.34"):
         job = ImportJob.objects.create(
@@ -158,7 +159,7 @@ class PruneFinanceJobsTaskTests(TestCase):
             username="prune-task-user@example.com",
             password="StrongPass123!",
         )
-        budget_file = BudgetFile.objects.get(user=user, is_default=True)
+        budget_file = personal_budget_file(user)
         job = ImportJob.objects.create(
             budget_file=budget_file,
             requested_by=user,

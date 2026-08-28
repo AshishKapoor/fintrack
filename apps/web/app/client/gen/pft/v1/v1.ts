@@ -21,16 +21,12 @@ import type {
   AICategorizationSettings,
   Account,
   AuditLog,
-  BankSyncInstitution,
   BankSyncLinkResult,
-  BankSyncProvider,
   BankSyncResult,
-  Budget,
   BudgetFile,
   BudgetMonth,
   Category,
-  CategoryGroupV2,
-  CategoryV2,
+  CategoryGroup,
   EncryptedBackupBundle,
   EnvelopeAssignment,
   ExportJob,
@@ -41,19 +37,36 @@ import type {
   LedgerTransaction,
   NotificationPreference,
   Organization,
+  PaginatedAccountList,
   PaginatedAuditLogList,
-  PaginatedBudgetList,
+  PaginatedBankSyncInstitutionList,
+  PaginatedBankSyncProviderList,
+  PaginatedBudgetFileList,
+  PaginatedBudgetMonthList,
+  PaginatedCategoryGroupList,
   PaginatedCategoryList,
+  PaginatedEncryptedBackupBundleList,
+  PaginatedEnvelopeAssignmentList,
+  PaginatedExportJobList,
+  PaginatedFxRateList,
+  PaginatedImportJobList,
+  PaginatedLedgerPostingReadList,
   PaginatedLedgerTransactionList,
-  PaginatedTransactionList,
+  PaginatedOrganizationList,
+  PaginatedPayeeList,
+  PaginatedSavedReportList,
+  PaginatedSavingsGoalList,
+  PaginatedScheduledTransactionList,
+  PaginatedSyncConnectionAccountList,
+  PaginatedSyncConnectionList,
+  PaginatedTagList,
+  PaginatedTransactionRuleList,
   PatchedAICategorizationSettings,
   PatchedAccount,
-  PatchedBudget,
   PatchedBudgetFile,
   PatchedBudgetMonth,
   PatchedCategory,
-  PatchedCategoryGroupV2,
-  PatchedCategoryV2,
+  PatchedCategoryGroup,
   PatchedEncryptedBackupBundle,
   PatchedEnvelopeAssignment,
   PatchedExportJob,
@@ -67,7 +80,6 @@ import type {
   PatchedScheduledTransaction,
   PatchedSyncConnection,
   PatchedTag,
-  PatchedTransaction,
   PatchedTransactionRule,
   PatchedUserProfile,
   Payee,
@@ -78,15 +90,33 @@ import type {
   SyncConnection,
   SyncConnectionAccount,
   Tag,
-  Transaction,
   TransactionRule,
   UserProfile,
   UserRegistration,
   V1AuditLogListParams,
-  V1BudgetsListParams,
-  V1CategoriesListParams,
+  V1FinanceAccountsListParams,
+  V1FinanceBackupsListParams,
+  V1FinanceBudgetFilesListParams,
+  V1FinanceBudgetMonthsListParams,
+  V1FinanceCategoriesListParams,
+  V1FinanceCategoryGroupsListParams,
+  V1FinanceEnvelopeAssignmentsListParams,
+  V1FinanceExportsListParams,
+  V1FinanceFxRatesListParams,
+  V1FinanceImportsListParams,
+  V1FinancePayeesListParams,
+  V1FinancePostingsListParams,
+  V1FinanceReportsListParams,
+  V1FinanceRulesListParams,
+  V1FinanceSavingsGoalsListParams,
+  V1FinanceScheduledTransactionsListParams,
+  V1FinanceSyncConnectionAccountsListParams,
+  V1FinanceSyncConnectionsInstitutionsListParams,
+  V1FinanceSyncConnectionsListParams,
+  V1FinanceSyncConnectionsProvidersListParams,
+  V1FinanceTagsListParams,
   V1FinanceTransactionsListParams,
-  V1TransactionsListParams
+  V1OrgsListParams
 } from '.././';
 
 import { httpPFTClient } from '../../../httpPFTClient';
@@ -220,532 +250,6 @@ export const useV1AuditLogExportRetrieve = <TError = unknown>(
   }
 }
 /**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsList = (
-    params?: V1BudgetsListParams,
- ) => {
-    return httpPFTClient<PaginatedBudgetList>(
-    {url: `/api/v1/budgets/`, method: 'GET',
-        params
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsListKey = (params?: V1BudgetsListParams,) => [`/api/v1/budgets/`, ...(params ? [params]: [])] as const;
-
-export type V1BudgetsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsList>>>
-export type V1BudgetsListQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsList = <TError = unknown>(
-  params?: V1BudgetsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1BudgetsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1BudgetsListKey(params) : null);
-  const swrFn = () => v1BudgetsList(params)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsCreate = (
-    budget: NonReadonly<Budget>,
- ) => {
-    return httpPFTClient<Budget>(
-    {url: `/api/v1/budgets/`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: budget
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Budget> }) => {
-    return v1BudgetsCreate(arg);
-  }
-}
-export const getV1BudgetsCreateMutationKey = () => [`/api/v1/budgets/`] as const;
-
-export type V1BudgetsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsCreate>>>
-export type V1BudgetsCreateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1BudgetsCreate>>, TError, Key, NonReadonly<Budget>, Awaited<ReturnType<typeof v1BudgetsCreate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1BudgetsCreateMutationKey();
-  const swrFn = getV1BudgetsCreateMutationFetcher();
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsRetrieve = (
-    id: string,
- ) => {
-    return httpPFTClient<Budget>(
-    {url: `/api/v1/budgets/${id}/`, method: 'GET'
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsRetrieveKey = (id: string,) => [`/api/v1/budgets/${id}/`] as const;
-
-export type V1BudgetsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsRetrieve>>>
-export type V1BudgetsRetrieveQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsRetrieve = <TError = unknown>(
-  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1BudgetsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(id)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1BudgetsRetrieveKey(id) : null);
-  const swrFn = () => v1BudgetsRetrieve(id)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsUpdate = (
-    id: string,
-    budget: NonReadonly<Budget>,
- ) => {
-    return httpPFTClient<Budget>(
-    {url: `/api/v1/budgets/${id}/`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: budget
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Budget> }) => {
-    return v1BudgetsUpdate(id, arg);
-  }
-}
-export const getV1BudgetsUpdateMutationKey = (id: string,) => [`/api/v1/budgets/${id}/`] as const;
-
-export type V1BudgetsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsUpdate>>>
-export type V1BudgetsUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1BudgetsUpdate>>, TError, Key, NonReadonly<Budget>, Awaited<ReturnType<typeof v1BudgetsUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1BudgetsUpdateMutationKey(id);
-  const swrFn = getV1BudgetsUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsPartialUpdate = (
-    id: string,
-    patchedBudget: NonReadonly<PatchedBudget>,
- ) => {
-    return httpPFTClient<Budget>(
-    {url: `/api/v1/budgets/${id}/`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: patchedBudget
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedBudget> }) => {
-    return v1BudgetsPartialUpdate(id, arg);
-  }
-}
-export const getV1BudgetsPartialUpdateMutationKey = (id: string,) => [`/api/v1/budgets/${id}/`] as const;
-
-export type V1BudgetsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsPartialUpdate>>>
-export type V1BudgetsPartialUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1BudgetsPartialUpdate>>, TError, Key, NonReadonly<PatchedBudget>, Awaited<ReturnType<typeof v1BudgetsPartialUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1BudgetsPartialUpdateMutationKey(id);
-  const swrFn = getV1BudgetsPartialUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1BudgetsDestroy = (
-    id: string,
- ) => {
-    return httpPFTClient<void>(
-    {url: `/api/v1/budgets/${id}/`, method: 'DELETE'
-    },
-    );
-  }
-
-
-
-export const getV1BudgetsDestroyMutationFetcher = (id: string, ) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return v1BudgetsDestroy(id);
-  }
-}
-export const getV1BudgetsDestroyMutationKey = (id: string,) => [`/api/v1/budgets/${id}/`] as const;
-
-export type V1BudgetsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1BudgetsDestroy>>>
-export type V1BudgetsDestroyMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1BudgetsDestroy = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1BudgetsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1BudgetsDestroy>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1BudgetsDestroyMutationKey(id);
-  const swrFn = getV1BudgetsDestroyMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesList = (
-    params?: V1CategoriesListParams,
- ) => {
-    return httpPFTClient<PaginatedCategoryList>(
-    {url: `/api/v1/categories/`, method: 'GET',
-        params
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesListKey = (params?: V1CategoriesListParams,) => [`/api/v1/categories/`, ...(params ? [params]: [])] as const;
-
-export type V1CategoriesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesList>>>
-export type V1CategoriesListQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesList = <TError = unknown>(
-  params?: V1CategoriesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1CategoriesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1CategoriesListKey(params) : null);
-  const swrFn = () => v1CategoriesList(params)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesCreate = (
-    category: NonReadonly<Category>,
- ) => {
-    return httpPFTClient<Category>(
-    {url: `/api/v1/categories/`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: category
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
-    return v1CategoriesCreate(arg);
-  }
-}
-export const getV1CategoriesCreateMutationKey = () => [`/api/v1/categories/`] as const;
-
-export type V1CategoriesCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesCreate>>>
-export type V1CategoriesCreateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1CategoriesCreate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1CategoriesCreate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1CategoriesCreateMutationKey();
-  const swrFn = getV1CategoriesCreateMutationFetcher();
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesRetrieve = (
-    id: string,
- ) => {
-    return httpPFTClient<Category>(
-    {url: `/api/v1/categories/${id}/`, method: 'GET'
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesRetrieveKey = (id: string,) => [`/api/v1/categories/${id}/`] as const;
-
-export type V1CategoriesRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesRetrieve>>>
-export type V1CategoriesRetrieveQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesRetrieve = <TError = unknown>(
-  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1CategoriesRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(id)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1CategoriesRetrieveKey(id) : null);
-  const swrFn = () => v1CategoriesRetrieve(id)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesUpdate = (
-    id: string,
-    category: NonReadonly<Category>,
- ) => {
-    return httpPFTClient<Category>(
-    {url: `/api/v1/categories/${id}/`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: category
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
-    return v1CategoriesUpdate(id, arg);
-  }
-}
-export const getV1CategoriesUpdateMutationKey = (id: string,) => [`/api/v1/categories/${id}/`] as const;
-
-export type V1CategoriesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesUpdate>>>
-export type V1CategoriesUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1CategoriesUpdate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1CategoriesUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1CategoriesUpdateMutationKey(id);
-  const swrFn = getV1CategoriesUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesPartialUpdate = (
-    id: string,
-    patchedCategory: NonReadonly<PatchedCategory>,
- ) => {
-    return httpPFTClient<Category>(
-    {url: `/api/v1/categories/${id}/`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: patchedCategory
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategory> }) => {
-    return v1CategoriesPartialUpdate(id, arg);
-  }
-}
-export const getV1CategoriesPartialUpdateMutationKey = (id: string,) => [`/api/v1/categories/${id}/`] as const;
-
-export type V1CategoriesPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesPartialUpdate>>>
-export type V1CategoriesPartialUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1CategoriesPartialUpdate>>, TError, Key, NonReadonly<PatchedCategory>, Awaited<ReturnType<typeof v1CategoriesPartialUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1CategoriesPartialUpdateMutationKey(id);
-  const swrFn = getV1CategoriesPartialUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1CategoriesDestroy = (
-    id: string,
- ) => {
-    return httpPFTClient<void>(
-    {url: `/api/v1/categories/${id}/`, method: 'DELETE'
-    },
-    );
-  }
-
-
-
-export const getV1CategoriesDestroyMutationFetcher = (id: string, ) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return v1CategoriesDestroy(id);
-  }
-}
-export const getV1CategoriesDestroyMutationKey = (id: string,) => [`/api/v1/categories/${id}/`] as const;
-
-export type V1CategoriesDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1CategoriesDestroy>>>
-export type V1CategoriesDestroyMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1CategoriesDestroy = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1CategoriesDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1CategoriesDestroy>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1CategoriesDestroyMutationKey(id);
-  const swrFn = getV1CategoriesDestroyMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
  * Base class for the finance viewsets.
 
 Enforces authentication and, on unsafe methods, that the target budget
@@ -754,29 +258,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceAccountsList = (
-    
+    params?: V1FinanceAccountsListParams,
  ) => {
-    return httpPFTClient<Account[]>(
-    {url: `/api/v1/finance/accounts/`, method: 'GET'
+    return httpPFTClient<PaginatedAccountList>(
+    {url: `/api/v1/finance/accounts/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceAccountsListKey = () => [`/api/v1/finance/accounts/`] as const;
+export const getV1FinanceAccountsListKey = (params?: V1FinanceAccountsListParams,) => [`/api/v1/finance/accounts/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceAccountsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceAccountsList>>>
 export type V1FinanceAccountsListQueryError = unknown
 
 export const useV1FinanceAccountsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceAccountsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceAccountsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceAccountsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceAccountsListKey() : null);
-  const swrFn = () => v1FinanceAccountsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceAccountsListKey(params) : null);
+  const swrFn = () => v1FinanceAccountsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -1245,29 +750,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBackupsList = (
-    
+    params?: V1FinanceBackupsListParams,
  ) => {
-    return httpPFTClient<EncryptedBackupBundle[]>(
-    {url: `/api/v1/finance/backups/`, method: 'GET'
+    return httpPFTClient<PaginatedEncryptedBackupBundleList>(
+    {url: `/api/v1/finance/backups/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceBackupsListKey = () => [`/api/v1/finance/backups/`] as const;
+export const getV1FinanceBackupsListKey = (params?: V1FinanceBackupsListParams,) => [`/api/v1/finance/backups/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceBackupsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceBackupsList>>>
 export type V1FinanceBackupsListQueryError = unknown
 
 export const useV1FinanceBackupsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBackupsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceBackupsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBackupsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBackupsListKey() : null);
-  const swrFn = () => v1FinanceBackupsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBackupsListKey(params) : null);
+  const swrFn = () => v1FinanceBackupsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -1553,29 +1059,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetFilesList = (
-    
+    params?: V1FinanceBudgetFilesListParams,
  ) => {
-    return httpPFTClient<BudgetFile[]>(
-    {url: `/api/v1/finance/budget-files/`, method: 'GET'
+    return httpPFTClient<PaginatedBudgetFileList>(
+    {url: `/api/v1/finance/budget-files/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceBudgetFilesListKey = () => [`/api/v1/finance/budget-files/`] as const;
+export const getV1FinanceBudgetFilesListKey = (params?: V1FinanceBudgetFilesListParams,) => [`/api/v1/finance/budget-files/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceBudgetFilesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceBudgetFilesList>>>
 export type V1FinanceBudgetFilesListQueryError = unknown
 
 export const useV1FinanceBudgetFilesList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBudgetFilesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceBudgetFilesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBudgetFilesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBudgetFilesListKey() : null);
-  const swrFn = () => v1FinanceBudgetFilesList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBudgetFilesListKey(params) : null);
+  const swrFn = () => v1FinanceBudgetFilesList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -1853,12 +1360,12 @@ export const useV1FinanceBudgetFilesBalancesRetrieve = <TError = unknown>(
   }
 }
 /**
- * Base class for the finance viewsets.
+ * Record this file as the caller's default in its workspace.
 
-Enforces authentication and, on unsafe methods, that the target budget
-file admits writes for this user (viewers are read-only). Every subclass
-remains responsible for scoping its own get_queryset() through
-tenancy.budget_file_q - see ARCHITECTURE.md.
+Per-caller, not per-file: before `is_default` moved onto Membership,
+this cleared the flag across every budget file the caller could see,
+so one member choosing a default silently changed it for everyone else
+in a shared workspace - and for their other workspaces too.
  */
 export const v1FinanceBudgetFilesSetDefaultCreate = (
     id: string,
@@ -1909,29 +1416,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceBudgetMonthsList = (
-    
+    params?: V1FinanceBudgetMonthsListParams,
  ) => {
-    return httpPFTClient<BudgetMonth[]>(
-    {url: `/api/v1/finance/budget-months/`, method: 'GET'
+    return httpPFTClient<PaginatedBudgetMonthList>(
+    {url: `/api/v1/finance/budget-months/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceBudgetMonthsListKey = () => [`/api/v1/finance/budget-months/`] as const;
+export const getV1FinanceBudgetMonthsListKey = (params?: V1FinanceBudgetMonthsListParams,) => [`/api/v1/finance/budget-months/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceBudgetMonthsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceBudgetMonthsList>>>
 export type V1FinanceBudgetMonthsListQueryError = unknown
 
 export const useV1FinanceBudgetMonthsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBudgetMonthsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceBudgetMonthsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceBudgetMonthsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBudgetMonthsListKey() : null);
-  const swrFn = () => v1FinanceBudgetMonthsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceBudgetMonthsListKey(params) : null);
+  const swrFn = () => v1FinanceBudgetMonthsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -2361,29 +1869,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesList = (
-    
+    params?: V1FinanceCategoriesListParams,
  ) => {
-    return httpPFTClient<CategoryV2[]>(
-    {url: `/api/v1/finance/categories/`, method: 'GET'
+    return httpPFTClient<PaginatedCategoryList>(
+    {url: `/api/v1/finance/categories/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceCategoriesListKey = () => [`/api/v1/finance/categories/`] as const;
+export const getV1FinanceCategoriesListKey = (params?: V1FinanceCategoriesListParams,) => [`/api/v1/finance/categories/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceCategoriesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceCategoriesList>>>
 export type V1FinanceCategoriesListQueryError = unknown
 
 export const useV1FinanceCategoriesList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceCategoriesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceCategoriesListKey() : null);
-  const swrFn = () => v1FinanceCategoriesList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceCategoriesListKey(params) : null);
+  const swrFn = () => v1FinanceCategoriesList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -2401,12 +1910,12 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesCreate = (
-    categoryV2: NonReadonly<CategoryV2>,
+    category: NonReadonly<Category>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: categoryV2
+      data: category
     },
     );
   }
@@ -2414,7 +1923,7 @@ export const v1FinanceCategoriesCreate = (
 
 
 export const getV1FinanceCategoriesCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
     return v1FinanceCategoriesCreate(arg);
   }
 }
@@ -2424,7 +1933,7 @@ export type V1FinanceCategoriesCreateMutationResult = NonNullable<Awaited<Return
 export type V1FinanceCategoriesCreateMutationError = unknown
 
 export const useV1FinanceCategoriesCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>, TError, Key, NonReadonly<CategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>> & { swrKey?: string }, }
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1FinanceCategoriesCreate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2450,7 +1959,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoriesRetrieve = (
     id: string,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'GET'
     },
     );
@@ -2489,12 +1998,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesUpdate = (
     id: string,
-    categoryV2: NonReadonly<CategoryV2>,
+    category: NonReadonly<Category>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryV2
+      data: category
     },
     );
   }
@@ -2502,7 +2011,7 @@ export const v1FinanceCategoriesUpdate = (
 
 
 export const getV1FinanceCategoriesUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<Category> }) => {
     return v1FinanceCategoriesUpdate(id, arg);
   }
 }
@@ -2512,7 +2021,7 @@ export type V1FinanceCategoriesUpdateMutationResult = NonNullable<Awaited<Return
 export type V1FinanceCategoriesUpdateMutationError = unknown
 
 export const useV1FinanceCategoriesUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>, TError, Key, NonReadonly<CategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>, TError, Key, NonReadonly<Category>, Awaited<ReturnType<typeof v1FinanceCategoriesUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2537,12 +2046,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoriesPartialUpdate = (
     id: string,
-    patchedCategoryV2: NonReadonly<PatchedCategoryV2>,
+    patchedCategory: NonReadonly<PatchedCategory>,
  ) => {
-    return httpPFTClient<CategoryV2>(
+    return httpPFTClient<Category>(
     {url: `/api/v1/finance/categories/${id}/`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: patchedCategoryV2
+      data: patchedCategory
     },
     );
   }
@@ -2550,7 +2059,7 @@ export const v1FinanceCategoriesPartialUpdate = (
 
 
 export const getV1FinanceCategoriesPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategory> }) => {
     return v1FinanceCategoriesPartialUpdate(id, arg);
   }
 }
@@ -2560,7 +2069,7 @@ export type V1FinanceCategoriesPartialUpdateMutationResult = NonNullable<Awaited
 export type V1FinanceCategoriesPartialUpdateMutationError = unknown
 
 export const useV1FinanceCategoriesPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryV2>, Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>, TError, Key, NonReadonly<PatchedCategory>, Awaited<ReturnType<typeof v1FinanceCategoriesPartialUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2629,29 +2138,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsList = (
-    
+    params?: V1FinanceCategoryGroupsListParams,
  ) => {
-    return httpPFTClient<CategoryGroupV2[]>(
-    {url: `/api/v1/finance/category-groups/`, method: 'GET'
+    return httpPFTClient<PaginatedCategoryGroupList>(
+    {url: `/api/v1/finance/category-groups/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceCategoryGroupsListKey = () => [`/api/v1/finance/category-groups/`] as const;
+export const getV1FinanceCategoryGroupsListKey = (params?: V1FinanceCategoryGroupsListParams,) => [`/api/v1/finance/category-groups/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceCategoryGroupsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceCategoryGroupsList>>>
 export type V1FinanceCategoryGroupsListQueryError = unknown
 
 export const useV1FinanceCategoryGroupsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceCategoryGroupsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceCategoryGroupsListKey() : null);
-  const swrFn = () => v1FinanceCategoryGroupsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceCategoryGroupsListKey(params) : null);
+  const swrFn = () => v1FinanceCategoryGroupsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -2669,12 +2179,12 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsCreate = (
-    categoryGroupV2: NonReadonly<CategoryGroupV2>,
+    categoryGroup: NonReadonly<CategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/`, method: 'POST',
       headers: {'Content-Type': 'application/json', },
-      data: categoryGroupV2
+      data: categoryGroup
     },
     );
   }
@@ -2682,7 +2192,7 @@ export const v1FinanceCategoryGroupsCreate = (
 
 
 export const getV1FinanceCategoryGroupsCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroup> }) => {
     return v1FinanceCategoryGroupsCreate(arg);
   }
 }
@@ -2692,7 +2202,7 @@ export type V1FinanceCategoryGroupsCreateMutationResult = NonNullable<Awaited<Re
 export type V1FinanceCategoryGroupsCreateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>, TError, Key, NonReadonly<CategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>> & { swrKey?: string }, }
+   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>, TError, Key, NonReadonly<CategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsCreate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2718,7 +2228,7 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
 export const v1FinanceCategoryGroupsRetrieve = (
     id: string,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'GET'
     },
     );
@@ -2757,12 +2267,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsUpdate = (
     id: string,
-    categoryGroupV2: NonReadonly<CategoryGroupV2>,
+    categoryGroup: NonReadonly<CategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'PUT',
       headers: {'Content-Type': 'application/json', },
-      data: categoryGroupV2
+      data: categoryGroup
     },
     );
   }
@@ -2770,7 +2280,7 @@ export const v1FinanceCategoryGroupsUpdate = (
 
 
 export const getV1FinanceCategoryGroupsUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<CategoryGroup> }) => {
     return v1FinanceCategoryGroupsUpdate(id, arg);
   }
 }
@@ -2780,7 +2290,7 @@ export type V1FinanceCategoryGroupsUpdateMutationResult = NonNullable<Awaited<Re
 export type V1FinanceCategoryGroupsUpdateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>, TError, Key, NonReadonly<CategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>, TError, Key, NonReadonly<CategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2805,12 +2315,12 @@ tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceCategoryGroupsPartialUpdate = (
     id: string,
-    patchedCategoryGroupV2: NonReadonly<PatchedCategoryGroupV2>,
+    patchedCategoryGroup: NonReadonly<PatchedCategoryGroup>,
  ) => {
-    return httpPFTClient<CategoryGroupV2>(
+    return httpPFTClient<CategoryGroup>(
     {url: `/api/v1/finance/category-groups/${id}/`, method: 'PATCH',
       headers: {'Content-Type': 'application/json', },
-      data: patchedCategoryGroupV2
+      data: patchedCategoryGroup
     },
     );
   }
@@ -2818,7 +2328,7 @@ export const v1FinanceCategoryGroupsPartialUpdate = (
 
 
 export const getV1FinanceCategoryGroupsPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryGroupV2> }) => {
+  return (_: Key, { arg }: { arg: NonReadonly<PatchedCategoryGroup> }) => {
     return v1FinanceCategoryGroupsPartialUpdate(id, arg);
   }
 }
@@ -2828,7 +2338,7 @@ export type V1FinanceCategoryGroupsPartialUpdateMutationResult = NonNullable<Awa
 export type V1FinanceCategoryGroupsPartialUpdateMutationError = unknown
 
 export const useV1FinanceCategoryGroupsPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryGroupV2>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>> & { swrKey?: string }, }
+  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>, TError, Key, NonReadonly<PatchedCategoryGroup>, Awaited<ReturnType<typeof v1FinanceCategoryGroupsPartialUpdate>>> & { swrKey?: string }, }
 ) => {
 
   const {swr: swrOptions} = options ?? {}
@@ -2897,29 +2407,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceEnvelopeAssignmentsList = (
-    
+    params?: V1FinanceEnvelopeAssignmentsListParams,
  ) => {
-    return httpPFTClient<EnvelopeAssignment[]>(
-    {url: `/api/v1/finance/envelope-assignments/`, method: 'GET'
+    return httpPFTClient<PaginatedEnvelopeAssignmentList>(
+    {url: `/api/v1/finance/envelope-assignments/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceEnvelopeAssignmentsListKey = () => [`/api/v1/finance/envelope-assignments/`] as const;
+export const getV1FinanceEnvelopeAssignmentsListKey = (params?: V1FinanceEnvelopeAssignmentsListParams,) => [`/api/v1/finance/envelope-assignments/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceEnvelopeAssignmentsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceEnvelopeAssignmentsList>>>
 export type V1FinanceEnvelopeAssignmentsListQueryError = unknown
 
 export const useV1FinanceEnvelopeAssignmentsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceEnvelopeAssignmentsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceEnvelopeAssignmentsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceEnvelopeAssignmentsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceEnvelopeAssignmentsListKey() : null);
-  const swrFn = () => v1FinanceEnvelopeAssignmentsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceEnvelopeAssignmentsListKey(params) : null);
+  const swrFn = () => v1FinanceEnvelopeAssignmentsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -3165,29 +2676,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceExportsList = (
-    
+    params?: V1FinanceExportsListParams,
  ) => {
-    return httpPFTClient<ExportJob[]>(
-    {url: `/api/v1/finance/exports/`, method: 'GET'
+    return httpPFTClient<PaginatedExportJobList>(
+    {url: `/api/v1/finance/exports/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceExportsListKey = () => [`/api/v1/finance/exports/`] as const;
+export const getV1FinanceExportsListKey = (params?: V1FinanceExportsListParams,) => [`/api/v1/finance/exports/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceExportsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceExportsList>>>
 export type V1FinanceExportsListQueryError = unknown
 
 export const useV1FinanceExportsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceExportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceExportsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceExportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceExportsListKey() : null);
-  const swrFn = () => v1FinanceExportsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceExportsListKey(params) : null);
+  const swrFn = () => v1FinanceExportsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -3469,29 +2981,30 @@ export const useV1FinanceExportsDownloadRetrieve = <TError = unknown>(
 not scoped to any one budget file. See pft/fx_rates.py.
  */
 export const v1FinanceFxRatesList = (
-    
+    params?: V1FinanceFxRatesListParams,
  ) => {
-    return httpPFTClient<FxRate[]>(
-    {url: `/api/v1/finance/fx-rates/`, method: 'GET'
+    return httpPFTClient<PaginatedFxRateList>(
+    {url: `/api/v1/finance/fx-rates/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceFxRatesListKey = () => [`/api/v1/finance/fx-rates/`] as const;
+export const getV1FinanceFxRatesListKey = (params?: V1FinanceFxRatesListParams,) => [`/api/v1/finance/fx-rates/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceFxRatesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceFxRatesList>>>
 export type V1FinanceFxRatesListQueryError = unknown
 
 export const useV1FinanceFxRatesList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceFxRatesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceFxRatesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceFxRatesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceFxRatesListKey() : null);
-  const swrFn = () => v1FinanceFxRatesList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceFxRatesListKey(params) : null);
+  const swrFn = () => v1FinanceFxRatesList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -3587,29 +3100,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceImportsList = (
-    
+    params?: V1FinanceImportsListParams,
  ) => {
-    return httpPFTClient<ImportJob[]>(
-    {url: `/api/v1/finance/imports/`, method: 'GET'
+    return httpPFTClient<PaginatedImportJobList>(
+    {url: `/api/v1/finance/imports/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceImportsListKey = () => [`/api/v1/finance/imports/`] as const;
+export const getV1FinanceImportsListKey = (params?: V1FinanceImportsListParams,) => [`/api/v1/finance/imports/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceImportsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceImportsList>>>
 export type V1FinanceImportsListQueryError = unknown
 
 export const useV1FinanceImportsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceImportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceImportsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceImportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceImportsListKey() : null);
-  const swrFn = () => v1FinanceImportsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceImportsListKey(params) : null);
+  const swrFn = () => v1FinanceImportsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -3951,29 +3465,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePayeesList = (
-    
+    params?: V1FinancePayeesListParams,
  ) => {
-    return httpPFTClient<Payee[]>(
-    {url: `/api/v1/finance/payees/`, method: 'GET'
+    return httpPFTClient<PaginatedPayeeList>(
+    {url: `/api/v1/finance/payees/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinancePayeesListKey = () => [`/api/v1/finance/payees/`] as const;
+export const getV1FinancePayeesListKey = (params?: V1FinancePayeesListParams,) => [`/api/v1/finance/payees/`, ...(params ? [params]: [])] as const;
 
 export type V1FinancePayeesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinancePayeesList>>>
 export type V1FinancePayeesListQueryError = unknown
 
 export const useV1FinancePayeesList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinancePayeesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinancePayeesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinancePayeesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinancePayeesListKey() : null);
-  const swrFn = () => v1FinancePayeesList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinancePayeesListKey(params) : null);
+  const swrFn = () => v1FinancePayeesList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -4264,29 +3779,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinancePostingsList = (
-    
+    params?: V1FinancePostingsListParams,
  ) => {
-    return httpPFTClient<LedgerPostingRead[]>(
-    {url: `/api/v1/finance/postings/`, method: 'GET'
+    return httpPFTClient<PaginatedLedgerPostingReadList>(
+    {url: `/api/v1/finance/postings/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinancePostingsListKey = () => [`/api/v1/finance/postings/`] as const;
+export const getV1FinancePostingsListKey = (params?: V1FinancePostingsListParams,) => [`/api/v1/finance/postings/`, ...(params ? [params]: [])] as const;
 
 export type V1FinancePostingsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinancePostingsList>>>
 export type V1FinancePostingsListQueryError = unknown
 
 export const useV1FinancePostingsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinancePostingsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinancePostingsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinancePostingsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinancePostingsListKey() : null);
-  const swrFn = () => v1FinancePostingsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinancePostingsListKey(params) : null);
+  const swrFn = () => v1FinancePostingsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -4344,29 +3860,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceReportsList = (
-    
+    params?: V1FinanceReportsListParams,
  ) => {
-    return httpPFTClient<SavedReport[]>(
-    {url: `/api/v1/finance/reports/`, method: 'GET'
+    return httpPFTClient<PaginatedSavedReportList>(
+    {url: `/api/v1/finance/reports/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceReportsListKey = () => [`/api/v1/finance/reports/`] as const;
+export const getV1FinanceReportsListKey = (params?: V1FinanceReportsListParams,) => [`/api/v1/finance/reports/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceReportsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceReportsList>>>
 export type V1FinanceReportsListQueryError = unknown
 
 export const useV1FinanceReportsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceReportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceReportsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceReportsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceReportsListKey() : null);
-  const swrFn = () => v1FinanceReportsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceReportsListKey(params) : null);
+  const swrFn = () => v1FinanceReportsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -4707,29 +4224,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceRulesList = (
-    
+    params?: V1FinanceRulesListParams,
  ) => {
-    return httpPFTClient<TransactionRule[]>(
-    {url: `/api/v1/finance/rules/`, method: 'GET'
+    return httpPFTClient<PaginatedTransactionRuleList>(
+    {url: `/api/v1/finance/rules/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceRulesListKey = () => [`/api/v1/finance/rules/`] as const;
+export const getV1FinanceRulesListKey = (params?: V1FinanceRulesListParams,) => [`/api/v1/finance/rules/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceRulesListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceRulesList>>>
 export type V1FinanceRulesListQueryError = unknown
 
 export const useV1FinanceRulesList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceRulesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceRulesListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceRulesList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceRulesListKey() : null);
-  const swrFn = () => v1FinanceRulesList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceRulesListKey(params) : null);
+  const swrFn = () => v1FinanceRulesList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -5022,29 +4540,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceSavingsGoalsList = (
-    
+    params?: V1FinanceSavingsGoalsListParams,
  ) => {
-    return httpPFTClient<SavingsGoal[]>(
-    {url: `/api/v1/finance/savings-goals/`, method: 'GET'
+    return httpPFTClient<PaginatedSavingsGoalList>(
+    {url: `/api/v1/finance/savings-goals/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceSavingsGoalsListKey = () => [`/api/v1/finance/savings-goals/`] as const;
+export const getV1FinanceSavingsGoalsListKey = (params?: V1FinanceSavingsGoalsListParams,) => [`/api/v1/finance/savings-goals/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceSavingsGoalsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSavingsGoalsList>>>
 export type V1FinanceSavingsGoalsListQueryError = unknown
 
 export const useV1FinanceSavingsGoalsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceSavingsGoalsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSavingsGoalsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSavingsGoalsListKey() : null);
-  const swrFn = () => v1FinanceSavingsGoalsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSavingsGoalsListKey(params) : null);
+  const swrFn = () => v1FinanceSavingsGoalsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -5290,29 +4809,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceScheduledTransactionsList = (
-    
+    params?: V1FinanceScheduledTransactionsListParams,
  ) => {
-    return httpPFTClient<ScheduledTransaction[]>(
-    {url: `/api/v1/finance/scheduled-transactions/`, method: 'GET'
+    return httpPFTClient<PaginatedScheduledTransactionList>(
+    {url: `/api/v1/finance/scheduled-transactions/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceScheduledTransactionsListKey = () => [`/api/v1/finance/scheduled-transactions/`] as const;
+export const getV1FinanceScheduledTransactionsListKey = (params?: V1FinanceScheduledTransactionsListParams,) => [`/api/v1/finance/scheduled-transactions/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceScheduledTransactionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceScheduledTransactionsList>>>
 export type V1FinanceScheduledTransactionsListQueryError = unknown
 
 export const useV1FinanceScheduledTransactionsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceScheduledTransactionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceScheduledTransactionsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceScheduledTransactionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceScheduledTransactionsListKey() : null);
-  const swrFn = () => v1FinanceScheduledTransactionsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceScheduledTransactionsListKey(params) : null);
+  const swrFn = () => v1FinanceScheduledTransactionsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -5605,29 +5125,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceSyncConnectionAccountsList = (
-    
+    params?: V1FinanceSyncConnectionAccountsListParams,
  ) => {
-    return httpPFTClient<SyncConnectionAccount[]>(
-    {url: `/api/v1/finance/sync-connection-accounts/`, method: 'GET'
+    return httpPFTClient<PaginatedSyncConnectionAccountList>(
+    {url: `/api/v1/finance/sync-connection-accounts/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceSyncConnectionAccountsListKey = () => [`/api/v1/finance/sync-connection-accounts/`] as const;
+export const getV1FinanceSyncConnectionAccountsListKey = (params?: V1FinanceSyncConnectionAccountsListParams,) => [`/api/v1/finance/sync-connection-accounts/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceSyncConnectionAccountsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsList>>>
 export type V1FinanceSyncConnectionAccountsListQueryError = unknown
 
 export const useV1FinanceSyncConnectionAccountsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceSyncConnectionAccountsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionAccountsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionAccountsListKey() : null);
-  const swrFn = () => v1FinanceSyncConnectionAccountsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionAccountsListKey(params) : null);
+  const swrFn = () => v1FinanceSyncConnectionAccountsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -5826,29 +5347,30 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export const v1FinanceSyncConnectionsList = (
-    
+    params?: V1FinanceSyncConnectionsListParams,
  ) => {
-    return httpPFTClient<SyncConnection[]>(
-    {url: `/api/v1/finance/sync-connections/`, method: 'GET'
+    return httpPFTClient<PaginatedSyncConnectionList>(
+    {url: `/api/v1/finance/sync-connections/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceSyncConnectionsListKey = () => [`/api/v1/finance/sync-connections/`] as const;
+export const getV1FinanceSyncConnectionsListKey = (params?: V1FinanceSyncConnectionsListParams,) => [`/api/v1/finance/sync-connections/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceSyncConnectionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsList>>>
 export type V1FinanceSyncConnectionsListQueryError = unknown
 
 export const useV1FinanceSyncConnectionsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceSyncConnectionsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsListKey() : null);
-  const swrFn = () => v1FinanceSyncConnectionsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsListKey(params) : null);
+  const swrFn = () => v1FinanceSyncConnectionsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -6299,29 +5821,30 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export const v1FinanceSyncConnectionsInstitutionsList = (
-    
+    params?: V1FinanceSyncConnectionsInstitutionsListParams,
  ) => {
-    return httpPFTClient<BankSyncInstitution[]>(
-    {url: `/api/v1/finance/sync-connections/institutions/`, method: 'GET'
+    return httpPFTClient<PaginatedBankSyncInstitutionList>(
+    {url: `/api/v1/finance/sync-connections/institutions/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceSyncConnectionsInstitutionsListKey = () => [`/api/v1/finance/sync-connections/institutions/`] as const;
+export const getV1FinanceSyncConnectionsInstitutionsListKey = (params?: V1FinanceSyncConnectionsInstitutionsListParams,) => [`/api/v1/finance/sync-connections/institutions/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceSyncConnectionsInstitutionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsInstitutionsList>>>
 export type V1FinanceSyncConnectionsInstitutionsListQueryError = unknown
 
 export const useV1FinanceSyncConnectionsInstitutionsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsInstitutionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceSyncConnectionsInstitutionsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsInstitutionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsInstitutionsListKey() : null);
-  const swrFn = () => v1FinanceSyncConnectionsInstitutionsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsInstitutionsListKey(params) : null);
+  const swrFn = () => v1FinanceSyncConnectionsInstitutionsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -6342,29 +5865,30 @@ guard - the same "guarded by construction" property notifications and
 imports already get for free.
  */
 export const v1FinanceSyncConnectionsProvidersList = (
-    
+    params?: V1FinanceSyncConnectionsProvidersListParams,
  ) => {
-    return httpPFTClient<BankSyncProvider[]>(
-    {url: `/api/v1/finance/sync-connections/providers/`, method: 'GET'
+    return httpPFTClient<PaginatedBankSyncProviderList>(
+    {url: `/api/v1/finance/sync-connections/providers/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceSyncConnectionsProvidersListKey = () => [`/api/v1/finance/sync-connections/providers/`] as const;
+export const getV1FinanceSyncConnectionsProvidersListKey = (params?: V1FinanceSyncConnectionsProvidersListParams,) => [`/api/v1/finance/sync-connections/providers/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceSyncConnectionsProvidersListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceSyncConnectionsProvidersList>>>
 export type V1FinanceSyncConnectionsProvidersListQueryError = unknown
 
 export const useV1FinanceSyncConnectionsProvidersList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsProvidersList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceSyncConnectionsProvidersListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceSyncConnectionsProvidersList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsProvidersListKey() : null);
-  const swrFn = () => v1FinanceSyncConnectionsProvidersList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceSyncConnectionsProvidersListKey(params) : null);
+  const swrFn = () => v1FinanceSyncConnectionsProvidersList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -6382,29 +5906,30 @@ remains responsible for scoping its own get_queryset() through
 tenancy.budget_file_q - see ARCHITECTURE.md.
  */
 export const v1FinanceTagsList = (
-    
+    params?: V1FinanceTagsListParams,
  ) => {
-    return httpPFTClient<Tag[]>(
-    {url: `/api/v1/finance/tags/`, method: 'GET'
+    return httpPFTClient<PaginatedTagList>(
+    {url: `/api/v1/finance/tags/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1FinanceTagsListKey = () => [`/api/v1/finance/tags/`] as const;
+export const getV1FinanceTagsListKey = (params?: V1FinanceTagsListParams,) => [`/api/v1/finance/tags/`, ...(params ? [params]: [])] as const;
 
 export type V1FinanceTagsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1FinanceTagsList>>>
 export type V1FinanceTagsListQueryError = unknown
 
 export const useV1FinanceTagsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceTagsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1FinanceTagsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1FinanceTagsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceTagsListKey() : null);
-  const swrFn = () => v1FinanceTagsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1FinanceTagsListKey(params) : null);
+  const swrFn = () => v1FinanceTagsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -7209,29 +6734,30 @@ export const useV1NotificationsTestCreate = <TError = unknown>(
   }
 }
 export const v1OrgsList = (
-    
+    params?: V1OrgsListParams,
  ) => {
-    return httpPFTClient<Organization[]>(
-    {url: `/api/v1/orgs/`, method: 'GET'
+    return httpPFTClient<PaginatedOrganizationList>(
+    {url: `/api/v1/orgs/`, method: 'GET',
+        params
     },
     );
   }
 
 
 
-export const getV1OrgsListKey = () => [`/api/v1/orgs/`] as const;
+export const getV1OrgsListKey = (params?: V1OrgsListParams,) => [`/api/v1/orgs/`, ...(params ? [params]: [])] as const;
 
 export type V1OrgsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1OrgsList>>>
 export type V1OrgsListQueryError = unknown
 
 export const useV1OrgsList = <TError = unknown>(
-   options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
+  params?: V1OrgsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1OrgsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
 ) => {
   const {swr: swrOptions} = options ?? {}
 
   const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsListKey() : null);
-  const swrFn = () => v1OrgsList()
+  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1OrgsListKey(params) : null);
+  const swrFn = () => v1OrgsList(params)
 
   const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
 
@@ -7846,269 +7372,6 @@ export const useV1RegisterCreate = <TError = unknown>(
 
   const swrKey = swrOptions?.swrKey ?? getV1RegisterCreateMutationKey();
   const swrFn = getV1RegisterCreateMutationFetcher();
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsList = (
-    params?: V1TransactionsListParams,
- ) => {
-    return httpPFTClient<PaginatedTransactionList>(
-    {url: `/api/v1/transactions/`, method: 'GET',
-        params
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsListKey = (params?: V1TransactionsListParams,) => [`/api/v1/transactions/`, ...(params ? [params]: [])] as const;
-
-export type V1TransactionsListQueryResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsList>>>
-export type V1TransactionsListQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsList = <TError = unknown>(
-  params?: V1TransactionsListParams, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1TransactionsList>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1TransactionsListKey(params) : null);
-  const swrFn = () => v1TransactionsList(params)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsCreate = (
-    transaction: NonReadonly<Transaction>,
- ) => {
-    return httpPFTClient<Transaction>(
-    {url: `/api/v1/transactions/`, method: 'POST',
-      headers: {'Content-Type': 'application/json', },
-      data: transaction
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsCreateMutationFetcher = ( ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Transaction> }) => {
-    return v1TransactionsCreate(arg);
-  }
-}
-export const getV1TransactionsCreateMutationKey = () => [`/api/v1/transactions/`] as const;
-
-export type V1TransactionsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsCreate>>>
-export type V1TransactionsCreateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsCreate = <TError = unknown>(
-   options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1TransactionsCreate>>, TError, Key, NonReadonly<Transaction>, Awaited<ReturnType<typeof v1TransactionsCreate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1TransactionsCreateMutationKey();
-  const swrFn = getV1TransactionsCreateMutationFetcher();
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsRetrieve = (
-    id: string,
- ) => {
-    return httpPFTClient<Transaction>(
-    {url: `/api/v1/transactions/${id}/`, method: 'GET'
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsRetrieveKey = (id: string,) => [`/api/v1/transactions/${id}/`] as const;
-
-export type V1TransactionsRetrieveQueryResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsRetrieve>>>
-export type V1TransactionsRetrieveQueryError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsRetrieve = <TError = unknown>(
-  id: string, options?: { swr?:SWRConfiguration<Awaited<ReturnType<typeof v1TransactionsRetrieve>>, TError> & { swrKey?: Key, enabled?: boolean },  }
-) => {
-  const {swr: swrOptions} = options ?? {}
-
-  const isEnabled = swrOptions?.enabled !== false && !!(id)
-  const swrKey = swrOptions?.swrKey ?? (() => isEnabled ? getV1TransactionsRetrieveKey(id) : null);
-  const swrFn = () => v1TransactionsRetrieve(id)
-
-  const query = useSwr<Awaited<ReturnType<typeof swrFn>>, TError>(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsUpdate = (
-    id: string,
-    transaction: NonReadonly<Transaction>,
- ) => {
-    return httpPFTClient<Transaction>(
-    {url: `/api/v1/transactions/${id}/`, method: 'PUT',
-      headers: {'Content-Type': 'application/json', },
-      data: transaction
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<Transaction> }) => {
-    return v1TransactionsUpdate(id, arg);
-  }
-}
-export const getV1TransactionsUpdateMutationKey = (id: string,) => [`/api/v1/transactions/${id}/`] as const;
-
-export type V1TransactionsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsUpdate>>>
-export type V1TransactionsUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1TransactionsUpdate>>, TError, Key, NonReadonly<Transaction>, Awaited<ReturnType<typeof v1TransactionsUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1TransactionsUpdateMutationKey(id);
-  const swrFn = getV1TransactionsUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsPartialUpdate = (
-    id: string,
-    patchedTransaction: NonReadonly<PatchedTransaction>,
- ) => {
-    return httpPFTClient<Transaction>(
-    {url: `/api/v1/transactions/${id}/`, method: 'PATCH',
-      headers: {'Content-Type': 'application/json', },
-      data: patchedTransaction
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsPartialUpdateMutationFetcher = (id: string, ) => {
-  return (_: Key, { arg }: { arg: NonReadonly<PatchedTransaction> }) => {
-    return v1TransactionsPartialUpdate(id, arg);
-  }
-}
-export const getV1TransactionsPartialUpdateMutationKey = (id: string,) => [`/api/v1/transactions/${id}/`] as const;
-
-export type V1TransactionsPartialUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsPartialUpdate>>>
-export type V1TransactionsPartialUpdateMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsPartialUpdate = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1TransactionsPartialUpdate>>, TError, Key, NonReadonly<PatchedTransaction>, Awaited<ReturnType<typeof v1TransactionsPartialUpdate>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1TransactionsPartialUpdateMutationKey(id);
-  const swrFn = getV1TransactionsPartialUpdateMutationFetcher(id);
-
-  const query = useSWRMutation(swrKey, swrFn, swrOptions)
-
-  return {
-    swrKey,
-    ...query
-  }
-}
-/**
- * Deprecated legacy resource; use /api/v1/finance/ instead.
- * @deprecated
- */
-export const v1TransactionsDestroy = (
-    id: string,
- ) => {
-    return httpPFTClient<void>(
-    {url: `/api/v1/transactions/${id}/`, method: 'DELETE'
-    },
-    );
-  }
-
-
-
-export const getV1TransactionsDestroyMutationFetcher = (id: string, ) => {
-  return (_: Key, __: { arg: Arguments }) => {
-    return v1TransactionsDestroy(id);
-  }
-}
-export const getV1TransactionsDestroyMutationKey = (id: string,) => [`/api/v1/transactions/${id}/`] as const;
-
-export type V1TransactionsDestroyMutationResult = NonNullable<Awaited<ReturnType<typeof v1TransactionsDestroy>>>
-export type V1TransactionsDestroyMutationError = unknown
-
-/**
- * @deprecated
- */
-export const useV1TransactionsDestroy = <TError = unknown>(
-  id: string, options?: { swr?:SWRMutationConfiguration<Awaited<ReturnType<typeof v1TransactionsDestroy>>, TError, Key, Arguments, Awaited<ReturnType<typeof v1TransactionsDestroy>>> & { swrKey?: string }, }
-) => {
-
-  const {swr: swrOptions} = options ?? {}
-
-  const swrKey = swrOptions?.swrKey ?? getV1TransactionsDestroyMutationKey(id);
-  const swrFn = getV1TransactionsDestroyMutationFetcher(id);
 
   const query = useSWRMutation(swrKey, swrFn, swrOptions)
 

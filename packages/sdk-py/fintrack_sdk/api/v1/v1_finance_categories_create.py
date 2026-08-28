@@ -5,13 +5,13 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.category_v2 import CategoryV2
+from ...models.category import Category
 from ...types import Response
 
 
 def _get_kwargs(
     *,
-    body: CategoryV2,
+    body: Category,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -30,9 +30,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CategoryV2 | None:
+) -> Category | None:
     if response.status_code == 201:
-        response_201 = CategoryV2.from_dict(response.json())
+        response_201 = Category.from_dict(response.json())
 
         return response_201
 
@@ -44,7 +44,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CategoryV2]:
+) -> Response[Category]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -56,8 +56,8 @@ def _build_response(
 def sync_detailed(
     *,
     client: AuthenticatedClient,
-    body: CategoryV2,
-) -> Response[CategoryV2]:
+    body: Category,
+) -> Response[Category]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -66,14 +66,14 @@ def sync_detailed(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryV2):
+        body (Category):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryV2]
+        Response[Category]
     """
 
     kwargs = _get_kwargs(
@@ -90,8 +90,8 @@ def sync_detailed(
 def sync(
     *,
     client: AuthenticatedClient,
-    body: CategoryV2,
-) -> CategoryV2 | None:
+    body: Category,
+) -> Category | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -100,14 +100,14 @@ def sync(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryV2):
+        body (Category):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryV2
+        Category
     """
 
     return sync_detailed(
@@ -119,8 +119,8 @@ def sync(
 async def asyncio_detailed(
     *,
     client: AuthenticatedClient,
-    body: CategoryV2,
-) -> Response[CategoryV2]:
+    body: Category,
+) -> Response[Category]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -129,14 +129,14 @@ async def asyncio_detailed(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryV2):
+        body (Category):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryV2]
+        Response[Category]
     """
 
     kwargs = _get_kwargs(
@@ -151,8 +151,8 @@ async def asyncio_detailed(
 async def asyncio(
     *,
     client: AuthenticatedClient,
-    body: CategoryV2,
-) -> CategoryV2 | None:
+    body: Category,
+) -> Category | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -161,14 +161,14 @@ async def asyncio(
     tenancy.budget_file_q - see ARCHITECTURE.md.
 
     Args:
-        body (CategoryV2):
+        body (Category):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryV2
+        Category
     """
 
     return (

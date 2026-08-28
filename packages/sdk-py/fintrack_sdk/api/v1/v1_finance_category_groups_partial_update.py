@@ -6,15 +6,15 @@ import httpx
 
 from ... import errors
 from ...client import AuthenticatedClient, Client
-from ...models.category_group_v2 import CategoryGroupV2
-from ...models.patched_category_group_v2 import PatchedCategoryGroupV2
+from ...models.category_group import CategoryGroup
+from ...models.patched_category_group import PatchedCategoryGroup
 from ...types import UNSET, Response, Unset
 
 
 def _get_kwargs(
     id: str,
     *,
-    body: PatchedCategoryGroupV2 | Unset = UNSET,
+    body: PatchedCategoryGroup | Unset = UNSET,
 ) -> dict[str, Any]:
     headers: dict[str, Any] = {}
 
@@ -36,9 +36,9 @@ def _get_kwargs(
 
 def _parse_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> CategoryGroupV2 | None:
+) -> CategoryGroup | None:
     if response.status_code == 200:
-        response_200 = CategoryGroupV2.from_dict(response.json())
+        response_200 = CategoryGroup.from_dict(response.json())
 
         return response_200
 
@@ -50,7 +50,7 @@ def _parse_response(
 
 def _build_response(
     *, client: AuthenticatedClient | Client, response: httpx.Response
-) -> Response[CategoryGroupV2]:
+) -> Response[CategoryGroup]:
     return Response(
         status_code=HTTPStatus(response.status_code),
         content=response.content,
@@ -63,8 +63,8 @@ def sync_detailed(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryGroupV2 | Unset = UNSET,
-) -> Response[CategoryGroupV2]:
+    body: PatchedCategoryGroup | Unset = UNSET,
+) -> Response[CategoryGroup]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -74,14 +74,14 @@ def sync_detailed(
 
     Args:
         id (str):
-        body (PatchedCategoryGroupV2 | Unset):
+        body (PatchedCategoryGroup | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryGroupV2]
+        Response[CategoryGroup]
     """
 
     kwargs = _get_kwargs(
@@ -100,8 +100,8 @@ def sync(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryGroupV2 | Unset = UNSET,
-) -> CategoryGroupV2 | None:
+    body: PatchedCategoryGroup | Unset = UNSET,
+) -> CategoryGroup | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -111,14 +111,14 @@ def sync(
 
     Args:
         id (str):
-        body (PatchedCategoryGroupV2 | Unset):
+        body (PatchedCategoryGroup | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryGroupV2
+        CategoryGroup
     """
 
     return sync_detailed(
@@ -132,8 +132,8 @@ async def asyncio_detailed(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryGroupV2 | Unset = UNSET,
-) -> Response[CategoryGroupV2]:
+    body: PatchedCategoryGroup | Unset = UNSET,
+) -> Response[CategoryGroup]:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -143,14 +143,14 @@ async def asyncio_detailed(
 
     Args:
         id (str):
-        body (PatchedCategoryGroupV2 | Unset):
+        body (PatchedCategoryGroup | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        Response[CategoryGroupV2]
+        Response[CategoryGroup]
     """
 
     kwargs = _get_kwargs(
@@ -167,8 +167,8 @@ async def asyncio(
     id: str,
     *,
     client: AuthenticatedClient,
-    body: PatchedCategoryGroupV2 | Unset = UNSET,
-) -> CategoryGroupV2 | None:
+    body: PatchedCategoryGroup | Unset = UNSET,
+) -> CategoryGroup | None:
     """Base class for the finance viewsets.
 
     Enforces authentication and, on unsafe methods, that the target budget
@@ -178,14 +178,14 @@ async def asyncio(
 
     Args:
         id (str):
-        body (PatchedCategoryGroupV2 | Unset):
+        body (PatchedCategoryGroup | Unset):
 
     Raises:
         errors.UnexpectedStatus: If the server returns an undocumented status code and Client.raise_on_unexpected_status is True.
         httpx.TimeoutException: If the request takes longer than Client.timeout.
 
     Returns:
-        CategoryGroupV2
+        CategoryGroup
     """
 
     return (

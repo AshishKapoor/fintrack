@@ -1,0 +1,38 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  title:
+    name: Conventional PR title
+    runs-on: ubuntu-latest
+    steps:
+      # Squash-merge puts the PR title in the commit subject, so this is what
+      # actually keeps the Conventional Commits convention CONTRIBUTING.md
+      # documents true of `git log` on main.
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # feat(web): add budget chart / fix(api): reject unbalanced postings / ...
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          # Scopes are free-form on purpose. The log mixes package scopes
+          # (web, api, deps) with feature ones (orgs, audit, backup), and an
+          # allowlist of the former would reject the latter.
+          requireScope: false

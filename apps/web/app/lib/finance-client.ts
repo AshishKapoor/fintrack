@@ -1,18 +1,22 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
+import { fetchAllPages, type PageLike, type PaginatedResponse } from '@/lib/paginated'
 
-export interface PaginatedResponse<T> {
-  count: number
-  next: string | null
-  previous: string | null
-  results: T[]
-}
+export type { PaginatedResponse }
 
 export interface BudgetFile {
   id: number
   name: string
   currency_code: string
+  /**
+   * Whether THIS viewer opens this file by default. Read from the caller's own
+   * Membership, not a column on the file - in a shared workspace two people
+   * see different values for the same row, which is the point (it used to be
+   * one flag on the file, so one member choosing a default moved everyone
+   * else's). Sending it on create or update records the caller's choice.
+   */
   is_default: boolean
-  organization?: number | null
+  /** Always set: the workspace that owns the file. */
+  organization: number
 }
 
 export interface FinanceAccount {
@@ -133,38 +137,26 @@ const toQueryString = (params: Record<string, string | number | undefined | null
   return query ? `?${query}` : ''
 }
 
-const asPaginated = <T>(payload: unknown): PaginatedResponse<T> => {
-  if (Array.isArray(payload)) {
-    return {
-      count: payload.length,
-      next: null,
-      previous: null,
-      results: payload as T[],
-    }
-  }
-
-  const maybe = payload as Partial<PaginatedResponse<T>>
-  if (Array.isArray(maybe.results)) {
-    return {
-      count: maybe.count ?? maybe.results.length,
-      next: maybe.next ?? null,
-      previous: maybe.previous ?? null,
-      results: maybe.results,
-    }
-  }
-
-  return {
-    count: 0,
-    next: null,
-    previous: null,
-    results: [],
-  }
-}
-
 const get = async <T>(url: string): Promise<T> =>
   httpPFTClient<T>({
     url,
     method: 'GET',
+  })
+
+/**
+ * GET every page of a list endpoint and return the flat array.
+ *
+ * These helpers all answer "what does this budget file contain", so a page of
+ * 50 is never the right answer - a category dropdown or a rules list that
+ * silently stops at 50 looks complete and is not. See lib/paginated.ts.
+ */
+const getAll = <T>(url: string): Promise<T[]> =>
+  fetchAllPages<T>((params) => {
+    const query = new URLSearchParams()
+    if (params.page != null) query.set('page', String(params.page))
+    if (params.page_size != null) query.set('page_size', String(params.page_size))
+    const separator = url.includes('?') ? '&' : '?'
+    return get<PageLike<T> | T[]>(`${url}${separator}${query.toString()}`)
   })
 
 const post = async <T>(url: string, data: unknown): Promise<T> =>
@@ -220,8 +212,7 @@ export function clearBudgetFileCache() {
 export const getDefaultBudgetFile = async (): Promise<BudgetFile> => {
   if (budgetFileCache) return budgetFileCache
 
-  const response = await get<PaginatedResponse<BudgetFile> | BudgetFile[]>('/api/v1/finance/budget-files/')
-  let files = asPaginated<BudgetFile>(response).results
+  let files = await getAll<BudgetFile>('/api/v1/finance/budget-files/')
 
   // Membership scoping returns files from every organization the user is in;
   // the UI works within the active one.
@@ -268,10 +259,9 @@ export const updateBudgetFileCurrency = async (currencyCode: string) => {
 
 export const listAccounts = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
-  const response = await get<PaginatedResponse<FinanceAccount> | FinanceAccount[]>(
+  return getAll<FinanceAccount>(
     `/api/v1/finance/accounts/${toQueryString({ budget_file: resolved })}`,
   )
-  return asPaginated<FinanceAccount>(response).results
 }
 
 export const createAccount = async (payload: {
@@ -356,10 +346,9 @@ export const testAICategorizationConnection = async (budgetFileId?: number) => {
 
 export const listSavingsGoals = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
-  const response = await get<PaginatedResponse<SavingsGoal> | SavingsGoal[]>(
+  return getAll<SavingsGoal>(
     `/api/v1/finance/savings-goals/${toQueryString({ budget_file: resolved })}`,
   )
-  return asPaginated<SavingsGoal>(response).results
 }
 
 export const createSavingsGoal = async (payload: {
@@ -401,10 +390,9 @@ export const syncFxRatesNow = async () => post<{ stored: number }>('/api/v1/fina
 
 export const listCategories = async (budgetFileId?: number) => {
   const resolved = budgetFileId ?? (await getDefaultBudgetFileId())
-  const response = await get<PaginatedResponse<FinanceCategory> | FinanceCategory[]>(
+  return getAll<FinanceCategory>(
     `/api/v1/finance/categories/${toQueryString({ budget_file: resolved })}`,
   )
-  return asPaginated<FinanceCategory>(response).results
 }
 
 export const createTransferTransaction = async (payload: {
@@ -448,10 +436,9 @@ export const createTransferTransaction = async (payload: {
 
 export const listSavedReports = async (params?: { pinned?: boolean }) => {
   const budgetFileId = await getDefaultBudgetFileId()
-  const response = await get<PaginatedResponse<SavedReport> | SavedReport[]>(
+  let results = await getAll<SavedReport>(
     `/api/v1/finance/reports/${toQueryString({ budget_file: budgetFileId })}`,
   )
-  let results = asPaginated<SavedReport>(response).results
   if (params?.pinned !== undefined) {
     results = results.filter((item) => item.pinned === params.pinned)
   }
@@ -499,10 +486,9 @@ export const deleteSavedReport = async (id: number) => {
 
 export const listTransactionRules = async () => {
   const budgetFileId = await getDefaultBudgetFileId()
-  const response = await get<PaginatedResponse<TransactionRule> | TransactionRule[]>(
+  return getAll<TransactionRule>(
     `/api/v1/finance/rules/${toQueryString({ budget_file: budgetFileId })}`,
   )
-  return asPaginated<TransactionRule>(response).results
 }
 
 export const createTransactionRule = async (payload: {
@@ -532,10 +518,9 @@ export const deleteTransactionRule = async (id: number) => {
 
 export const listScheduledTransactions = async () => {
   const budgetFileId = await getDefaultBudgetFileId()
-  const response = await get<PaginatedResponse<ScheduledTransaction> | ScheduledTransaction[]>(
+  return getAll<ScheduledTransaction>(
     `/api/v1/finance/scheduled-transactions/${toQueryString({ budget_file: budgetFileId })}`,
   )
-  return asPaginated<ScheduledTransaction>(response).results
 }
 
 export const createScheduledTransaction = async (payload: {

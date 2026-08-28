@@ -1,10 +1,11 @@
 'use client'
 
+import { useAllCategories } from '@/lib/finance-lists'
+
 import { useEffect, useMemo, useState } from 'react'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
-import { useV1FinanceCategoriesList } from '@/client/gen/pft/v1/v1'
 import {
   createScheduledTransaction,
   createTransactionRule,
@@ -157,8 +158,8 @@ export default function RulesAndRecurringPage() {
 
   const [loading, setLoading] = useState(false)
 
-  const { data: categoriesData } = useV1FinanceCategoriesList()
-  // Native CategoryV2 rows: the classification field is `kind`.
+  const { data: categoriesData } = useAllCategories()
+  // Native ledger category rows: the classification field is `kind`.
   const categories = useMemo(() => categoriesData ?? [], [categoriesData])
 
   const expenseCategories = useMemo(
@@ -442,16 +443,18 @@ export default function RulesAndRecurringPage() {
             <CardContent className='space-y-4'>
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label>Name</Label>
+                  <Label htmlFor='rule-name'>Name</Label>
                   <Input
+                    id='rule-name'
                     value={ruleForm.name}
                     onChange={(e) => setRuleForm((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder='e.g. Auto-tag subscriptions'
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Priority</Label>
+                  <Label htmlFor='rule-priority'>Priority</Label>
                   <Input
+                    id='rule-priority'
                     type='number'
                     value={ruleForm.priority}
                     onChange={(e) =>
@@ -466,8 +469,9 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2'>
-                  <Label>Memo contains</Label>
+                  <Label htmlFor='rule-memo-contains'>Memo contains</Label>
                   <Input
+                    id='rule-memo-contains'
                     value={ruleForm.memoContains}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, memoContains: e.target.value }))
@@ -476,8 +480,9 @@ export default function RulesAndRecurringPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Payee contains</Label>
+                  <Label htmlFor='rule-payee-contains'>Payee contains</Label>
                   <Input
+                    id='rule-payee-contains'
                     value={ruleForm.payeeContains}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, payeeContains: e.target.value }))
@@ -486,8 +491,9 @@ export default function RulesAndRecurringPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Minimum abs amount</Label>
+                  <Label htmlFor='rule-min-amount'>Minimum abs amount</Label>
                   <Input
+                    id='rule-min-amount'
                     type='number'
                     min='0'
                     step='0.01'
@@ -502,8 +508,9 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label>Append memo</Label>
+                  <Label htmlFor='rule-append-memo'>Append memo</Label>
                   <Input
+                    id='rule-append-memo'
                     value={ruleForm.appendMemo}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, appendMemo: e.target.value }))
@@ -514,33 +521,36 @@ export default function RulesAndRecurringPage() {
                 <div className='flex items-end gap-4 pb-2'>
                   <div className='flex items-center gap-2'>
                     <Switch
+                      id='rule-set-cleared'
                       checked={ruleForm.setCleared}
                       onCheckedChange={(value) =>
                         setRuleForm((prev) => ({ ...prev, setCleared: value }))
                       }
                     />
-                    <Label>Set cleared</Label>
+                    <Label htmlFor='rule-set-cleared'>Set cleared</Label>
                   </div>
                   <div className='flex items-center gap-2'>
                     <Switch
+                      id='rule-set-imported'
                       checked={ruleForm.setImported}
                       onCheckedChange={(value) =>
                         setRuleForm((prev) => ({ ...prev, setImported: value }))
                       }
                     />
-                    <Label>Set imported</Label>
+                    <Label htmlFor='rule-set-imported'>Set imported</Label>
                   </div>
                 </div>
               </div>
 
               <div className='flex items-center gap-2'>
                 <Switch
+                  id='rule-active'
                   checked={ruleForm.isActive}
                   onCheckedChange={(value) =>
                     setRuleForm((prev) => ({ ...prev, isActive: value }))
                   }
                 />
-                <Label>Rule active</Label>
+                <Label htmlFor='rule-active'>Rule active</Label>
               </div>
 
               <div className='flex gap-2'>
@@ -621,15 +631,16 @@ export default function RulesAndRecurringPage() {
             <CardContent className='space-y-4'>
               <div className='grid gap-4 md:grid-cols-4'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label>Name</Label>
+                  <Label htmlFor='schedule-name'>Name</Label>
                   <Input
+                    id='schedule-name'
                     value={scheduleForm.name}
                     onChange={(e) => setScheduleForm((prev) => ({ ...prev, name: e.target.value }))}
                     placeholder='e.g. Monthly Rent'
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Frequency</Label>
+                  <Label htmlFor='schedule-frequency'>Frequency</Label>
                   <Select
                     value={scheduleForm.frequency}
                     onValueChange={(value) =>
@@ -639,7 +650,7 @@ export default function RulesAndRecurringPage() {
                       }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id='schedule-frequency'>
                       <SelectValue placeholder='Frequency' />
                     </SelectTrigger>
                     <SelectContent>
@@ -652,8 +663,9 @@ export default function RulesAndRecurringPage() {
                   </Select>
                 </div>
                 <div className='space-y-2'>
-                  <Label>Interval</Label>
+                  <Label htmlFor='schedule-interval'>Interval</Label>
                   <Input
+                    id='schedule-interval'
                     type='number'
                     min='1'
                     value={scheduleForm.interval}
@@ -666,16 +678,18 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-4'>
                 <div className='space-y-2'>
-                  <Label>Start date</Label>
+                  <Label htmlFor='schedule-start-date'>Start date</Label>
                   <Input
+                    id='schedule-start-date'
                     type='date'
                     value={scheduleForm.startDate}
                     onChange={(e) => setScheduleForm((prev) => ({ ...prev, startDate: e.target.value }))}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Next run date</Label>
+                  <Label htmlFor='schedule-next-run-date'>Next run date</Label>
                   <Input
+                    id='schedule-next-run-date'
                     type='date'
                     value={scheduleForm.nextRunDate}
                     onChange={(e) =>
@@ -684,14 +698,14 @@ export default function RulesAndRecurringPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label>Kind</Label>
+                  <Label htmlFor='schedule-kind'>Kind</Label>
                   <Select
                     value={scheduleForm.kind}
                     onValueChange={(value) =>
                       setScheduleForm((prev) => ({ ...prev, kind: value as ScheduleKind }))
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id='schedule-kind'>
                       <SelectValue placeholder='Type' />
                     </SelectTrigger>
                     <SelectContent>
@@ -702,8 +716,9 @@ export default function RulesAndRecurringPage() {
                   </Select>
                 </div>
                 <div className='space-y-2'>
-                  <Label>Amount</Label>
+                  <Label htmlFor='schedule-amount'>Amount</Label>
                   <Input
+                    id='schedule-amount'
                     type='number'
                     min='0'
                     step='0.01'
@@ -716,12 +731,12 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2'>
-                  <Label>Primary account</Label>
+                  <Label htmlFor='schedule-account'>Primary account</Label>
                   <Select
                     value={scheduleForm.accountId}
                     onValueChange={(value) => setScheduleForm((prev) => ({ ...prev, accountId: value }))}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id='schedule-account'>
                       <SelectValue placeholder='Select account' />
                     </SelectTrigger>
                     <SelectContent>
@@ -736,14 +751,14 @@ export default function RulesAndRecurringPage() {
 
                 {scheduleForm.kind === 'transfer' ? (
                   <div className='space-y-2'>
-                    <Label>Destination account</Label>
+                    <Label htmlFor='schedule-to-account'>Destination account</Label>
                     <Select
                       value={scheduleForm.toAccountId}
                       onValueChange={(value) =>
                         setScheduleForm((prev) => ({ ...prev, toAccountId: value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id='schedule-to-account'>
                         <SelectValue placeholder='Select destination account' />
                       </SelectTrigger>
                       <SelectContent>
@@ -757,14 +772,14 @@ export default function RulesAndRecurringPage() {
                   </div>
                 ) : (
                   <div className='space-y-2'>
-                    <Label>Category</Label>
+                    <Label htmlFor='schedule-category'>Category</Label>
                     <Select
                       value={scheduleForm.categoryId}
                       onValueChange={(value) =>
                         setScheduleForm((prev) => ({ ...prev, categoryId: value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id='schedule-category'>
                         <SelectValue placeholder='Select category' />
                       </SelectTrigger>
                       <SelectContent>
@@ -781,8 +796,9 @@ export default function RulesAndRecurringPage() {
                 )}
 
                 <div className='space-y-2'>
-                  <Label>Memo</Label>
+                  <Label htmlFor='schedule-memo'>Memo</Label>
                   <Input
+                    id='schedule-memo'
                     value={scheduleForm.memo}
                     onChange={(e) => setScheduleForm((prev) => ({ ...prev, memo: e.target.value }))}
                     placeholder='Optional memo'
@@ -792,12 +808,13 @@ export default function RulesAndRecurringPage() {
 
               <div className='flex items-center gap-2'>
                 <Switch
+                  id='schedule-active'
                   checked={scheduleForm.isActive}
                   onCheckedChange={(value) =>
                     setScheduleForm((prev) => ({ ...prev, isActive: value }))
                   }
                 />
-                <Label>Schedule active</Label>
+                <Label htmlFor='schedule-active'>Schedule active</Label>
               </div>
 
               <div className='flex gap-2'>

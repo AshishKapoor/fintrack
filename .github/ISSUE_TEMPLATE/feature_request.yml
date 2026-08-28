@@ -1,0 +1,47 @@
+name: Feature request
+description: Suggest something FinTrack should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing:
+        [ROADMAP.md](https://github.com/AshishKapoor/fintrack/blob/main/ROADMAP.md)
+        lists what is planned and, just as usefully, the **non-goals** - native
+        mobile apps, hosted SaaS, Plaid-first bank sync and investment portfolio
+        tracking are all deliberate no's, so a request for one of those gets
+        closed with a pointer rather than considered.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do that FinTrack makes hard? Describe the
+        situation rather than the feature - it often turns out there is already
+        a way, or a better one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: What you would like it to do
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you tried instead
+      description: >
+        Including how another tool solves it. A concrete "YNAB does X, and here
+        is why that works" is worth more than a paragraph of description.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Would you like to build it?
+      description: Entirely optional, and not a condition of the request being considered.
+      options:
+        - label: I would be up for opening a PR, with some guidance on where to start

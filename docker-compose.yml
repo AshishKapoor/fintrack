@@ -207,13 +207,23 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-fintrack}
       POSTGRES_USER: ${POSTGRES_USER:-fintrack}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fintrack_local_dev}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Mounted at /var/lib/postgresql, not at .../data. From 18 on, these
+      # images keep the cluster in a major-version-specific subdirectory
+      # (PGDATA defaults to /var/lib/postgresql/18/docker) so that both
+      # clusters sit under one mount and `pg_upgrade --link` does not have to
+      # cross a mount boundary. Mounting .../data instead makes 18+ refuse to
+      # start. PGDATA is deliberately left at the image default so it tracks
+      # the image tag rather than drifting out of sync with it.
+      #
+      # Moving an existing 16 volume onto 18 is NOT automatic - see
+      # docs/self-hosting.md, "Upgrading across a Postgres major version".
+      - postgres_data:/var/lib/postgresql
     networks:
       - fintrack_network
     # Not published to the host by default. Uncomment only if you need to connect

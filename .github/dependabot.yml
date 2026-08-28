@@ -114,8 +114,8 @@ updates:
     schedule:
       interval: weekly
 
-  # postgres:16-alpine and redis:7-alpine live in the compose files at the
-  # repo root, outside every directory above, so nothing was tracking them.
+  # The postgres and redis images live in the compose files at the repo root,
+  # outside every directory above, so nothing was tracking them.
   - package-ecosystem: docker-compose
     directory: /
     schedule:

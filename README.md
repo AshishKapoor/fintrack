@@ -133,6 +133,19 @@ images, and starts every service. Once it finishes, open:
 | API docs (Swagger UI) | http://localhost:8000/api/docs/ |
 | API docs (ReDoc) | http://localhost:8000/api/redoc/ |
 
+Prefer not to build? Run the published images instead:
+
+```bash
+FINTRACK_VERSION=latest \
+  docker compose -f docker-compose.yml -f docker-compose.images.yml up -d
+```
+
+Pin `FINTRACK_VERSION` to a [released tag](https://github.com/AshishKapoor/fintrack/releases)
+for anything you care about — `latest` moves on every release, so an
+unattended pull can apply a major version and its migrations without you
+choosing to. Images carry build provenance you can check before running them;
+see [RELEASING.md](RELEASING.md).
+
 There is no default account. To get started:
 
 1. Open http://localhost:5173/register

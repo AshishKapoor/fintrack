@@ -271,8 +271,16 @@ gunzip -c fintrack-2026-08-12.sql.gz | docker compose exec -T db psql -U fintrac
 docker compose start api web
 ```
 
-Back up your `.env` too — specifically `SECRET_KEY`. Restoring a database with a
-different signing key invalidates every session and token.
+Back up your `.env` too — specifically `SECRET_KEY` **and
+`FINTRACK_SYNC_ENCRYPTION_KEY`**. Losing the latter is not recoverable from a
+database dump: every stored bank sync credential and BYOK LLM key is encrypted
+with it, and there is currently no rotation or re-encryption path, because the
+stored ciphertext carries no key version to migrate from. If it changes, those
+connections have to be set up again from scratch. FinTrack will tell you that
+is what happened rather than failing obscurely, but it cannot undo it.
+
+Restoring a database with a different `SECRET_KEY` invalidates every session
+and token — annoying, but recoverable by signing in again.
 
 ### Application-level backups
 
@@ -286,16 +294,41 @@ once.
 
 ## Upgrading
 
-```bash
-cd /srv/fintrack
-```
+How you upgrade depends on how you installed.
+
+**From source** (what `./setup.sh start` and the Quick Start give you):
 
 ```bash
+cd /srv/fintrack
 git pull && docker compose build && docker compose up -d
 ```
 
-Migrations run automatically: the `migrate` service executes before `api`
-starts, and `api` waits for it to complete.
+**From the published images**, if you started with
+`docker-compose.images.yml`:
+
+```bash
+cd /srv/fintrack
+git pull                      # compose files and migrations metadata
+FINTRACK_VERSION=0.3.0 docker compose \
+  -f docker-compose.yml -f docker-compose.images.yml pull
+FINTRACK_VERSION=0.3.0 docker compose \
+  -f docker-compose.yml -f docker-compose.images.yml up -d
+```
+
+Note that plain `docker compose pull` does nothing without that second file:
+the base compose sets `pull_policy: build` so a clone always runs its own
+working tree rather than silently swapping in a published tag.
+
+Before running an image you have just pulled, you can verify it was built by
+this repository rather than substituted somewhere in between:
+
+```bash
+gh attestation verify oci://ghcr.io/ashishkapoor/fintrack-api:0.3.0 \
+  --owner AshishKapoor
+```
+
+Either way, migrations run automatically: the `migrate` service executes before
+`api` starts, and `api` waits for it to complete.
 
 **Take a database dump before upgrading.** Migrations in this project are not
 reversible — the data migrations have no-op reverse functions — so rolling back
@@ -330,9 +363,15 @@ Running bare-metal without the `beat` process? Cron it yourself:
 
 ## Monitoring
 
-The stack runs five services: `web`, `api`, `worker` (imports and exports),
-`redis` (the job queue) and `db`. `docker compose logs worker` shows job
-processing.
+The stack runs six services: `web`, `api`, `worker` (imports and exports),
+`beat` (the scheduler behind everything in Housekeeping above, plus FX rates,
+budget alerts, reminders and bank sync), `redis` (the job queue) and `db`.
+`docker compose logs worker beat` shows job processing.
+
+`beat` is the one worth watching. Nothing surfaces its absence in the UI, so a
+`beat` container that died at 03:00 looks exactly like an instance where
+nothing happened to be due - while scheduled imports, alerts and the daily
+payload pruning all quietly stop.
 
 `/healthz/` returns `200` with `{"status": "ok", "database": "ok"}` when the API
 can reach Postgres, and `503` otherwise. It is unauthenticated and contains no

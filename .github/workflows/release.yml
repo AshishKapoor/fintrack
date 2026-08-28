@@ -3,19 +3,41 @@ name: Publish images
 # Publishes multi-architecture images to GHCR. The previously published
 # `:latest` tags were arm64-only and hand-pushed, so they could not run on the
 # x86_64 hosts most people self-host on.
+#
+# The `docker/*` actions below are pinned to commit SHAs rather than moving
+# tags. They are the ones that see a token with `packages: write`, so a
+# compromised tag on any of them would be a supply-chain compromise of every
+# image this project ships. Dependabot's github-actions ecosystem keeps the
+# pins current and annotates each with its version.
 
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
 
+# Least privilege at the workflow level; `packages: write` is granted only to
+# the job that actually pushes to GHCR. The SDK jobs used to inherit it and
+# have never had any use for it.
 permissions:
   contents: read
-  packages: write
+
+# Two tags pushed close together, or a tag plus a manual dispatch, would
+# otherwise race each other onto the same image tags.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      # Both needed for build provenance: the attestation is signed with a
+      # short-lived OIDC identity rather than a stored key.
+      id-token: write
+      attestations: write
 
     strategy:
       matrix:
@@ -28,26 +50,32 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-qemu-action@96fe6ef7f33517b61c61be40b68a1882f3264fb8 # v4
 
-      - uses: docker/setup-buildx-action@v4
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
 
-      - uses: docker/login-action@v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # On `latest`: the previous `enable={{is_default_branch}}` is false on a
+      # tag push, so a release published {{version}} and never moved `:latest`
+      # - while every service in docker-compose.yml names `:latest`.
+      # Pre-releases stay excluded, since `v1.0.0-rc1` must not become what a
+      # fresh install pulls.
       - id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
         with:
           images: ghcr.io/${{ github.repository_owner }}/fintrack-${{ matrix.name }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-') }}
 
-      - uses: docker/build-push-action@v7
+      - id: build
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: ${{ matrix.context }}
           platforms: linux/amd64,linux/arm64
@@ -56,10 +84,25 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Ship an SBOM and full build provenance with the image. Without
+          # these, nothing lets a self-hoster check that what they pulled is
+          # what this repository built, which for a finance app is most of the
+          # argument for self-hosting in the first place.
+          provenance: mode=max
+          sbom: true
+
+      # Belt to the buildkit attestation's braces: this one is verifiable with
+      # `gh attestation verify oci://ghcr.io/... --owner AshishKapoor`, which
+      # is the command a self-hoster can actually be told to run.
+      - uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2
+        with:
+          subject-name: ghcr.io/${{ github.repository_owner }}/fintrack-${{ matrix.name }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
 
   publish-sdk-ts:
-    # Publishes @fintrack/sdk to npm when an NPM_TOKEN secret is configured;
-    # without it the job builds and exits, so forks are unaffected.
+    # Publishes @fintrack/sdk to npm. A fork with no NPM_TOKEN builds and
+    # stops; on this repository a missing token is a failure, not a skip.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -78,36 +121,52 @@ jobs:
         run: pnpm install --frozen-lockfile && pnpm run build
 
       - name: Publish
+        if: github.repository == 'AshishKapoor/fintrack'
         working-directory: packages/sdk-ts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          # This used to `exit 0` when the token was missing, which meant a
+          # revoked or renamed NPM_TOKEN produced a fully green release that
+          # published nothing at all.
           if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "NPM_TOKEN not configured; skipping publish."
-            exit 0
+            echo "::error::NPM_TOKEN is not configured on this repository. The release did not publish @fintrack/sdk."
+            exit 1
           fi
           pnpm publish --access public --no-git-checks
 
+      - name: Skipped (fork)
+        if: github.repository != 'AshishKapoor/fintrack'
+        run: echo "Not the upstream repository; built but not published."
+
   publish-sdk-py:
-    # Publishes fintrack-sdk to PyPI when a PYPI_API_TOKEN secret exists;
-    # without it the job builds and exits, so forks are unaffected.
+    # Publishes fintrack-sdk to PyPI. Same fork/upstream split as above.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
 
       - uses: astral-sh/setup-uv@v7
+        with:
+          # The uv binary itself was floating; a resolver change between
+          # releases would show up as an unrelated build difference.
+          version: "0.9.7"
 
       - name: Build
         working-directory: packages/sdk-py
         run: uv build
 
       - name: Publish
+        if: github.repository == 'AshishKapoor/fintrack'
         working-directory: packages/sdk-py
         env:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           if [ -z "$UV_PUBLISH_TOKEN" ]; then
-            echo "PYPI_API_TOKEN not configured; skipping publish."
-            exit 0
+            echo "::error::PYPI_API_TOKEN is not configured on this repository. The release did not publish fintrack-sdk."
+            exit 1
           fi
           uv publish
+
+      - name: Skipped (fork)
+        if: github.repository != 'AshishKapoor/fintrack'
+        run: echo "Not the upstream repository; built but not published."

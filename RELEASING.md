@@ -49,7 +49,7 @@ whether the step is reversible.
    cd apps/api && uv run manage.py spectacular --file ../web/schema/pft.yaml
    cd ../web && pnpm orval
    cd ../../packages/sdk-ts && pnpm run generate && pnpm run build
-   cd ../sdk-py && uvx openapi-python-client generate \
+   cd ../sdk-py && uvx openapi-python-client@0.29.0 generate \
        --path ../../apps/web/schema/pft.yaml --output-path fintrack_sdk \
        --meta none --overwrite && python3 post_generate.py
    git diff --exit-code

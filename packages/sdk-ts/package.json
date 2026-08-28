@@ -28,6 +28,11 @@
     "README.md"
   ],
   "packageManager": "pnpm@10.34.5",
+  "pnpm": {
+    "overrides": {
+      "js-yaml@4.1.1": "^4.3.2"
+    }
+  },
   "scripts": {
     "generate": "orval",
     "build": "tsc -p tsconfig.json",

@@ -4,7 +4,19 @@ x-django-env: &django-env
   DEBUG: ${DEBUG:-False}
   SECRET_KEY: ${SECRET_KEY:-}
   SECRET_KEY_FILE: /app/run/.secret_key
-  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost 127.0.0.1 [::1]}
+  # "*" so the stack works unmodified whether you browse it via localhost, a
+  # LAN IP, or a hostname - the previous localhost-only default made Django
+  # reject every proxied API call with a 400 DisallowedHost on any other host,
+  # which surfaced in the UI as signup/login failing (and read like a CORS
+  # error, though no cross-origin request is ever involved: the browser talks
+  # only to the web container, whose nginx proxies /api/ same-origin). "*" is
+  # safe in this topology - auth is JWT, and nothing derives links or redirects
+  # from the Host header - but pin it to your real hostname for an
+  # internet-facing instance (docs/self-hosting.md) for defense in depth.
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-*}
+  # Only consulted for cross-origin setups (e.g. `pnpm dev` against this API,
+  # or serving web and api from different domains). The shipped same-origin
+  # nginx proxy never triggers CORS, whatever host or IP you browse from.
   CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:5173}
   CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:5173}
   SECURE_SSL: ${SECURE_SSL:-False}

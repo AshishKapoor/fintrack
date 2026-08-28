@@ -201,6 +201,15 @@
     },
     "title": "Ajustes"
   },
+  "themeSwitcher": {
+    "allThemes": "Todos los temas",
+    "default": "Predeterminado",
+    "favorites": "Favoritos",
+    "findTheme": "Buscar un tema…",
+    "label": "Cambiar tema",
+    "noThemeFound": "No se encontró ningún tema.",
+    "toggleFavorite": "Marcar como favorito"
+  },
   "topbar": {
     "logout": "Cerrar sesión",
     "notifications": "Notificaciones",

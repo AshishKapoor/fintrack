@@ -84,7 +84,7 @@
     "react-dom": "^19.2.8",
     "react-hook-form": "^7.85.0",
     "react-i18next": "^16.4.0",
-    "react-resizable-panels": "^4.12.2",
+    "react-resizable-panels": "^4.12.3",
     "react-router-dom": "^7.18.2",
     "recharts": "^2.15.2",
     "sonner": "^2.0.8",

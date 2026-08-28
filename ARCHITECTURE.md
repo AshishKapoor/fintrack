@@ -35,7 +35,9 @@ explained in full below.
   schedule state lives on the same `api_run` volume as the generated
   `SECRET_KEY`, so a restart does not lose track of when a task last fired.
 - `apps/landing/` is a separate Next.js marketing site. It is **not** part of the
-  self-hosted stack and is not referenced by `docker-compose.yml`.
+  self-hosted stack and is not referenced by `docker-compose.yml`. It deploys
+  through Vercel only when the project version is bumped, not on every merge —
+  see `apps/landing/README.md`.
 
 ## The API surface
 

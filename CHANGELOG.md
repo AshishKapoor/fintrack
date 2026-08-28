@@ -108,6 +108,14 @@ first** — the encrypted backup in the app covers the ledger, and a
 - `scripts/feature_audit.py` never scanned `pft/finance_urls.py`, so the three
   AI-categorization endpoints had reported as schema-only since the day they
   shipped.
+- **The landing site had not deployed since 2026-08-13.** Vercel built it on
+  every push of every branch, which first exhausted the free tier's build
+  quota, and the monorepo restructure left the project's Root Directory
+  pointing at the old `landing/` path. Deploys are now gated by an Ignored
+  Build Step (`apps/landing/vercel.json`) that skips every build unless the
+  project version was bumped — so the site redeploys once per release, not
+  per merge. The Root Directory fix is a dashboard setting; it is documented
+  in `apps/landing/README.md`.
 
 ## [0.2.0] — 2026-08-13
 

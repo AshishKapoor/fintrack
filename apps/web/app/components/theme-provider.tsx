@@ -1,4 +1,5 @@
-import { applyThemePreset, clearThemePreset } from '@/lib/apply-theme'
+import { applyThemePreset, clearThemePreset, resolvePresetStyles } from '@/lib/apply-theme'
+import { loadThemeFonts } from '@/lib/theme-fonts'
 import { DEFAULT_THEME_KEY, themePresets } from '@/lib/theme-presets'
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 
@@ -77,6 +78,7 @@ export function ThemeProvider({
       const preset = themePresets.find((p) => p.key === colorTheme)
       if (preset) {
         applyThemePreset(root, preset, mode)
+        loadThemeFonts(resolvePresetStyles(preset, mode))
       } else {
         clearThemePreset(root)
       }

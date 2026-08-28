@@ -19,7 +19,11 @@ SECRET_KEY=$(openssl rand -base64 48)
 # 2. A real database password.
 POSTGRES_PASSWORD=<something long>
 
-# 3. Your own hostname.
+# 3. Your own hostname. Out of the box DJANGO_ALLOWED_HOSTS is "*" so the
+#    stack works on localhost, a LAN IP, or any hostname without edits - the
+#    browser only ever talks to the web container, which proxies /api/
+#    same-origin, so nothing here is reachable cross-origin anyway. Pin it
+#    once you have a real domain, as defense in depth.
 DJANGO_ALLOWED_HOSTS=fintrack.example.com
 CORS_ALLOWED_ORIGINS=https://fintrack.example.com
 CSRF_TRUSTED_ORIGINS=https://fintrack.example.com
@@ -386,16 +390,27 @@ status rather than just "running".
 
 ## Troubleshooting
 
-**The stack starts but the web app cannot reach the API.** Check
-`CORS_ALLOWED_ORIGINS` matches the scheme and host you are actually browsing
-from, including the port if it is non-standard.
+**The stack starts but the web app cannot reach the API — signup or login
+fails on the first request.** In the shipped Docker stack this is almost never
+CORS: the browser talks only to the `web` container, whose nginx proxies
+`/api/` to the backend on the same origin, so no cross-origin request exists
+to be blocked. The usual cause is an `.env` created from an older
+`.env.example` that pins `DJANGO_ALLOWED_HOSTS` to localhost — Django then
+answers every API call with `400 DisallowedHost` when you browse via an IP or
+hostname, which the UI reports as a failed signup. Set
+`DJANGO_ALLOWED_HOSTS=*` (the current default) or add your host to it, then
+`docker compose up -d` again. `CORS_ALLOWED_ORIGINS` only matters if you
+serve the web app and API from *different* origins — then it must match the
+scheme, host, and port you are browsing from.
 
 **Redirect loop after enabling TLS.** Your proxy is not sending
 `X-Forwarded-Proto: https`, so Django thinks the request is plain HTTP and
 redirects again.
 
-**`DisallowedHost` errors.** Add your hostname to `DJANGO_ALLOWED_HOSTS`. It
-accepts spaces or commas as separators.
+**`DisallowedHost` errors.** Your `.env` overrides the default
+`DJANGO_ALLOWED_HOSTS=*` with a list that does not include the hostname you
+are browsing from. Add it (spaces or commas as separators), or set the value
+back to `*`.
 
 **Everyone was signed out after a restart.** `SECRET_KEY` was not set, so a new
 one was generated. Set it explicitly in `.env`.

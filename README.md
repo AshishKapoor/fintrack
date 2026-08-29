@@ -373,5 +373,3 @@ Distributed under the [MIT License](LICENSE). © 2025 [Ashish Kapoor](https://gi
 
 If you find FinTrack useful, consider giving it a ⭐ on GitHub or sharing it
 with others — it helps the project grow!
-
-[![Star History Chart](https://api.star-history.com/svg?repos=ashishkapoor/fintrack&type=Date)](https://www.star-history.com/#ashishkapoor/fintrack&Date)

@@ -39,7 +39,7 @@
     "check": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
-    "orval": "^8.26.0",
+    "orval": "^8.27.0",
     "typescript": "~5.9.3"
   }
 }

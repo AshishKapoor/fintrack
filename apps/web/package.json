@@ -114,7 +114,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.11.0",
-    "i18next-cli": "^1.11.0",
+    "i18next-cli": "^1.71.3",
     "jsdom": "^30.0.1",
     "orval": "^7.8.0",
     "typescript": "~5.9.3",

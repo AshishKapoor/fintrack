@@ -52,7 +52,7 @@ jobs:
       # no gate. Tracked as an issue.
       - name: Scan every committed lockfile
         continue-on-error: true
-        uses: google/osv-scanner-action/osv-scanner-action@v2.5.1
+        uses: google/osv-scanner-action/osv-scanner-action@v2.6.0
         with:
           # `--lockfile` per file rather than a recursive scan: the recursive
           # form also walks node_modules and vendored trees when they exist on

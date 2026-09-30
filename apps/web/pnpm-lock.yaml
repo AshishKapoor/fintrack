@@ -135,8 +135,8 @@ importers:
         specifier: ^8.2.0
         version: 8.2.1
       i18next-http-backend:
-        specifier: ^4.0.1
-        version: 4.0.1
+        specifier: ^4.0.2
+        version: 4.0.2
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -3258,8 +3258,8 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
-  i18next-http-backend@4.0.1:
-    resolution: {integrity: sha512-O+7MwPCJIKCu68vho8JtD1HF8QHyMPzoChIDFfYCrpaDqX6oq3RqASujnpKEdnNCEOb+kLMOHTNTcGKpj7B1BA==}
+  i18next-http-backend@4.0.2:
+    resolution: {integrity: sha512-oay62dIB2kL7+WHzoUXBjWfL3+mwijD3pQkQkIEaRLhy6kjXxUhrRenV0gInwlCASAaJaDy94+XvYizK+cAGdA==}
     engines: {node: '>=18'}
 
   i18next-resources-for-ts@2.1.0:
@@ -7900,7 +7900,7 @@ snapshots:
       - react-native
       - typescript
 
-  i18next-http-backend@4.0.1: {}
+  i18next-http-backend@4.0.2: {}
 
   i18next-resources-for-ts@2.1.0:
     dependencies:

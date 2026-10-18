@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslation } from 'react-i18next'
 import { RefreshCw } from 'lucide-react'
 
+import { LoadError } from '@/components/load-error'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
 import { Badge } from '@/components/ui/badge'
@@ -9,12 +11,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { formatCurrency, useCurrency } from '@/context/currency-context'
 import { useSubscriptions, type DetectedSubscription } from '@/lib/ledger'
 
-const CADENCE_LABEL: Record<DetectedSubscription['cadence'], string> = {
-  weekly: 'Weekly',
-  biweekly: 'Every 2 weeks',
-  monthly: 'Monthly',
-  quarterly: 'Quarterly',
-  yearly: 'Yearly',
+function useCadenceLabels(): Record<DetectedSubscription['cadence'], string> {
+  const { t } = useTranslation()
+  return {
+    weekly: t('insights.cadenceWeekly'),
+    biweekly: t('insights.cadenceBiweekly'),
+    monthly: t('insights.cadenceMonthly'),
+    quarterly: t('insights.cadenceQuarterly'),
+    yearly: t('insights.cadenceYearly'),
+  }
 }
 
 function formatDate(value: string) {
@@ -29,20 +34,26 @@ function formatDate(value: string) {
 // dataviz skill's own "is it even a chart?" table calls this out: more than
 // a handful of classes that all carry meaning is a table, not a chart.
 export function SubscriptionsPanel() {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
-  const { data, isLoading } = useSubscriptions()
+  const cadenceLabel = useCadenceLabels()
+  const { data, isLoading, error, mutate } = useSubscriptions()
   const subscriptions = data?.subscriptions ?? []
 
   if (isLoading) {
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.subscriptions')} onRetry={() => void mutate()} />
+  }
+
   if (!subscriptions.length) {
     return (
       <EmptyPlaceholder
         icon={<RefreshCw className='w-12 h-12' />}
-        title='No recurring charges detected yet'
-        description='Once the same payee charges you a similar amount on a regular interval a few times, it will show up here automatically.'
+        title={t('insights.subscriptionsEmptyTitle')}
+        description={t('insights.subscriptionsEmptyDescription')}
       />
     )
   }
@@ -50,22 +61,22 @@ export function SubscriptionsPanel() {
   return (
     <div className='space-y-4'>
       <p className='text-sm text-muted-foreground'>
-        <span className='text-foreground font-semibold'>{subscriptions.length}</span> recurring{' '}
-        {subscriptions.length === 1 ? 'charge' : 'charges'} totaling{' '}
+        <span className='text-foreground font-semibold'>{subscriptions.length}</span>{' '}
+        {t('insights.recurringChargesTotaling', { count: subscriptions.length })}{' '}
         <span className='text-foreground font-semibold'>
           {formatCurrency(Number(data?.total_monthly_equivalent ?? 0), currency.code)}
         </span>
-        /mo
+        {t('insights.perMonth')}
       </p>
       <div className='overflow-x-auto'>
-        <Table>
+        <Table scrollLabel={t('insights.recurringCharges')}>
           <TableHeader>
             <TableRow>
-              <TableHead>Payee</TableHead>
-              <TableHead>Cadence</TableHead>
-              <TableHead className='text-right'>Amount</TableHead>
-              <TableHead className='text-right'>Monthly equivalent</TableHead>
-              <TableHead>Last charged</TableHead>
+              <TableHead>{t('insights.payee')}</TableHead>
+              <TableHead>{t('insights.cadence')}</TableHead>
+              <TableHead className='text-right'>{t('insights.amount')}</TableHead>
+              <TableHead className='text-right'>{t('insights.monthlyEquivalent')}</TableHead>
+              <TableHead>{t('insights.lastCharged')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -73,7 +84,7 @@ export function SubscriptionsPanel() {
               <TableRow key={subscription.payee_id}>
                 <TableCell className='font-medium'>{subscription.payee}</TableCell>
                 <TableCell>
-                  <Badge variant='outline'>{CADENCE_LABEL[subscription.cadence]}</Badge>
+                  <Badge variant='outline'>{cadenceLabel[subscription.cadence]}</Badge>
                 </TableCell>
                 <TableCell className='text-right tabular-nums'>
                   {formatCurrency(Number(subscription.amount), currency.code)}

@@ -87,7 +87,7 @@ export function UserAuthForm({ className, ...props }: React.HTMLAttributes<HTMLD
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
-          {error && <div className='text-red-500 text-sm mb-8'>{error}</div>}
+          {error && <div className='text-destructive text-sm mb-8'>{error}</div>}
           <Button type='submit' disabled={isLoading} className='w-full'>
             {isLoading && <Loader className='mr-2 h-4 w-4 animate-spin' />}
             {t('auth.register.submit')}

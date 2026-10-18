@@ -31,20 +31,20 @@ test('inline quick-add, split transactions, and the payee combobox', async ({ pa
     await page.goto('/transactions')
     await page.keyboard.press('Control+k')
     await page.getByText('Add transaction').click()
-    await expect(page.getByRole('dialog', { name: 'Transaction' })).toBeVisible({
+    await expect(page.getByRole('dialog', { name: 'Add transaction' })).toBeVisible({
       timeout: 10_000,
     })
     await page.keyboard.press('Escape')
   })
 
   await test.step('closing the add-transaction dialog returns focus to its trigger', async () => {
-    const trigger = page.getByRole('button', { name: 'Add Transaction' }).first()
+    const trigger = page.getByRole('button', { name: 'Add transaction' }).first()
     await trigger.click()
-    await expect(page.getByRole('dialog', { name: 'Transaction' })).toBeVisible({
+    await expect(page.getByRole('dialog', { name: 'Add transaction' })).toBeVisible({
       timeout: 10_000,
     })
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog', { name: 'Transaction' })).toBeHidden()
+    await expect(page.getByRole('dialog', { name: 'Add transaction' })).toBeHidden()
     await expect(trigger).toBeFocused()
   })
 
@@ -61,8 +61,8 @@ test('inline quick-add, split transactions, and the payee combobox', async ({ pa
   })
 
   await test.step('a split transaction divides one total across two categories', async () => {
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
-    const dialog = page.getByRole('dialog', { name: 'Transaction' })
+    await page.getByRole('button', { name: 'Add transaction' }).first().click()
+    const dialog = page.getByRole('dialog', { name: 'Add transaction' })
     await dialog.locator('#title').fill('Costco run')
     await dialog.locator('#amount').fill('100.00')
     await dialog.getByText('Split into multiple categories').click()

@@ -2,6 +2,7 @@
 
 import { httpPFTClient } from '@/client/httpPFTClient'
 import { useV1AuditLogList } from '@/client/gen/pft/v1/v1'
+import { LoadError } from '@/components/load-error'
 import { AnimateSpinner } from '@/components/spinner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -28,6 +29,7 @@ import { downloadFile } from '@/lib/export'
 import { format } from 'date-fns'
 import { Download, History, ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 // The backend does not constrain entity_type to an enum (it is whatever
@@ -58,6 +60,7 @@ const ACTION_BADGE_VARIANT: Record<string, 'default' | 'secondary' | 'destructiv
 }
 
 export default function AuditLogPage() {
+  const { t } = useTranslation()
   const { activeOrg } = useOrganization()
   const [page, setPage] = useState(1)
   const [action, setAction] = useState<'all' | 'created' | 'updated' | 'deleted'>('all')
@@ -71,7 +74,7 @@ export default function AuditLogPage() {
   const org = activeOrg && !activeOrg.personal ? activeOrg : null
   const canManage = org !== null && (org.my_role === 'owner' || org.my_role === 'admin')
 
-  const { data, isLoading } = useV1AuditLogList(
+  const { data, isLoading, error: auditError, mutate: retryAudit } = useV1AuditLogList(
     org && canManage
       ? {
           page,
@@ -91,11 +94,11 @@ export default function AuditLogPage() {
       <div className='p-6'>
         <EmptyPlaceholder
           icon={<ShieldAlert className='w-12 h-12' />}
-          title='Audit log unavailable'
+          title={t('auditLog.unavailableTitle')}
           description={
             !activeOrg || activeOrg.personal
-              ? 'Switch to a shared workspace to see who changed what. Personal budgets have no audit trail to show.'
-              : 'Only workspace owners and admins can browse the audit log.'
+              ? t('auditLog.unavailablePersonal')
+              : t('auditLog.unavailableNoPermission')
           }
         />
       </div>
@@ -114,9 +117,9 @@ export default function AuditLogPage() {
         },
       })
       downloadFile(csv, `fintrack-audit-log-${formatDateForApi(new Date())}.csv`, 'text/csv;charset=utf-8')
-      toast.success('Audit log exported as CSV')
+      toast.success(t('auditLog.exported'))
     } catch {
-      toast.error('Could not export the audit log')
+      toast.error(t('auditLog.exportFailed'))
     }
   }
 
@@ -124,27 +127,31 @@ export default function AuditLogPage() {
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
         <div>
-          <Typography variant='h2'>Audit Log</Typography>
+          <Typography variant='h2' as='h1'>{t('auditLog.title')}</Typography>
           <p className='text-sm text-muted-foreground'>
-            Every create, update and delete in <strong>{org.name}</strong>, newest first.
+            <Trans
+              i18nKey='auditLog.subtitle'
+              values={{ name: org.name }}
+              components={{ strong: <strong /> }}
+            />
           </p>
         </div>
         <Button variant='outline' onClick={() => void exportCsv()}>
           <Download className='mr-2 h-4 w-4' />
-          Export CSV
+          {t('auditLog.exportCsv')}
         </Button>
       </div>
 
       <div className='flex flex-col gap-2 sm:flex-row sm:items-center'>
         <Select value={action} onValueChange={(value) => { setAction(value as typeof action); setPage(1) }}>
           <SelectTrigger className='w-[160px]'>
-            <SelectValue placeholder='Action' />
+            <SelectValue placeholder={t('auditLog.action')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='all'>All actions</SelectItem>
-            <SelectItem value='created'>Created</SelectItem>
-            <SelectItem value='updated'>Updated</SelectItem>
-            <SelectItem value='deleted'>Deleted</SelectItem>
+            <SelectItem value='all'>{t('auditLog.allActions')}</SelectItem>
+            <SelectItem value='created'>{t('auditLog.created')}</SelectItem>
+            <SelectItem value='updated'>{t('auditLog.updated')}</SelectItem>
+            <SelectItem value='deleted'>{t('auditLog.deleted')}</SelectItem>
           </SelectContent>
         </Select>
         <Select
@@ -152,10 +159,10 @@ export default function AuditLogPage() {
           onValueChange={(value) => { setEntityType(value as typeof entityType); setPage(1) }}
         >
           <SelectTrigger className='w-[200px]'>
-            <SelectValue placeholder='Type' />
+            <SelectValue placeholder={t('auditLog.type')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value='all'>All types</SelectItem>
+            <SelectItem value='all'>{t('auditLog.allTypes')}</SelectItem>
             {ENTITY_TYPES.map((type) => (
               <SelectItem key={type} value={type}>
                 {type}
@@ -167,11 +174,13 @@ export default function AuditLogPage() {
 
       {isLoading ? (
         <AnimateSpinner size={64} />
+      ) : auditError && !data ? (
+        <LoadError what={t('loadError.auditLog')} onRetry={() => void retryAudit()} />
       ) : !data?.results?.length ? (
         <EmptyPlaceholder
           icon={<History className='w-12 h-12' />}
-          title='No activity yet'
-          description='Changes made by anyone in this workspace will show up here.'
+          title={t('auditLog.emptyTitle')}
+          description={t('auditLog.emptyDescription')}
         />
       ) : (
         <>
@@ -179,11 +188,11 @@ export default function AuditLogPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Who</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Entity</TableHead>
-                  <TableHead>Summary</TableHead>
+                  <TableHead>{t('auditLog.when')}</TableHead>
+                  <TableHead>{t('auditLog.who')}</TableHead>
+                  <TableHead>{t('auditLog.action')}</TableHead>
+                  <TableHead>{t('auditLog.entity')}</TableHead>
+                  <TableHead>{t('auditLog.summary')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -192,7 +201,7 @@ export default function AuditLogPage() {
                     <TableCell className='whitespace-nowrap text-sm text-muted-foreground'>
                       {format(new Date(entry.created_at), 'dd MMM yyyy HH:mm')}
                     </TableCell>
-                    <TableCell>{entry.actor_email || 'system'}</TableCell>
+                    <TableCell>{entry.actor_email || t('auditLog.system')}</TableCell>
                     <TableCell>
                       <Badge variant={ACTION_BADGE_VARIANT[entry.action] ?? 'outline'}>
                         {entry.action}
@@ -211,7 +220,11 @@ export default function AuditLogPage() {
 
           <div className='flex items-center justify-between'>
             <div className='text-sm text-muted-foreground'>
-              Showing <strong>{data.results.length}</strong> of <strong>{data.count}</strong> entries
+              <Trans
+                i18nKey='auditLog.showing'
+                values={{ shown: data.results.length, total: data.count }}
+                components={{ strong: <strong /> }}
+              />
             </div>
             <div className='flex items-center gap-2'>
               <Button
@@ -220,7 +233,7 @@ export default function AuditLogPage() {
                 disabled={!data.previous}
                 onClick={() => setPage((prev) => prev - 1)}
               >
-                Previous
+                {t('auditLog.previous')}
               </Button>
               <Button
                 variant='outline'
@@ -228,7 +241,7 @@ export default function AuditLogPage() {
                 disabled={!data.next}
                 onClick={() => setPage((prev) => prev + 1)}
               >
-                Next
+                {t('auditLog.next')}
               </Button>
             </div>
           </div>

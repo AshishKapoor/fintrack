@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { PieChart as PieChartIcon } from 'lucide-react'
 
@@ -11,6 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { LoadError } from '@/components/load-error'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -31,15 +33,10 @@ interface CategoryTrendsChartProps {
 // range, not a stable per-category identity - this app has no persisted
 // per-category color anywhere else, so a given category's color can shift if
 // the selected range changes which categories rank highest.
-const PALETTE: { light: string; dark: string }[] = [
-  { light: '#2a78d6', dark: '#3987e5' },
-  { light: '#eb6834', dark: '#d95926' },
-  { light: '#1baf7a', dark: '#199e70' },
-  { light: '#eda100', dark: '#c98500' },
-  { light: '#e87ba4', dark: '#d55181' },
-  { light: '#008300', dark: '#008300' },
-]
-const OTHER_COLOR = { light: '#898781', dark: '#898781' }
+// The values live in globals.css as --category-1..6 / --category-other, with
+// their light and dark steps.
+const PALETTE = [1, 2, 3, 4, 5, 6].map((slot) => `var(--category-${slot})`)
+const OTHER_COLOR = 'var(--category-other)'
 
 function seriesKey(index: number) {
   return `series-${index}`
@@ -69,9 +66,10 @@ function CategoryLegend({ payload }: { payload?: Array<{ value?: string; color?:
 }
 
 export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartProps) {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
   const [view, setView] = useState<'chart' | 'table'>('chart')
-  const { data, isLoading } = useSpendingTrends(startDate, endDate)
+  const { data, isLoading, error, mutate } = useSpendingTrends(startDate, endDate)
 
   const { points, categories } = useMemo(
     () => pivotCategoryTrends(data?.rows ?? [], 6),
@@ -82,7 +80,7 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     const config: ChartConfig = {}
     categories.forEach((category, index) => {
       config[seriesKey(index)] =
-        category === OTHER_CATEGORY_LABEL ? { theme: OTHER_COLOR } : { theme: PALETTE[index] }
+        category === OTHER_CATEGORY_LABEL ? { color: OTHER_COLOR } : { color: PALETTE[index] }
     })
     return config
   }, [categories])
@@ -91,12 +89,16 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
+  }
+
   if (!points.length) {
     return (
       <EmptyPlaceholder
         icon={<PieChartIcon className='w-12 h-12' />}
-        title='No spending to compare yet'
-        description='Add expense transactions across a couple of months to see how your spending shifts by category.'
+        title={t('insights.categoryEmptyTitle')}
+        description={t('insights.categoryEmptyDescription')}
       />
     )
   }
@@ -105,8 +107,8 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     <Tabs value={view} onValueChange={(value) => setView(value as 'chart' | 'table')}>
       <div className='flex justify-end'>
         <TabsList>
-          <TabsTrigger value='chart'>Chart</TabsTrigger>
-          <TabsTrigger value='table'>Table</TabsTrigger>
+          <TabsTrigger value='chart'>{t('insights.viewChart')}</TabsTrigger>
+          <TabsTrigger value='table'>{t('insights.viewTable')}</TabsTrigger>
         </TabsList>
       </div>
 
@@ -148,10 +150,10 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
 
       <TabsContent value='table'>
         <div className='overflow-x-auto'>
-          <Table>
+          <Table scrollLabel={t('insights.categoryTableLabel')}>
             <TableHeader>
               <TableRow>
-                <TableHead>Period</TableHead>
+                <TableHead>{t('insights.period')}</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className='text-right'>
                     {category}

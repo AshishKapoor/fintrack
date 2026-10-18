@@ -128,7 +128,7 @@ test.describe('signed in', () => {
     await signIn(page, email)
 
     const pages: [string, string][] = [
-      ['/', 'Dashboard'],
+      ['/', 'Home'],
       ['/transactions', 'Transactions'],
       ['/categories', 'Categories'],
       ['/budgets', 'Budgets'],
@@ -171,7 +171,7 @@ test.describe('signed in', () => {
     await signIn(page, email)
     await page.goto('/transactions')
 
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await page.getByRole('button', { name: 'Add transaction' }).first().click()
     await expect(page.getByRole('dialog')).toBeVisible({ timeout: 30_000 })
 
     // Scoped to the dialog: a modal traps focus, so the page behind it is

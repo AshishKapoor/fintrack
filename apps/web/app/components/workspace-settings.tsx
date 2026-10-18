@@ -33,10 +33,21 @@ import {
 } from '@/components/ui/table'
 import { useOrganization } from '@/context/organization-context'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import useSWR from 'swr'
 
 const ROLES = ['admin', 'member', 'viewer'] as const
+
+// What each role can do, in a household's words. The stored values (and the
+// API's permission checks) are unchanged. Values are catalogue keys,
+// translated at render time.
+const ROLE_LABELS: Record<string, string> = {
+  owner: 'workspace.roles.owner',
+  admin: 'workspace.roles.admin',
+  member: 'workspace.roles.member',
+  viewer: 'workspace.roles.viewer',
+}
 
 /**
  * Workspace management: create one, invite people, manage roles.
@@ -45,6 +56,8 @@ const ROLES = ['admin', 'member', 'viewer'] as const
  * inviter to share out of band, and joining is pasting a token here.
  */
 export function WorkspaceSettings() {
+  const { t } = useTranslation()
+  const roleLabel = (role: string) => (ROLE_LABELS[role] ? t(ROLE_LABELS[role]) : role)
   const { organizations, activeOrg, setActiveOrg, refresh } = useOrganization()
   const [newOrgName, setNewOrgName] = useState('')
   const [inviteEmail, setInviteEmail] = useState('')
@@ -73,7 +86,7 @@ export function WorkspaceSettings() {
       toast.success(label)
     } catch (error) {
       console.error(label, 'failed:', error)
-      toast.error('That did not work.')
+      toast.error(t('workspace.failed'))
     } finally {
       setBusy(false)
     }
@@ -83,25 +96,25 @@ export function WorkspaceSettings() {
     <div className='space-y-6'>
       <Card>
         <CardHeader>
-          <CardTitle>Create a workspace</CardTitle>
+          <CardTitle>{t('workspace.createTitle')}</CardTitle>
           <CardDescription>
-            A shared space for a household, a team, or a client. You become its owner.
+            {t('workspace.createDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className='flex flex-wrap items-end gap-3'>
           <div className='grid gap-2'>
-            <Label htmlFor='workspace-name'>Name</Label>
+            <Label htmlFor='workspace-name'>{t('workspace.name')}</Label>
             <Input
               id='workspace-name'
               value={newOrgName}
               onChange={(event) => setNewOrgName(event.target.value)}
-              placeholder='e.g. Family finances'
+              placeholder={t('workspace.namePlaceholder')}
             />
           </div>
           <Button
             disabled={!newOrgName.trim() || busy}
             onClick={() =>
-              run('Workspace created', async () => {
+              run(t('workspace.created'), async () => {
                 const created = await v1OrgsCreate({ name: newOrgName.trim() } as never)
                 setNewOrgName('')
                 await refresh()
@@ -109,19 +122,19 @@ export function WorkspaceSettings() {
               })
             }
           >
-            Create workspace
+            {t('workspace.create')}
           </Button>
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Join a workspace</CardTitle>
-          <CardDescription>Paste the invitation token you were sent.</CardDescription>
+          <CardTitle>{t('workspace.joinTitle')}</CardTitle>
+          <CardDescription>{t('workspace.joinDescription')}</CardDescription>
         </CardHeader>
         <CardContent className='flex flex-wrap items-end gap-3'>
           <div className='grid gap-2 grow max-w-md'>
-            <Label htmlFor='join-token'>Invitation token</Label>
+            <Label htmlFor='join-token'>{t('workspace.invitationCode')}</Label>
             <Input
               id='join-token'
               value={joinToken}
@@ -131,14 +144,14 @@ export function WorkspaceSettings() {
           <Button
             disabled={!joinToken.trim() || busy}
             onClick={() =>
-              run('Joined the workspace', async () => {
+              run(t('workspace.joined'), async () => {
                 await v1OrgsAcceptInvitationCreate({ token: joinToken.trim() } as never)
                 setJoinToken('')
                 await refresh()
               })
             }
           >
-            Join
+            {t('workspace.join')}
           </Button>
         </CardContent>
       </Card>
@@ -146,16 +159,16 @@ export function WorkspaceSettings() {
       {managing && (
         <Card>
           <CardHeader>
-            <CardTitle>{managing.name} — members</CardTitle>
+            <CardTitle>{t('workspace.membersTitle', { name: managing.name })}</CardTitle>
             <CardDescription>
-              Your role: {managing.my_role}. Viewers can read everything and change nothing.
+              {t('workspace.membersDescription', { role: roleLabel(managing.my_role) })}
             </CardDescription>
           </CardHeader>
           <CardContent className='space-y-6'>
             {canManage && (
               <div className='flex flex-wrap items-end gap-3'>
                 <div className='grid gap-2 grow max-w-xs'>
-                  <Label htmlFor='invite-email'>Invite by email</Label>
+                  <Label htmlFor='invite-email'>{t('workspace.inviteEmail')}</Label>
                   <Input
                     id='invite-email'
                     type='email'
@@ -164,7 +177,7 @@ export function WorkspaceSettings() {
                   />
                 </div>
                 <div className='grid gap-2'>
-                  <Label htmlFor='invite-role'>Role</Label>
+                  <Label htmlFor='invite-role'>{t('workspace.inviteRole')}</Label>
                   <Select
                     value={inviteRole}
                     onValueChange={(value) => setInviteRole(value as (typeof ROLES)[number])}
@@ -175,7 +188,7 @@ export function WorkspaceSettings() {
                     <SelectContent>
                       {ROLES.map((role) => (
                         <SelectItem key={role} value={role}>
-                          {role}
+                          {roleLabel(role)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -184,7 +197,7 @@ export function WorkspaceSettings() {
                 <Button
                   disabled={!inviteEmail.trim() || busy}
                   onClick={() =>
-                    run('Invitation created', async () => {
+                    run(t('workspace.invitationCreated'), async () => {
                       const invitation = (await v1OrgsInvitationsCreate(
                         String(managing.id),
                         { email: inviteEmail.trim(), role: inviteRole } as never,
@@ -194,7 +207,7 @@ export function WorkspaceSettings() {
                     })
                   }
                 >
-                  Invite
+                  {t('workspace.invite')}
                 </Button>
               </div>
             )}
@@ -208,16 +221,16 @@ export function WorkspaceSettings() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead>Role</TableHead>
-                  {canManage && <TableHead className='text-right'>Actions</TableHead>}
+                  <TableHead>{t('workspace.person')}</TableHead>
+                  <TableHead>{t('workspace.can')}</TableHead>
+                  {canManage && <TableHead className='text-right'>{t('workspace.actions')}</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(members ?? []).map((member) => (
                   <TableRow key={member.id}>
                     <TableCell>{(member as { email?: string }).email}</TableCell>
-                    <TableCell>{member.role}</TableCell>
+                    <TableCell>{roleLabel(member.role)}</TableCell>
                     {canManage && (
                       <TableCell className='text-right space-x-2'>
                         {member.role !== 'owner' && (
@@ -225,7 +238,7 @@ export function WorkspaceSettings() {
                             <Select
                               value={member.role}
                               onValueChange={(value) =>
-                                run('Role updated', async () => {
+                                run(t('workspace.updated'), async () => {
                                   await v1OrgsMembersPartialUpdate(
                                     String(managing.id),
                                     String(member.id),
@@ -235,13 +248,13 @@ export function WorkspaceSettings() {
                                 })
                               }
                             >
-                              <SelectTrigger className='w-28 inline-flex'>
+                              <SelectTrigger className='w-40 inline-flex'>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {ROLES.map((role) => (
                                   <SelectItem key={role} value={role}>
-                                    {role}
+                                    {roleLabel(role)}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -251,7 +264,7 @@ export function WorkspaceSettings() {
                               size='sm'
                               disabled={busy}
                               onClick={() =>
-                                run('Member removed', async () => {
+                                run(t('workspace.removed'), async () => {
                                   await v1OrgsMembersRemoveDestroy(
                                     String(managing.id),
                                     String(member.id),
@@ -260,7 +273,7 @@ export function WorkspaceSettings() {
                                 })
                               }
                             >
-                              Remove
+                              {t('workspace.remove')}
                             </Button>
                           </>
                         )}
@@ -276,7 +289,7 @@ export function WorkspaceSettings() {
 
       {!managing && organizations.length > 0 && (
         <p className='text-sm text-muted-foreground'>
-          Switch to a shared workspace in the top bar to manage its members.
+          {t('workspace.switchHint')}
         </p>
       )}
     </div>

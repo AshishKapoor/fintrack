@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Pin, PinOff, Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Pin, PinOff, Play, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 import {
@@ -14,6 +15,9 @@ import {
   type SavedReport,
 } from '@/lib/finance-client'
 
+import { ReportResult, type ReportResultData } from '@/components/report-result'
+import { PinnedReports } from '@/components/pinned-reports'
+import { LoadError } from '@/components/load-error'
 import Typography from '@/components/ui/typography'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -40,8 +44,9 @@ import { Badge } from '@/components/ui/badge'
 const today = new Date().toISOString().slice(0, 10)
 
 export default function ReportsPage() {
+  const { t } = useTranslation()
   const [savedReports, setSavedReports] = useState<SavedReport[]>([])
-  const [loadingSaved, setLoadingSaved] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [runningReport, setRunningReport] = useState(false)
   const [result, setResult] = useState<Record<string, unknown> | null>(null)
 
@@ -73,13 +78,11 @@ export default function ReportsPage() {
 
   const refreshSavedReports = async () => {
     try {
-      setLoadingSaved(true)
+      setLoadFailed(false)
       const reports = await listSavedReports()
       setSavedReports(reports)
     } catch {
-      toast.error('Failed to load saved reports')
-    } finally {
-      setLoadingSaved(false)
+      setLoadFailed(true)
     }
   }
 
@@ -95,9 +98,9 @@ export default function ReportsPage() {
       setRunningReport(true)
       const data = await runAdhocReport(currentDefinition)
       setResult(data)
-      toast.success('Report generated')
+      toast.success(t('reports.shown'))
     } catch {
-      toast.error('Failed to run report')
+      toast.error(t('reports.showFailed'))
     } finally {
       setRunningReport(false)
     }
@@ -105,7 +108,7 @@ export default function ReportsPage() {
 
   const handleSaveReport = async () => {
     if (!saveName.trim()) {
-      toast.error('Report name is required')
+      toast.error(t('reports.nameRequired'))
       return
     }
 
@@ -116,12 +119,12 @@ export default function ReportsPage() {
         definition: currentDefinition,
         pinned: pinOnSave,
       })
-      toast.success('Report saved')
+      toast.success(t('reports.saved'))
       setSaveName('')
       setPinOnSave(false)
       await refreshSavedReports()
     } catch {
-      toast.error('Failed to save report')
+      toast.error(t('reports.saveFailed'))
     }
   }
 
@@ -130,7 +133,7 @@ export default function ReportsPage() {
       await updateSavedReport(report.id, { pinned: !report.pinned })
       await refreshSavedReports()
     } catch {
-      toast.error('Failed to update pin state')
+      toast.error(t('reports.pinFailed'))
     }
   }
 
@@ -139,9 +142,9 @@ export default function ReportsPage() {
       setRunningReport(true)
       const data = await runSavedReport(report.id)
       setResult(data)
-      toast.success(`Ran ${report.name}`)
+      toast.success(t('reports.ran', { name: report.name }))
     } catch {
-      toast.error('Failed to run saved report')
+      toast.error(t('reports.runFailed'))
     } finally {
       setRunningReport(false)
     }
@@ -150,41 +153,56 @@ export default function ReportsPage() {
   const handleDeleteSaved = async (report: SavedReport) => {
     try {
       await deleteSavedReport(report.id)
-      toast.success('Saved report deleted')
+      toast.success(t('reports.deleted'))
       await refreshSavedReports()
     } catch {
-      toast.error('Failed to delete saved report')
+      toast.error(t('reports.deleteFailed'))
     }
   }
 
+
+  // A failed load is not an empty list: say so instead of "No ... yet".
+  if (loadFailed) {
+    return (
+      <div className='space-y-4 p-6'>
+        <Typography variant='h2' as='h1'>
+          {t('reports.title')}
+        </Typography>
+        <LoadError what={t('loadError.reports')} onRetry={() => void refreshSavedReports()} />
+      </div>
+    )
+  }
   return (
     <div className='space-y-6 p-6'>
-      <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Reports</Typography>
-        <Button variant='outline' onClick={() => void refreshSavedReports()} disabled={loadingSaved}>
-          <RefreshCw className='mr-2 h-4 w-4' />
-          Refresh
-        </Button>
-      </div>
+      <Typography variant='h2' as='h1'>{t('reports.title')}</Typography>
 
       <Card>
         <CardHeader>
-          <CardTitle>Run Report</CardTitle>
-          <CardDescription>Generate net worth, cash flow, spending, or custom grouped reports.</CardDescription>
+          <CardTitle>{t('reports.pinnedTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PinnedReports />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('reports.makeTitle')}</CardTitle>
+          <CardDescription>{t('reports.makeDescription')}</CardDescription>
         </CardHeader>
         <CardContent className='space-y-4'>
           <div className='grid gap-4 md:grid-cols-4'>
             <div className='space-y-2'>
-              <Label htmlFor='report-type'>Type</Label>
+              <Label htmlFor='report-type'>{t('reports.type')}</Label>
               <Select value={reportType} onValueChange={(value) => setReportType(value as SavedReport['report_type'])}>
                 <SelectTrigger id='report-type'>
-                  <SelectValue placeholder='Report type' />
+                  <SelectValue placeholder={t('reports.reportType')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='net_worth'>Net Worth</SelectItem>
-                  <SelectItem value='cash_flow'>Cash Flow</SelectItem>
-                  <SelectItem value='spending'>Spending Trends</SelectItem>
-                  <SelectItem value='custom'>Custom</SelectItem>
+                  <SelectItem value='net_worth'>{t('reports.typeNetWorth')}</SelectItem>
+                  <SelectItem value='cash_flow'>{t('reports.typeCashFlow')}</SelectItem>
+                  <SelectItem value='spending'>{t('reports.typeSpending')}</SelectItem>
+                  <SelectItem value='custom'>{t('reports.typeCustom')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -192,7 +210,7 @@ export default function ReportsPage() {
             {reportType !== 'net_worth' ? (
               <>
                 <div className='space-y-2'>
-                  <Label htmlFor='report-start-date'>Start date</Label>
+                  <Label htmlFor='report-start-date'>{t('reports.startDate')}</Label>
                   <Input
                     id='report-start-date'
                     type='date'
@@ -201,7 +219,7 @@ export default function ReportsPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='report-end-date'>End date</Label>
+                  <Label htmlFor='report-end-date'>{t('reports.endDate')}</Label>
                   <Input
                     id='report-end-date'
                     type='date'
@@ -212,7 +230,7 @@ export default function ReportsPage() {
               </>
             ) : (
               <div className='space-y-2'>
-                <Label htmlFor='report-as-of'>As of</Label>
+                <Label htmlFor='report-as-of'>{t('reports.asOf')}</Label>
                 <Input
                   id='report-as-of'
                   type='date'
@@ -224,14 +242,14 @@ export default function ReportsPage() {
 
             {reportType === 'custom' && (
               <div className='space-y-2'>
-                <Label htmlFor='report-group-by'>Group by</Label>
+                <Label htmlFor='report-group-by'>{t('reports.groupBy')}</Label>
                 <Select value={groupBy} onValueChange={(value) => setGroupBy(value as 'category' | 'month')}>
                   <SelectTrigger id='report-group-by'>
-                    <SelectValue placeholder='Group by' />
+                    <SelectValue placeholder={t('reports.groupBy')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='category'>Category</SelectItem>
-                    <SelectItem value='month'>Month</SelectItem>
+                    <SelectItem value='category'>{t('reports.groupCategory')}</SelectItem>
+                    <SelectItem value='month'>{t('reports.groupMonth')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -240,25 +258,25 @@ export default function ReportsPage() {
 
           <div className='flex flex-wrap items-end gap-3'>
             <div className='flex-1 min-w-[220px] space-y-2'>
-              <Label htmlFor='report-save-name'>Save as report</Label>
+              <Label htmlFor='report-save-name'>{t('reports.saveAs')}</Label>
               <Input
                 id='report-save-name'
                 value={saveName}
                 onChange={(e) => setSaveName(e.target.value)}
-                placeholder='e.g. Monthly Cash Flow'
+                placeholder={t('reports.saveAsPlaceholder')}
               />
             </div>
             <div className='flex items-center gap-2 pb-1'>
               <Switch id='report-pin-on-save' checked={pinOnSave} onCheckedChange={setPinOnSave} />
-              <Label htmlFor='report-pin-on-save'>Pin on save</Label>
+              <Label htmlFor='report-pin-on-save'>{t('reports.alsoPin')}</Label>
             </div>
             <Button variant='outline' onClick={() => void handleSaveReport()}>
               <Plus className='mr-2 h-4 w-4' />
-              Save
+              {t('reports.save')}
             </Button>
             <Button onClick={() => void handleRunAdhoc()} disabled={runningReport}>
               <Play className='mr-2 h-4 w-4' />
-              Run
+              {t('reports.show')}
             </Button>
           </div>
         </CardContent>
@@ -266,24 +284,24 @@ export default function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Saved Reports</CardTitle>
-          <CardDescription>Pin reports to keep quick access to important analytics.</CardDescription>
+          <CardTitle>{t('reports.savedTitle')}</CardTitle>
+          <CardDescription>{t('reports.savedDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Pinned</TableHead>
-                <TableHead className='w-[220px]'>Actions</TableHead>
+                <TableHead>{t('reports.name')}</TableHead>
+                <TableHead>{t('reports.type')}</TableHead>
+                <TableHead>{t('reports.pinned')}</TableHead>
+                <TableHead className='w-[220px]'>{t('reports.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {savedReports.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={4} className='text-center text-muted-foreground'>
-                    No saved reports yet.
+                    {t('reports.noSaved')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -298,16 +316,16 @@ export default function ReportsPage() {
                         variant='ghost'
                         size='icon'
                         onClick={() => void handleTogglePin(report)}
-                        aria-label={report.pinned ? 'Unpin report' : 'Pin report'}
+                        aria-label={report.pinned ? t('reports.unpin') : t('reports.pin')}
                       >
-                        {report.pinned ? <Pin className='h-4 w-4 text-amber-600' /> : <PinOff className='h-4 w-4' />}
+                        {report.pinned ? <Pin className='h-4 w-4 text-caution' /> : <PinOff className='h-4 w-4' />}
                       </Button>
                     </TableCell>
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         <Button variant='outline' size='sm' onClick={() => void handleRunSaved(report)}>
                           <Play className='mr-2 h-4 w-4' />
-                          Run
+                          {t('reports.run')}
                         </Button>
                         <Button
                           variant='ghost'
@@ -316,7 +334,7 @@ export default function ReportsPage() {
                           className='text-destructive hover:text-destructive'
                         >
                           <Trash2 className='mr-2 h-4 w-4' />
-                          Delete
+                          {t('reports.delete')}
                         </Button>
                       </div>
                     </TableCell>
@@ -330,16 +348,14 @@ export default function ReportsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Report Output</CardTitle>
-          <CardDescription>Latest ad-hoc or saved report run payload.</CardDescription>
+          <CardTitle>{t('reports.resultTitle')}</CardTitle>
+          <CardDescription>{t('reports.resultDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           {result ? (
-            <pre className='rounded-md border bg-muted/30 p-4 text-xs overflow-x-auto'>
-              {JSON.stringify(result, null, 2)}
-            </pre>
+            <ReportResult result={result as ReportResultData} />
           ) : (
-            <p className='text-sm text-muted-foreground'>Run a report to see output.</p>
+            <p className='text-sm text-muted-foreground'>{t('reports.resultEmpty')}</p>
           )}
         </CardContent>
       </Card>

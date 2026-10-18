@@ -8,6 +8,7 @@ import { AddTransferDialog } from '@/components/add-transfer-dialog'
 import { DeleteTransactionAlert } from '@/components/delete-transaction-alert'
 import { EditTransactionDialog } from '@/components/edit-transaction-dialog'
 import { ImportTransactionsDialog } from '@/components/import-transactions-dialog'
+import { LoadError } from '@/components/load-error'
 import { InlineTransactionRow } from '@/components/inline-transaction-row'
 import { AnimateSpinner } from '@/components/spinner'
 import { Button } from '@/components/ui/button'
@@ -58,7 +59,7 @@ import {
   Upload,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { Trans, useTranslation } from 'react-i18next'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -85,7 +86,7 @@ export default function TransactionsPage() {
   // its own to restore focus to.
   const addTransactionTriggerRef = useRef<HTMLButtonElement>(null)
   const [showAddTransfer, setShowAddTransfer] = useState(false)
-  const [showImport, setShowImport] = useState(false)
+  const [showImport, setShowImport] = useState(() => searchParams.get('import') === '1')
   const [showEditTransaction, setShowEditTransaction] = useState(false)
   const [showDeleteAlert, setShowDeleteAlert] = useState(false)
   const [selectedTransaction, setSelectedTransaction] = useState<LedgerTransaction | null>(null)
@@ -108,6 +109,13 @@ export default function TransactionsPage() {
       setShowAddTransaction(true)
       const next = new URLSearchParams(searchParams)
       next.delete('new')
+      setSearchParams(next, { replace: true })
+    }
+    // Same for ?import=1, the Setup section's "Import" entry.
+    if (searchParams.get('import') === '1') {
+      setShowImport(true)
+      const next = new URLSearchParams(searchParams)
+      next.delete('import')
       setSearchParams(next, { replace: true })
     }
   }, [searchParams, setSearchParams])
@@ -133,6 +141,7 @@ export default function TransactionsPage() {
   const {
     data: transactions,
     isLoading: isLoadingTransactions,
+    error: transactionsError,
     mutate: refreshTransactions,
   } = useV1FinanceTransactionsList({
     page: currentPage,
@@ -156,6 +165,18 @@ export default function TransactionsPage() {
     return <AnimateSpinner size={64} />
   }
 
+  // A failed request must not fall through to "No transactions yet".
+  if (transactionsError && !transactions) {
+    return (
+      <div className='space-y-4 p-4 sm:p-6'>
+        <Typography variant='h2' as='h1'>
+          {t('transactionsPage.title')}
+        </Typography>
+        <LoadError what={t('loadError.transactions')} onRetry={() => void refreshTransactions()} />
+      </div>
+    )
+  }
+
   // Search, type, date and ordering are applied by the API across the whole
   // ledger. Doing it here only ever filtered the current page, so the result
   // count disagreed with what was shown.
@@ -169,7 +190,7 @@ export default function TransactionsPage() {
 
   const exportTransactions = (format: 'csv' | 'json') => {
     if (!filteredTransactions.length) {
-      toast.error('No transactions available for export')
+      toast.error(t('transactionsPage.exportEmpty'))
       return
     }
 
@@ -188,35 +209,41 @@ export default function TransactionsPage() {
     const { content, mimeType, extension } = serializeExport(rows, format)
     const filename = `fintrack-transactions-${formatDateForApi(new Date())}.${extension}`
     downloadFile(content, filename, mimeType)
-    toast.success(`Transactions exported as ${extension.toUpperCase()}`)
+    toast.success(t('transactionsPage.exported', { format: extension.toUpperCase() }))
   }
 
   return (
-    <div className='space-y-4 p-6'>
-      <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Transactions</Typography>
-        <div className='flex items-center gap-2'>
+    <div className='space-y-4 p-4 sm:p-6'>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <Typography variant='h2' as='h1'>{t('transactionsPage.title')}</Typography>
+        {/* Phones: the primary action spans the row and comes first, the two
+            secondary actions share the row beneath it. */}
+        <div className='grid grid-cols-2 gap-2 sm:flex sm:items-center'>
           <Button variant='outline' onClick={() => setShowImport(true)}>
             <Upload className='mr-2 h-4 w-4' />
-            Import
+            {t('transactionsPage.import')}
           </Button>
           <Button variant='outline' onClick={() => setShowAddTransfer(true)}>
             <Repeat className='mr-2 h-4 w-4' />
-            Add Transfer
+            {t('transactionsPage.addTransfer')}
           </Button>
-          <Button ref={addTransactionTriggerRef} onClick={() => setShowAddTransaction(true)}>
-            Add Transaction
+          <Button
+            ref={addTransactionTriggerRef}
+            className='order-first col-span-2 sm:order-none'
+            onClick={() => setShowAddTransaction(true)}
+          >
+            {t('transactionsPage.addTransaction')}
           </Button>
         </div>
       </div>
 
       <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-        <div className='flex flex-1 items-center gap-2'>
-          <div className='relative flex-1'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+        <div className='flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap'>
+          <div className='relative basis-full sm:basis-auto sm:flex-1'>
+            <Search className='pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
             <Input
               type='search'
-              placeholder='Search transactions...'
+              placeholder={t('transactionsPage.searchPlaceholder')}
               className='w-full pl-8'
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -225,7 +252,7 @@ export default function TransactionsPage() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='outline' className='gap-1'>
-                <Filter className='h-4 w-4' /> Filter
+                <Filter className='h-4 w-4' /> {t('transactionsPage.filter')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[200px]'>
@@ -233,27 +260,27 @@ export default function TransactionsPage() {
                 checked={transactionType === 'all'}
                 onCheckedChange={() => setTransactionType('all')}
               >
-                All Transactions
+                {t('transactionsPage.filterAll')}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={transactionType === 'income'}
                 onCheckedChange={() => setTransactionType('income')}
               >
-                Income Only
+                {t('transactionsPage.filterIncome')}
               </DropdownMenuCheckboxItem>
               <DropdownMenuCheckboxItem
                 checked={transactionType === 'expense'}
                 onCheckedChange={() => setTransactionType('expense')}
               >
-                Expenses Only
+                {t('transactionsPage.filterExpense')}
               </DropdownMenuCheckboxItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant='outline' className='gap-1 w-[180px] justify-start'>
+              <Button variant='outline' className='min-w-0 flex-1 justify-start gap-1 sm:w-[180px] sm:flex-none'>
                 <CalendarIcon className='h-4 w-4' />
-                {date ? format(date, 'MMM dd, yyyy') : 'Select date'}
+                {date ? format(date, 'MMM dd, yyyy') : t('transactionsPage.selectDate')}
               </Button>
             </PopoverTrigger>
             <PopoverContent className='w-auto p-0'>
@@ -266,29 +293,29 @@ export default function TransactionsPage() {
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
           >
-            <SelectTrigger aria-label='Sort by' className='w-[180px]'>
-              <SelectValue placeholder='Sort by' />
+            <SelectTrigger aria-label={t('transactionsPage.sortBy')} className='flex-1 sm:w-[180px] sm:flex-none'>
+              <SelectValue placeholder={t('transactionsPage.sortBy')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='newest'>Newest first</SelectItem>
-              <SelectItem value='oldest'>Oldest first</SelectItem>
-              <SelectItem value='highest'>Highest amount</SelectItem>
-              <SelectItem value='lowest'>Lowest amount</SelectItem>
+              <SelectItem value='newest'>{t('transactionsPage.sortNewest')}</SelectItem>
+              <SelectItem value='oldest'>{t('transactionsPage.sortOldest')}</SelectItem>
+              <SelectItem value='highest'>{t('transactionsPage.sortHighest')}</SelectItem>
+              <SelectItem value='lowest'>{t('transactionsPage.sortLowest')}</SelectItem>
             </SelectContent>
           </Select>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='icon' className='h-9 w-9'>
                 <Download className='h-4 w-4' />
-                <span className='sr-only'>Export transactions</span>
+                <span className='sr-only'>{t('transactionsPage.export')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuItem onClick={() => exportTransactions('csv')}>
-                Export CSV
+                {t('transactionsPage.exportCsv')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => exportTransactions('json')}>
-                Export JSON
+                {t('transactionsPage.exportJson')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -299,11 +326,11 @@ export default function TransactionsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
-              <TableHead>Title</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead className='text-left'>Amount</TableHead>
-              <TableHead className='w-[80px]'>Actions</TableHead>
+              <TableHead>{t('transactionsPage.date')}</TableHead>
+              <TableHead>{t('transactionsPage.titleColumn')}</TableHead>
+              <TableHead>{t('transactionsPage.category')}</TableHead>
+              <TableHead className='text-left'>{t('transactionsPage.amount')}</TableHead>
+              <TableHead className='w-[80px]'>{t('transactionsPage.actions')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -320,18 +347,18 @@ export default function TransactionsPage() {
                   {hasNoTransactionsAtAll ? (
                     <EmptyPlaceholder
                       icon={<CircleDollarSign className='w-12 h-12' />}
-                      title='No transactions yet'
-                      description='Add one above, or import a statement to get started.'
+                      title={t('transactionsPage.emptyTitle')}
+                      description={t('transactionsPage.emptyDescription')}
                       action={
                         <Button variant='outline' onClick={() => setShowImport(true)}>
                           <Upload className='mr-2 h-4 w-4' />
-                          Import statement
+                          {t('transactionsPage.importStatement')}
                         </Button>
                       }
                     />
                   ) : (
                     <EmptyPlaceholder title={''} description={''}>
-                      No transactions found
+                      {t('transactionsPage.noneFound')}
                     </EmptyPlaceholder>
                   )}
                 </TableCell>
@@ -398,14 +425,14 @@ export default function TransactionsPage() {
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         {display.kind === 'income' ? (
-                          <ArrowUpIcon className='h-4 w-4 text-emerald-600' />
+                          <ArrowUpIcon className='h-4 w-4 text-income' />
                         ) : (
-                          <ArrowDownIcon className='h-4 w-4 text-rose-600' />
+                          <ArrowDownIcon className='h-4 w-4 text-expense' />
                         )}
                         <span
                           className={cn(
                             'tabular-nums',
-                            display.kind === 'income' ? 'text-emerald-600' : 'text-rose-600',
+                            display.kind === 'income' ? 'text-income' : 'text-expense',
                           )}
                         >
                           <CurrencyDisplay amount={display.amount} />
@@ -417,13 +444,13 @@ export default function TransactionsPage() {
                         <DropdownMenuTrigger asChild>
                           <Button variant='ghost' size='icon' className='h-8 w-8'>
                             <MoreHorizontal className='h-4 w-4' />
-                            <span className='sr-only'>Open menu</span>
+                            <span className='sr-only'>{t('transactionsPage.openMenu')}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align='end'>
                           <DropdownMenuItem onClick={openEdit}>
                             <Pencil className='mr-2 h-4 w-4' />
-                            Edit
+                            {t('transactionsPage.edit')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
@@ -433,7 +460,7 @@ export default function TransactionsPage() {
                             className='text-destructive focus:text-destructive'
                           >
                             <Trash className='mr-2 h-4 w-4' />
-                            Delete
+                            {t('transactionsPage.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -448,8 +475,11 @@ export default function TransactionsPage() {
 
       <div className='flex items-center justify-between'>
         <div className='text-sm text-muted-foreground'>
-          Showing <strong>{filteredTransactions.length}</strong> of{' '}
-          <strong>{transactions?.count || 0}</strong> transactions
+          <Trans
+            i18nKey='transactionsPage.showing'
+            values={{ shown: filteredTransactions.length, total: transactions?.count || 0 }}
+            components={{ strong: <strong /> }}
+          />
         </div>
         <div className='flex items-center gap-2'>
           <Button
@@ -458,7 +488,7 @@ export default function TransactionsPage() {
             disabled={!transactions?.previous}
             onClick={() => setCurrentPage((prev) => prev - 1)}
           >
-            Previous
+            {t('transactionsPage.previous')}
           </Button>
           <Button
             variant='outline'
@@ -466,7 +496,7 @@ export default function TransactionsPage() {
             disabled={!transactions?.next}
             onClick={() => setCurrentPage((prev) => prev + 1)}
           >
-            Next
+            {t('transactionsPage.next')}
           </Button>
         </div>
       </div>

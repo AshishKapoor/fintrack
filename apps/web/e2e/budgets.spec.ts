@@ -30,7 +30,7 @@ test('set a budget, see its card, zero it out', async ({ page }) => {
 
   await test.step('create a budget from the empty state', async () => {
     await page.goto('/budgets')
-    await page.getByRole('button', { name: 'Create Budget' }).click()
+    await page.getByRole('button', { name: 'Plan this month' }).click()
 
     await page.locator('#category').click()
     await page.getByRole('option', { name: 'Housing' }).click()
@@ -44,7 +44,7 @@ test('set a budget, see its card, zero it out', async ({ page }) => {
   })
 
   await test.step('upsert: saving the same category again updates, not duplicates', async () => {
-    await page.getByRole('button', { name: 'Add Budget' }).click()
+    await page.getByRole('button', { name: 'Add envelope' }).click()
     await page.locator('#category').click()
     await page.getByRole('option', { name: 'Housing' }).click()
     await page.locator('#amount').fill('750')
@@ -55,7 +55,10 @@ test('set a budget, see its card, zero it out', async ({ page }) => {
   })
 
   await test.step('zero out clears the month', async () => {
-    await page.getByRole('button', { name: 'Zero out' }).click()
+    await page.getByRole('button', { name: 'Fill from…' }).click()
+    await page.getByRole('menuitem', { name: 'Zero out this month' }).click()
+    // Zeroing a whole month is confirmed, not one click.
+    await page.getByRole('alertdialog').getByRole('button', { name: 'Zero out' }).click()
     await expect(page.getByText(/0\.00/).first()).toBeVisible({ timeout: 30_000 })
   })
 })

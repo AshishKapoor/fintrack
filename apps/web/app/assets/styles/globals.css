@@ -25,8 +25,24 @@
   --muted-foreground: oklch(0.45 0.05 39.21);
   --accent: oklch(0.9 0.05 146.04);
   --accent-foreground: oklch(0.43 0.12 144.31);
-  --destructive: oklch(0.54 0.19 26.72);
+  --destructive: oklch(0.515 0.19 26.72);
   --destructive-foreground: oklch(1 0 0);
+  /* Money direction and budget health. Each clears 4.5:1 as 14px text on every
+     light surface it can sit on, down to the accent hover wash. Never the only
+     signal: amounts always carry an arrow or sign beside the colour. */
+  --income: oklch(0.48 0.1 163.225);
+  --expense: oklch(0.52 0.205 17.585);
+  --caution: oklch(0.505 0.12 58.318);
+  /* Categorical chart series: six distinct hues in a fixed order for charts that
+     compare categories, plus a neutral catch-all that never takes a hue slot.
+     The --chart-* ramp is one hue on purpose; it cannot tell six series apart. */
+  --category-1: #2a78d6;
+  --category-2: #eb6834;
+  --category-3: #1baf7a;
+  --category-4: #eda100;
+  --category-5: #e87ba4;
+  --category-6: #008300;
+  --category-other: #898781;
   --border: oklch(0.88 0.02 74.64);
   --input: oklch(0.88 0.02 74.64);
   --ring: oklch(0.52 0.13 144.17);
@@ -72,8 +88,20 @@
   --muted-foreground: oklch(0.86 0.02 76.1);
   --accent: oklch(0.58 0.14 144.18);
   --accent-foreground: oklch(0.94 0.01 72.66);
-  --destructive: oklch(0.54 0.19 26.72);
-  --destructive-foreground: oklch(0.94 0.01 72.66);
+  --destructive: oklch(0.79 0.12 26.72);
+  --destructive-foreground: oklch(0.22 0.05 145.73);
+  /* Lighter, softer steps of the same hues: 4.5:1 or better on the forest
+     background, cards and the secondary surface. */
+  --income: oklch(0.755 0.145 163.225);
+  --expense: oklch(0.79 0.12 17.585);
+  --caution: oklch(0.785 0.145 58.318);
+  --category-1: #3987e5;
+  --category-2: #d95926;
+  --category-3: #199e70;
+  --category-4: #c98500;
+  --category-5: #d55181;
+  --category-6: #008300;
+  --category-other: #898781;
   --border: oklch(0.39 0.03 142.99);
   --input: oklch(0.39 0.03 142.99);
   --ring: oklch(0.67 0.16 144.21);
@@ -121,6 +149,9 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-income: var(--income);
+  --color-expense: var(--expense);
+  --color-caution: var(--caution);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);

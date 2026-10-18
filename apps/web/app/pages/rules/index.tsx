@@ -3,6 +3,8 @@
 import { useAllCategories } from '@/lib/finance-lists'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Play, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -22,6 +24,7 @@ import {
   type TransactionRule,
 } from '@/lib/finance-client'
 
+import { LoadError } from '@/components/load-error'
 import Typography from '@/components/ui/typography'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -146,6 +149,16 @@ const parseTemplate = (
 }
 
 export default function RulesAndRecurringPage() {
+  // ?tab= deep-links straight to a tab (the sidebar's Setup entries use it).
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requested = searchParams.get('tab')
+  const tab = requested === 'rules' || requested === 'recurring' ? requested : 'rules'
+  const setTab = (value: string) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('tab', value)
+    setSearchParams(next, { replace: true })
+  }
+  const { t } = useTranslation()
   const [rules, setRules] = useState<TransactionRule[]>([])
   const [scheduled, setScheduled] = useState<ScheduledTransaction[]>([])
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
@@ -157,6 +170,7 @@ export default function RulesAndRecurringPage() {
   const [editingScheduleId, setEditingScheduleId] = useState<number | null>(null)
 
   const [loading, setLoading] = useState(false)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const { data: categoriesData } = useAllCategories()
   // Native ledger category rows: the classification field is `kind`.
@@ -173,6 +187,7 @@ export default function RulesAndRecurringPage() {
 
   const loadAll = async () => {
     try {
+      setLoadFailed(false)
       setLoading(true)
       const [ruleRows, scheduleRows, accountRows] = await Promise.all([
         listTransactionRules(),
@@ -183,7 +198,7 @@ export default function RulesAndRecurringPage() {
       setScheduled(scheduleRows)
       setAccounts(accountRows)
     } catch {
-      toast.error('Failed to load rules/recurring data')
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -229,7 +244,7 @@ export default function RulesAndRecurringPage() {
 
   const handleSaveRule = async () => {
     if (!ruleForm.name.trim()) {
-      toast.error('Rule name is required')
+      toast.error(t('rules.nameRequired'))
       return
     }
 
@@ -241,11 +256,11 @@ export default function RulesAndRecurringPage() {
       } else {
         await createTransactionRule(payload)
       }
-      toast.success('Rule saved')
+      toast.success(t('rules.ruleSaved'))
       resetRuleForm()
       await loadAll()
     } catch {
-      toast.error('Failed to save rule')
+      toast.error(t('rules.ruleSaveFailed'))
     }
   }
 
@@ -271,22 +286,22 @@ export default function RulesAndRecurringPage() {
   const handleDeleteRule = async (id: number) => {
     try {
       await deleteTransactionRule(id)
-      toast.success('Rule deleted')
+      toast.success(t('rules.ruleDeleted'))
       await loadAll()
     } catch {
-      toast.error('Failed to delete rule')
+      toast.error(t('rules.ruleDeleteFailed'))
     }
   }
 
   const buildScheduleTemplate = () => {
     const amount = Math.abs(Number(scheduleForm.amount || 0))
     if (!amount) {
-      throw new Error('Amount is required')
+      throw new Error(t('rules.amountRequired'))
     }
 
     if (scheduleForm.kind === 'transfer') {
       if (!scheduleForm.accountId || !scheduleForm.toAccountId) {
-        throw new Error('Both source and destination accounts are required')
+        throw new Error(t('rules.transferAccountsRequired'))
       }
       return {
         memo: scheduleForm.memo,
@@ -307,7 +322,7 @@ export default function RulesAndRecurringPage() {
     }
 
     if (!scheduleForm.accountId || !scheduleForm.categoryId) {
-      throw new Error('Account and category are required')
+      throw new Error(t('rules.accountCategoryRequired'))
     }
 
     const accountAmount = scheduleForm.kind === 'income' ? amount : -amount
@@ -330,7 +345,7 @@ export default function RulesAndRecurringPage() {
 
   const handleSaveSchedule = async () => {
     if (!scheduleForm.name.trim()) {
-      toast.error('Recurring transaction name is required')
+      toast.error(t('rules.scheduleNameRequired'))
       return
     }
 
@@ -338,7 +353,7 @@ export default function RulesAndRecurringPage() {
     try {
       template = buildScheduleTemplate()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Invalid schedule configuration')
+      toast.error(error instanceof Error ? error.message : t('rules.invalidSchedule'))
       return
     }
 
@@ -358,11 +373,11 @@ export default function RulesAndRecurringPage() {
       } else {
         await createScheduledTransaction(payload)
       }
-      toast.success('Recurring transaction saved')
+      toast.success(t('rules.scheduleSaved'))
       resetScheduleForm()
       await loadAll()
     } catch {
-      toast.error('Failed to save recurring transaction')
+      toast.error(t('rules.scheduleSaveFailed'))
     }
   }
 
@@ -388,10 +403,10 @@ export default function RulesAndRecurringPage() {
   const handleDeleteSchedule = async (id: number) => {
     try {
       await deleteScheduledTransaction(id)
-      toast.success('Recurring transaction deleted')
+      toast.success(t('rules.scheduleDeleted'))
       await loadAll()
     } catch {
-      toast.error('Failed to delete recurring transaction')
+      toast.error(t('rules.scheduleDeleteFailed'))
     }
   }
 
@@ -399,10 +414,10 @@ export default function RulesAndRecurringPage() {
     try {
       const response = await runDueScheduledTransactions()
       const count = response.created_transaction_ids.length
-      toast.success(`Created ${count} scheduled transaction${count === 1 ? '' : 's'}`)
+      toast.success(count === 0 ? t('rules.nothingDue') : t('rules.postedDue', { count }))
       await loadAll()
     } catch {
-      toast.error('Failed to run due recurring transactions')
+      toast.error(t('rules.postDueFailed'))
     }
   }
 
@@ -410,49 +425,63 @@ export default function RulesAndRecurringPage() {
     .filter((item) => !item.is_archived)
     .map((item) => ({ id: String(item.id), name: item.name }))
 
+
+  // A failed load is not an empty list: say so instead of "No ... yet".
+  if (loadFailed) {
+    return (
+      <div className='space-y-4 p-6'>
+        <Typography variant='h2' as='h1'>
+          {tab === 'recurring' ? t('rules.billsTitle') : t('rules.title')}
+        </Typography>
+        <LoadError what={t('loadError.rules')} onRetry={() => void loadAll()} />
+      </div>
+    )
+  }
   return (
     <div className='space-y-6 p-6'>
-      <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Rules & Recurring</Typography>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <Typography variant='h2' as='h1'>
+          {tab === 'recurring' ? t('rules.billsTitle') : t('rules.title')}
+        </Typography>
         <div className='flex gap-2'>
           <Button variant='outline' onClick={() => void loadAll()} disabled={loading}>
             <RefreshCw className='mr-2 h-4 w-4' />
-            Refresh
+            {t('rules.refresh')}
           </Button>
           <Button variant='outline' onClick={() => void handleRunDue()}>
             <Play className='mr-2 h-4 w-4' />
-            Run Due
+            {t('rules.postDue')}
           </Button>
         </div>
       </div>
 
-      <Tabs defaultValue='rules' className='space-y-4'>
+      <Tabs value={tab} onValueChange={setTab} className='space-y-4'>
         <TabsList>
-          <TabsTrigger value='rules'>Rules</TabsTrigger>
-          <TabsTrigger value='recurring'>Recurring</TabsTrigger>
+          <TabsTrigger value='recurring'>{t('rules.billsTitle')}</TabsTrigger>
+          <TabsTrigger value='rules'>{t('rules.title')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value='rules' className='space-y-4'>
           <Card>
             <CardHeader>
-              <CardTitle>{editingRuleId ? 'Edit Rule' : 'Create Rule'}</CardTitle>
+              <CardTitle>{editingRuleId ? t('rules.editRule') : t('rules.newRule')}</CardTitle>
               <CardDescription>
-                Define condition/action automation for payee, memo, and amount based categorization.
+                {t('rules.ruleDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label htmlFor='rule-name'>Name</Label>
+                  <Label htmlFor='rule-name'>{t('rules.name')}</Label>
                   <Input
                     id='rule-name'
                     value={ruleForm.name}
                     onChange={(e) => setRuleForm((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder='e.g. Auto-tag subscriptions'
+                    placeholder={t('rules.namePlaceholder')}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='rule-priority'>Priority</Label>
+                  <Label htmlFor='rule-priority'>{t('rules.order')}</Label>
                   <Input
                     id='rule-priority'
                     type='number'
@@ -469,29 +498,29 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2'>
-                  <Label htmlFor='rule-memo-contains'>Memo contains</Label>
+                  <Label htmlFor='rule-memo-contains'>{t('rules.noteContains')}</Label>
                   <Input
                     id='rule-memo-contains'
                     value={ruleForm.memoContains}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, memoContains: e.target.value }))
                     }
-                    placeholder='e.g. netflix'
+                    placeholder={t('rules.noteContainsPlaceholder')}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='rule-payee-contains'>Payee contains</Label>
+                  <Label htmlFor='rule-payee-contains'>{t('rules.payeeContains')}</Label>
                   <Input
                     id='rule-payee-contains'
                     value={ruleForm.payeeContains}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, payeeContains: e.target.value }))
                     }
-                    placeholder='e.g. uber'
+                    placeholder={t('rules.payeeContainsPlaceholder')}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='rule-min-amount'>Minimum abs amount</Label>
+                  <Label htmlFor='rule-min-amount'>{t('rules.minAmount')}</Label>
                   <Input
                     id='rule-min-amount'
                     type='number'
@@ -508,14 +537,14 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label htmlFor='rule-append-memo'>Append memo</Label>
+                  <Label htmlFor='rule-append-memo'>{t('rules.appendMemo')}</Label>
                   <Input
                     id='rule-append-memo'
                     value={ruleForm.appendMemo}
                     onChange={(e) =>
                       setRuleForm((prev) => ({ ...prev, appendMemo: e.target.value }))
                     }
-                    placeholder='e.g. #subscription'
+                    placeholder={t('rules.appendMemoPlaceholder')}
                   />
                 </div>
                 <div className='flex items-end gap-4 pb-2'>
@@ -527,7 +556,7 @@ export default function RulesAndRecurringPage() {
                         setRuleForm((prev) => ({ ...prev, setCleared: value }))
                       }
                     />
-                    <Label htmlFor='rule-set-cleared'>Set cleared</Label>
+                    <Label htmlFor='rule-set-cleared'>{t('rules.markCleared')}</Label>
                   </div>
                   <div className='flex items-center gap-2'>
                     <Switch
@@ -537,7 +566,7 @@ export default function RulesAndRecurringPage() {
                         setRuleForm((prev) => ({ ...prev, setImported: value }))
                       }
                     />
-                    <Label htmlFor='rule-set-imported'>Set imported</Label>
+                    <Label htmlFor='rule-set-imported'>{t('rules.markImported')}</Label>
                   </div>
                 </div>
               </div>
@@ -550,17 +579,17 @@ export default function RulesAndRecurringPage() {
                     setRuleForm((prev) => ({ ...prev, isActive: value }))
                   }
                 />
-                <Label htmlFor='rule-active'>Rule active</Label>
+                <Label htmlFor='rule-active'>{t('rules.ruleOn')}</Label>
               </div>
 
               <div className='flex gap-2'>
                 <Button onClick={() => void handleSaveRule()}>
                   <Plus className='mr-2 h-4 w-4' />
-                  {editingRuleId ? 'Update Rule' : 'Create Rule'}
+                  {editingRuleId ? t('rules.saveRule') : t('rules.addRule')}
                 </Button>
                 {editingRuleId && (
                   <Button variant='outline' onClick={resetRuleForm}>
-                    Cancel edit
+                    {t('rules.cancelEdit')}
                   </Button>
                 )}
               </div>
@@ -569,24 +598,24 @@ export default function RulesAndRecurringPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Existing Rules</CardTitle>
-              <CardDescription>Rules are evaluated in ascending priority order.</CardDescription>
+              <CardTitle>{t('rules.yourRules')}</CardTitle>
+              <CardDescription>{t('rules.yourRulesDescription')}</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Priority</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className='w-[220px]'>Actions</TableHead>
+                    <TableHead>{t('rules.name')}</TableHead>
+                    <TableHead>{t('rules.priority')}</TableHead>
+                    <TableHead>{t('rules.active')}</TableHead>
+                    <TableHead className='w-[220px]'>{t('rules.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {rules.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={4} className='text-center text-muted-foreground'>
-                        No rules yet.
+                        {t('rules.noRules')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -594,11 +623,11 @@ export default function RulesAndRecurringPage() {
                       <TableRow key={rule.id}>
                         <TableCell>{rule.name}</TableCell>
                         <TableCell>{rule.priority}</TableCell>
-                        <TableCell>{rule.is_active ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>{rule.is_active ? t('rules.yes') : t('rules.no')}</TableCell>
                         <TableCell>
                           <div className='flex gap-2'>
                             <Button variant='outline' size='sm' onClick={() => handleEditRule(rule)}>
-                              Edit
+                              {t('rules.edit')}
                             </Button>
                             <Button
                               variant='ghost'
@@ -607,7 +636,7 @@ export default function RulesAndRecurringPage() {
                               onClick={() => void handleDeleteRule(rule.id)}
                             >
                               <Trash2 className='mr-2 h-4 w-4' />
-                              Delete
+                              {t('rules.delete')}
                             </Button>
                           </div>
                         </TableCell>
@@ -623,24 +652,24 @@ export default function RulesAndRecurringPage() {
         <TabsContent value='recurring' className='space-y-4'>
           <Card>
             <CardHeader>
-              <CardTitle>{editingScheduleId ? 'Edit Recurring Transaction' : 'Create Recurring Transaction'}</CardTitle>
+              <CardTitle>{editingScheduleId ? t('rules.editSchedule') : t('rules.newSchedule')}</CardTitle>
               <CardDescription>
-                Configure recurrence, template postings, and transfer-aware schedules.
+                {t('rules.scheduleDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
               <div className='grid gap-4 md:grid-cols-4'>
                 <div className='space-y-2 md:col-span-2'>
-                  <Label htmlFor='schedule-name'>Name</Label>
+                  <Label htmlFor='schedule-name'>{t('rules.name')}</Label>
                   <Input
                     id='schedule-name'
                     value={scheduleForm.name}
                     onChange={(e) => setScheduleForm((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder='e.g. Monthly Rent'
+                    placeholder={t('rules.scheduleNamePlaceholder')}
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-frequency'>Frequency</Label>
+                  <Label htmlFor='schedule-frequency'>{t('rules.frequency')}</Label>
                   <Select
                     value={scheduleForm.frequency}
                     onValueChange={(value) =>
@@ -651,19 +680,19 @@ export default function RulesAndRecurringPage() {
                     }
                   >
                     <SelectTrigger id='schedule-frequency'>
-                      <SelectValue placeholder='Frequency' />
+                      <SelectValue placeholder={t('rules.frequency')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='daily'>Daily</SelectItem>
-                      <SelectItem value='weekly'>Weekly</SelectItem>
-                      <SelectItem value='monthly'>Monthly</SelectItem>
-                      <SelectItem value='yearly'>Yearly</SelectItem>
-                      <SelectItem value='custom'>Custom</SelectItem>
+                      <SelectItem value='daily'>{t('rules.daily')}</SelectItem>
+                      <SelectItem value='weekly'>{t('rules.weekly')}</SelectItem>
+                      <SelectItem value='monthly'>{t('rules.monthly')}</SelectItem>
+                      <SelectItem value='yearly'>{t('rules.yearly')}</SelectItem>
+                      <SelectItem value='custom'>{t('rules.custom')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-interval'>Interval</Label>
+                  <Label htmlFor='schedule-interval'>{t('rules.interval')}</Label>
                   <Input
                     id='schedule-interval'
                     type='number'
@@ -678,7 +707,7 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-4'>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-start-date'>Start date</Label>
+                  <Label htmlFor='schedule-start-date'>{t('rules.startDate')}</Label>
                   <Input
                     id='schedule-start-date'
                     type='date'
@@ -687,7 +716,7 @@ export default function RulesAndRecurringPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-next-run-date'>Next run date</Label>
+                  <Label htmlFor='schedule-next-run-date'>{t('rules.nextDate')}</Label>
                   <Input
                     id='schedule-next-run-date'
                     type='date'
@@ -698,7 +727,7 @@ export default function RulesAndRecurringPage() {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-kind'>Kind</Label>
+                  <Label htmlFor='schedule-kind'>{t('rules.type')}</Label>
                   <Select
                     value={scheduleForm.kind}
                     onValueChange={(value) =>
@@ -706,17 +735,17 @@ export default function RulesAndRecurringPage() {
                     }
                   >
                     <SelectTrigger id='schedule-kind'>
-                      <SelectValue placeholder='Type' />
+                      <SelectValue placeholder={t('rules.type')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='expense'>Expense</SelectItem>
-                      <SelectItem value='income'>Income</SelectItem>
-                      <SelectItem value='transfer'>Transfer</SelectItem>
+                      <SelectItem value='expense'>{t('rules.expense')}</SelectItem>
+                      <SelectItem value='income'>{t('rules.income')}</SelectItem>
+                      <SelectItem value='transfer'>{t('rules.transfer')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-amount'>Amount</Label>
+                  <Label htmlFor='schedule-amount'>{t('rules.amount')}</Label>
                   <Input
                     id='schedule-amount'
                     type='number'
@@ -731,13 +760,13 @@ export default function RulesAndRecurringPage() {
 
               <div className='grid gap-4 md:grid-cols-3'>
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-account'>Primary account</Label>
+                  <Label htmlFor='schedule-account'>{t('rules.account')}</Label>
                   <Select
                     value={scheduleForm.accountId}
                     onValueChange={(value) => setScheduleForm((prev) => ({ ...prev, accountId: value }))}
                   >
                     <SelectTrigger id='schedule-account'>
-                      <SelectValue placeholder='Select account' />
+                      <SelectValue placeholder={t('rules.selectAccount')} />
                     </SelectTrigger>
                     <SelectContent>
                       {accountOptions.map((account) => (
@@ -751,7 +780,7 @@ export default function RulesAndRecurringPage() {
 
                 {scheduleForm.kind === 'transfer' ? (
                   <div className='space-y-2'>
-                    <Label htmlFor='schedule-to-account'>Destination account</Label>
+                    <Label htmlFor='schedule-to-account'>{t('rules.toAccount')}</Label>
                     <Select
                       value={scheduleForm.toAccountId}
                       onValueChange={(value) =>
@@ -759,7 +788,7 @@ export default function RulesAndRecurringPage() {
                       }
                     >
                       <SelectTrigger id='schedule-to-account'>
-                        <SelectValue placeholder='Select destination account' />
+                        <SelectValue placeholder={t('rules.selectToAccount')} />
                       </SelectTrigger>
                       <SelectContent>
                         {accountOptions.map((account) => (
@@ -772,7 +801,7 @@ export default function RulesAndRecurringPage() {
                   </div>
                 ) : (
                   <div className='space-y-2'>
-                    <Label htmlFor='schedule-category'>Category</Label>
+                    <Label htmlFor='schedule-category'>{t('rules.category')}</Label>
                     <Select
                       value={scheduleForm.categoryId}
                       onValueChange={(value) =>
@@ -780,7 +809,7 @@ export default function RulesAndRecurringPage() {
                       }
                     >
                       <SelectTrigger id='schedule-category'>
-                        <SelectValue placeholder='Select category' />
+                        <SelectValue placeholder={t('rules.selectCategory')} />
                       </SelectTrigger>
                       <SelectContent>
                         {(scheduleForm.kind === 'income' ? incomeCategories : expenseCategories).map(
@@ -796,12 +825,12 @@ export default function RulesAndRecurringPage() {
                 )}
 
                 <div className='space-y-2'>
-                  <Label htmlFor='schedule-memo'>Memo</Label>
+                  <Label htmlFor='schedule-memo'>{t('rules.memo')}</Label>
                   <Input
                     id='schedule-memo'
                     value={scheduleForm.memo}
                     onChange={(e) => setScheduleForm((prev) => ({ ...prev, memo: e.target.value }))}
-                    placeholder='Optional memo'
+                    placeholder={t('rules.memoPlaceholder')}
                   />
                 </div>
               </div>
@@ -814,17 +843,17 @@ export default function RulesAndRecurringPage() {
                     setScheduleForm((prev) => ({ ...prev, isActive: value }))
                   }
                 />
-                <Label htmlFor='schedule-active'>Schedule active</Label>
+                <Label htmlFor='schedule-active'>{t('rules.scheduleOn')}</Label>
               </div>
 
               <div className='flex gap-2'>
                 <Button onClick={() => void handleSaveSchedule()}>
                   <Plus className='mr-2 h-4 w-4' />
-                  {editingScheduleId ? 'Update Recurring' : 'Create Recurring'}
+                  {editingScheduleId ? t('rules.save') : t('rules.add')}
                 </Button>
                 {editingScheduleId && (
                   <Button variant='outline' onClick={resetScheduleForm}>
-                    Cancel edit
+                    {t('rules.cancelEdit')}
                   </Button>
                 )}
               </div>
@@ -833,30 +862,27 @@ export default function RulesAndRecurringPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Recurring Transactions</CardTitle>
+              <CardTitle>{t('rules.yourSchedules')}</CardTitle>
               <CardDescription>
-                Manage execution schedules and template postings. Due schedules post
-                automatically every hour on deployments running the beat scheduler; use
-                Run Due to trigger them immediately, or as the only option on deployments
-                without a background worker.
+                {t('rules.yourSchedulesDescription')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Next run</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead>Active</TableHead>
-                    <TableHead className='w-[220px]'>Actions</TableHead>
+                    <TableHead>{t('rules.name')}</TableHead>
+                    <TableHead>{t('rules.next')}</TableHead>
+                    <TableHead>{t('rules.frequency')}</TableHead>
+                    <TableHead>{t('rules.active')}</TableHead>
+                    <TableHead className='w-[220px]'>{t('rules.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {scheduled.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className='text-center text-muted-foreground'>
-                        No recurring transactions yet.
+                        {t('rules.noSchedules')}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -865,13 +891,13 @@ export default function RulesAndRecurringPage() {
                         <TableCell>{item.name}</TableCell>
                         <TableCell>{item.next_run_date}</TableCell>
                         <TableCell>
-                          {item.frequency} / {item.interval}
+                          {t(`rules.frequencyValue.${item.frequency}`, { defaultValue: item.frequency })} / {item.interval}
                         </TableCell>
-                        <TableCell>{item.is_active ? 'Yes' : 'No'}</TableCell>
+                        <TableCell>{item.is_active ? t('rules.yes') : t('rules.no')}</TableCell>
                         <TableCell>
                           <div className='flex gap-2'>
                             <Button variant='outline' size='sm' onClick={() => handleEditSchedule(item)}>
-                              Edit
+                              {t('rules.edit')}
                             </Button>
                             <Button
                               variant='ghost'
@@ -880,7 +906,7 @@ export default function RulesAndRecurringPage() {
                               onClick={() => void handleDeleteSchedule(item.id)}
                             >
                               <Trash2 className='mr-2 h-4 w-4' />
-                              Delete
+                              {t('rules.delete')}
                             </Button>
                           </div>
                         </TableCell>

@@ -35,19 +35,19 @@ test('owner sees workspace activity on the audit log; a member does not', async 
   await test.step('owner registers and creates a workspace', async () => {
     await registerAndSignIn(owner, OWNER)
     await owner.goto('/settings')
-    await owner.getByRole('tab', { name: 'Workspace' }).click()
+    await owner.getByRole('tab', { name: 'Household' }).click()
     await owner.locator('#workspace-name').fill(WORKSPACE)
-    await owner.getByRole('button', { name: 'Create workspace' }).click()
-    await expect(owner.getByText(`${WORKSPACE} — members`)).toBeVisible({ timeout: 30_000 })
+    await owner.getByRole('button', { name: 'Create household' }).click()
+    await expect(owner.getByText(`Who's in ${WORKSPACE}`)).toBeVisible({ timeout: 30_000 })
   })
 
   await test.step('the audit log link appears for the owner', async () => {
-    await expect(owner.getByRole('link', { name: 'Audit Log' })).toBeVisible({ timeout: 10_000 })
+    await expect(owner.getByRole('link', { name: 'Change history' })).toBeVisible({ timeout: 10_000 })
   })
 
   await test.step('owner adds a transaction, which the audit log records', async () => {
     await owner.goto('/transactions')
-    await owner.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await owner.getByRole('button', { name: 'Add transaction' }).first().click()
     await owner.locator('#title').fill('Audited Lunch')
     await owner.locator('#amount').fill('19.00')
     await owner.locator('#category').click()
@@ -70,10 +70,10 @@ test('owner sees workspace activity on the audit log; a member does not', async 
 
   await test.step('owner invites a plain member', async () => {
     await owner.goto('/settings')
-    await owner.getByRole('tab', { name: 'Workspace' }).click()
+    await owner.getByRole('tab', { name: 'Household' }).click()
     await owner.locator('#invite-email').fill(MEMBER)
     await owner.locator('#invite-role').click()
-    await owner.getByRole('option', { name: 'member' }).click()
+    await owner.getByRole('option', { name: 'Can add and edit' }).click()
     await owner.getByRole('button', { name: 'Invite' }).click()
     const tokenBox = owner.getByTestId('invite-token')
     await expect(tokenBox).toBeVisible({ timeout: 30_000 })
@@ -87,23 +87,23 @@ test('owner sees workspace activity on the audit log; a member does not', async 
   await test.step('member joins but has no audit log link', async () => {
     await registerAndSignIn(member, MEMBER)
     await member.goto('/settings')
-    await member.getByRole('tab', { name: 'Workspace' }).click()
+    await member.getByRole('tab', { name: 'Household' }).click()
     await member.locator('#join-token').fill(token)
     await member.getByRole('button', { name: 'Join' }).click()
-    await expect(member.getByText('Joined the workspace').first()).toBeVisible({
+    await expect(member.getByText('You joined the household').first()).toBeVisible({
       timeout: 30_000,
     })
     await member.getByRole('button', { name: /workspace|space/i }).first().click()
     await member.getByRole('menuitem', { name: WORKSPACE }).click()
 
-    await expect(member.getByRole('link', { name: 'Audit Log' })).toHaveCount(0)
+    await expect(member.getByRole('link', { name: 'Change history' })).toHaveCount(0)
   })
 
   await test.step('a direct visit explains why, instead of guessing at an empty list', async () => {
     await member.goto('/audit-log')
-    await expect(member.getByText('Audit log unavailable')).toBeVisible({ timeout: 30_000 })
+    await expect(member.getByText('Change history unavailable')).toBeVisible({ timeout: 30_000 })
     await expect(
-      member.getByText('Only workspace owners and admins can browse the audit log.'),
+      member.getByText('Only people who can manage this household can see its history.'),
     ).toBeVisible()
   })
 

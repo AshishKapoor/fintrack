@@ -50,17 +50,17 @@ test('register, sign in, add a transaction, and see it listed', async ({ page })
     await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 30_000 })
   })
 
-  await test.step('the dashboard renders its empty state', async () => {
-    // A brand-new account has no transactions yet, so the dashboard shows the
-    // empty placeholder rather than the summary cards.
-    await expect(page.getByRole('heading', { name: 'No transactions yet' })).toBeVisible({
+  await test.step('home shows the first-run start', async () => {
+    // A brand-new account has no budget month and no entries, so Home offers
+    // the two ways to begin instead of an empty month.
+    await expect(page.getByRole('heading', { name: 'Your books start here' })).toBeVisible({
       timeout: 30_000,
     })
   })
 
   await test.step('add a transaction', async () => {
     await page.goto('/transactions')
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await page.getByRole('button', { name: 'Add transaction' }).first().click()
 
     await page.locator('#title').fill('E2E coffee')
     await page.locator('#amount').fill('12.34')
@@ -76,11 +76,11 @@ test('register, sign in, add a transaction, and see it listed', async ({ page })
     await expect(page.getByText('E2E coffee').first()).toBeVisible({ timeout: 30_000 })
   })
 
-  await test.step('the dashboard now shows the summary cards', async () => {
+  await test.step('home now lists the entry under today', async () => {
     await page.goto('/home')
-    await expect(page.getByText('Total Balance')).toBeVisible({ timeout: 30_000 })
-    // Regression: the cards used to truncate to a 32-bit integer, dropping the
-    // cents from every headline figure.
-    await expect(page.getByText(/12\.34/).first()).toBeVisible({ timeout: 30_000 })
+    const recent = page.getByRole('region', { name: 'Today' })
+    await expect(recent.getByText('E2E coffee')).toBeVisible({ timeout: 30_000 })
+    // Regression: amounts once truncated to a 32-bit integer, dropping the cents.
+    await expect(recent.getByText(/12\.34/)).toBeVisible({ timeout: 30_000 })
   })
 })

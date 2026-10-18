@@ -136,11 +136,11 @@ export function EditTransactionDialog({
 
       await refreshLedger()
 
-      toast.success('Transaction updated successfully')
+      toast.success(t('editTransaction.updated'))
       onOpenChange(false)
     } catch (err) {
       console.error('Failed to update transaction:', err)
-      toast.error('Failed to update transaction')
+      toast.error(t('editTransaction.updateFailed'))
     }
   }
 
@@ -170,12 +170,12 @@ export function EditTransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[425px]'>
         <DialogHeader>
-          <DialogTitle>Edit Transaction</DialogTitle>
-          <DialogDescription>Update the details of your transaction.</DialogDescription>
+          <DialogTitle>{t('editTransaction.title')}</DialogTitle>
+          <DialogDescription>{t('editTransaction.description')}</DialogDescription>
         </DialogHeader>
         <div className='grid gap-4 py-4'>
           <div className='grid gap-2'>
-            <Label htmlFor='transaction-type'>Transaction Type</Label>
+            <Label htmlFor='transaction-type'>{t('addTransaction.type')}</Label>
             <RadioGroup
               id='transaction-type'
               value={kind}
@@ -188,22 +188,22 @@ export function EditTransactionDialog({
               <div className='flex items-center space-x-2'>
                 <RadioGroupItem value='expense' id='expense' />
                 <Label htmlFor='expense' className='cursor-pointer'>
-                  Expense
+                  {t('addTransaction.expense')}
                 </Label>
               </div>
               <div className='flex items-center space-x-2 ml-4'>
                 <RadioGroupItem value='income' id='income' />
                 <Label htmlFor='income' className='cursor-pointer'>
-                  Income
+                  {t('addTransaction.income')}
                 </Label>
               </div>
             </RadioGroup>
           </div>
           <div className='grid gap-2'>
-            <Label htmlFor='title'>Title</Label>
+            <Label htmlFor='title'>{t('addTransaction.titleLabel')}</Label>
             <Input
               id='title'
-              placeholder='e.g., Grocery Shopping'
+              placeholder={t('addTransaction.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -217,7 +217,7 @@ export function EditTransactionDialog({
             />
           </div>
           <div className='grid gap-2'>
-            <Label htmlFor='amount'>Amount</Label>
+            <Label htmlFor='amount'>{t('addTransaction.amount')}</Label>
             <Input
               id='amount'
               type='number'
@@ -229,7 +229,7 @@ export function EditTransactionDialog({
             />
           </div>
           <div className='grid gap-2'>
-            <Label htmlFor='date'>Date</Label>
+            <Label htmlFor='date'>{t('addTransaction.date')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -241,7 +241,7 @@ export function EditTransactionDialog({
                   )}
                 >
                   <CalendarIcon className='mr-2 h-4 w-4' />
-                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  {date ? format(date, 'PPP') : <span>{t('addTransaction.pickDate')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-auto p-0'>
@@ -264,15 +264,17 @@ export function EditTransactionDialog({
             />
           ) : (
             <div className='grid gap-2'>
-              <Label htmlFor='category'>Category</Label>
+              <Label htmlFor='category'>{t('addTransaction.category')}</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger id='category'>
-                  <SelectValue placeholder='Select a category' />
+                  <SelectValue placeholder={t('addTransaction.categoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCategories.length === 0 ? (
                     <div className='p-2 text-sm text-center text-muted-foreground'>
-                      No {kind} categories found
+                      {kind === 'income'
+                        ? t('editTransaction.noIncomeCategories')
+                        : t('editTransaction.noExpenseCategories')}
                     </div>
                   ) : (
                     filteredCategories.map((category) => (
@@ -288,10 +290,10 @@ export function EditTransactionDialog({
         </div>
         <DialogFooter>
           <Button variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type='submit' onClick={handleUpdateTransaction} disabled={!canSave}>
-            Save Changes
+            {t('editTransaction.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

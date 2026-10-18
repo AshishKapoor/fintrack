@@ -1,9 +1,7 @@
 'use client'
 
 import { CommandMenu } from '@/components/command-menu'
-import { LanguageSwitcher } from '@/components/language-switcher'
-import { ModeToggle } from '@/components/mode-toggle'
-import { ThemeSwitcher } from '@/components/theme-switcher'
+import { PreferenceControls } from '@/components/preference-controls'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -14,8 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { OrgSwitcher } from '@/components/org-switcher'
-import { currencies, useCurrency } from '@/context/currency-context'
 import { getUser, logout } from '@/lib/auth'
 import { Bell, Menu } from 'lucide-react'
 import { useEffect, useState } from 'react'
@@ -30,7 +26,6 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   const { t } = useTranslation()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
-  const { currency, setCurrency } = useCurrency()
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -41,48 +36,29 @@ export function TopBar({ onMenuClick }: TopBarProps) {
   }, [])
 
   return (
-    <header className='flex h-14 items-center gap-4 border-b bg-background px-4 lg:px-6'>
+    <header className='flex h-14 items-center gap-2 border-b bg-background px-4 md:gap-4 lg:px-6'>
       <Button variant='outline' size='icon' className='md:hidden' onClick={onMenuClick}>
         <Menu className='h-5 w-5' />
         <span className='sr-only'>{t('topbar.toggleMenu')}</span>
       </Button>
 
-      <div className='w-full flex-1 md:grow-0 md:w-80'>
+      <div className='min-w-0 flex-1 md:w-80 md:flex-none'>
         <CommandMenu />
       </div>
 
-      <div className='ml-auto flex items-center gap-2'>
-        <OrgSwitcher />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' size='sm'>
-              <span className='mr-1'>{currency.flag}</span>
-              {currency.symbol}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {currencies.map((curr) => (
-              <DropdownMenuItem key={curr.code} onClick={() => setCurrency(curr)}>
-                <span className='mr-2'>{curr.flag}</span>
-                {curr.name} ({curr.symbol})
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className='ml-auto flex items-center gap-1 md:gap-2'>
+        <PreferenceControls className='hidden md:flex' />
 
-        <LanguageSwitcher />
-        <ThemeSwitcher />
-        <ModeToggle />
-
-        <Link to='/settings?tab=notifications'>
-          <Button variant='ghost' size='icon' className='relative'>
+        <Button asChild variant='ghost' size='icon' className='relative'>
+          <Link to='/settings?tab=notifications'>
             <Bell className='h-5 w-5' />
             <span className='sr-only'>{t('topbar.notifications')}</span>
-          </Button>
-        </Link>
+          </Link>
+        </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant='ghost' className='relative h-8 w-8 rounded-full'>
+            <Button variant='ghost' size='icon' className='relative rounded-full'>
+              <span className='sr-only'>{t('topbar.account')}</span>
               <Avatar>
                 <AvatarFallback>{user && user?.email?.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>

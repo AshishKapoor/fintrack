@@ -8,10 +8,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useOrganization } from '@/context/organization-context'
-import { Building2, Check, User } from 'lucide-react'
+import { Check, User, Users } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 /** Which organization the UI is working in. Lives in the top bar. */
 export function OrgSwitcher() {
+  const { t } = useTranslation()
   const { organizations, activeOrg, setActiveOrg } = useOrganization()
 
   if (organizations.length < 2) {
@@ -26,20 +28,20 @@ export function OrgSwitcher() {
           {activeOrg?.personal ? (
             <User className='h-4 w-4' aria-hidden='true' />
           ) : (
-            <Building2 className='h-4 w-4' aria-hidden='true' />
+            <Users className='h-4 w-4' aria-hidden='true' />
           )}
-          <span className='max-w-32 truncate'>{activeOrg?.name ?? 'Workspace'}</span>
+          <span className='max-w-32 truncate'>{activeOrg?.name ?? t('orgSwitcher.household')}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-56'>
-        <DropdownMenuLabel>Workspaces</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('orgSwitcher.households')}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {organizations.map((org) => (
           <DropdownMenuItem key={org.id} onClick={() => setActiveOrg(org)}>
             {org.personal ? (
               <User className='mr-2 h-4 w-4' aria-hidden='true' />
             ) : (
-              <Building2 className='mr-2 h-4 w-4' aria-hidden='true' />
+              <Users className='mr-2 h-4 w-4' aria-hidden='true' />
             )}
             <span className='flex-1 truncate'>{org.name}</span>
             {activeOrg?.id === org.id && <Check className='ml-2 h-4 w-4' aria-hidden='true' />}

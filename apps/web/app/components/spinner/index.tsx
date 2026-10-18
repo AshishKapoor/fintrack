@@ -32,7 +32,12 @@ const frames = Array.from({ length: totalFrames }, (_, i) => {
   return t(i / (60 * timePerPath))
 })
 
-function Spinner({ size = 32, fill = '#307b34', stroke = 'black', strokeWidth = 0.7 }) {
+function Spinner({
+  size = 32,
+  fill = 'var(--primary)',
+  stroke = 'var(--foreground)',
+  strokeWidth = 0.7,
+}) {
   const actualPath = useMotionValue(frames[0])
   const ref = useRef<SVGPathElement>(null)
   const rotation = useMotionValue(0)

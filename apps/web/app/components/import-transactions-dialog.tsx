@@ -35,6 +35,7 @@ import {
   type ImportPreview,
 } from '@/lib/import-client'
 import { useState } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 // The API caps the payload; mirror it here so a too-large file fails before
@@ -50,6 +51,7 @@ export function ImportTransactionsDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const { t } = useTranslation()
   const [step, setStep] = useState<Step>('choose')
   const [format, setFormat] = useState<ImportFormat>('csv')
   const [filename, setFilename] = useState('')
@@ -79,7 +81,7 @@ export function ImportTransactionsDialog({
     if (!file) return
 
     if (file.size > MAX_BYTES) {
-      toast.error(`That file is larger than the ${MAX_BYTES / 1024 / 1024}MB import limit.`)
+      toast.error(t('importTransactions.tooLarge', { limit: MAX_BYTES / 1024 / 1024 }))
       return
     }
 
@@ -98,11 +100,11 @@ export function ImportTransactionsDialog({
       setStep('preview')
 
       if (summary.detected_rows === 0) {
-        toast.warning('No transactions were found in that file. Check the format.')
+        toast.warning(t('importTransactions.noneFound'))
       }
     } catch (error: unknown) {
       const message =
-        (error as { errorMessage?: string })?.errorMessage ?? 'Could not read that file.'
+        (error as { errorMessage?: string })?.errorMessage ?? t('importTransactions.readFailed')
       toast.error(message)
     } finally {
       setBusy(false)
@@ -116,13 +118,15 @@ export function ImportTransactionsDialog({
     try {
       const result = await executeImportJob(jobId)
       await invalidateTransactions()
-      const skipped = result.skipped ? `, ${result.skipped} already present` : ''
-      toast.success(`Imported ${result.created} transaction(s)${skipped}.`)
+      const skipped = result.skipped
+        ? t('importTransactions.skipped', { count: result.skipped })
+        : ''
+      toast.success(t('importTransactions.imported', { count: result.created, skipped }))
       close()
     } catch (error: unknown) {
       const message =
         (error as { errorMessage?: string })?.errorMessage ??
-        (error instanceof Error ? error.message : 'The import failed.')
+        (error instanceof Error ? error.message : t('importTransactions.importFailed'))
       toast.error(message)
       setStep('preview')
     } finally {
@@ -134,17 +138,16 @@ export function ImportTransactionsDialog({
     <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
-          <DialogTitle>Import transactions</DialogTitle>
+          <DialogTitle>{t('importTransactions.title')}</DialogTitle>
           <DialogDescription>
-            Import a statement from your bank. Transactions already present are skipped, so
-            re-importing an overlapping file will not create duplicates.
+            {t('importTransactions.description')}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'choose' && (
           <div className='space-y-4'>
             <div className='space-y-2'>
-              <Label htmlFor='import-file'>Statement file</Label>
+              <Label htmlFor='import-file'>{t('importTransactions.file')}</Label>
               <Input
                 id='import-file'
                 type='file'
@@ -154,7 +157,7 @@ export function ImportTransactionsDialog({
             </div>
 
             <div className='space-y-2'>
-              <Label htmlFor='import-format'>Format</Label>
+              <Label htmlFor='import-format'>{t('importTransactions.format')}</Label>
               <Select value={format} onValueChange={(value) => setFormat(value as ImportFormat)}>
                 <SelectTrigger id='import-format'>
                   <SelectValue />
@@ -162,13 +165,13 @@ export function ImportTransactionsDialog({
                 <SelectContent>
                   {IMPORT_FORMATS.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label} — {item.hint}
+                      {item.label} — {t(`importTransactions.formatHints.${item.value}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <p className='text-xs text-muted-foreground'>
-                Detected from the file extension; change it if your bank uses a different one.
+                {t('importTransactions.formatHint')}
               </p>
             </div>
           </div>
@@ -177,20 +180,27 @@ export function ImportTransactionsDialog({
         {step !== 'choose' && preview && (
           <div className='space-y-3'>
             <p className='text-sm'>
-              Found <span className='font-semibold'>{preview.detected_rows}</span> transaction(s)
-              in <span className='font-mono'>{filename}</span>.
+              <Trans
+                i18nKey='importTransactions.found'
+                count={preview.detected_rows}
+                values={{ filename }}
+                components={{
+                  num: <span className='font-semibold' />,
+                  file: <span className='font-mono' />,
+                }}
+              />
               {preview.detected_rows > preview.sample.length &&
-                ` Showing the first ${preview.sample.length}.`}
+                t('importTransactions.showingFirst', { count: preview.sample.length })}
             </p>
 
             <div className='max-h-72 overflow-y-auto rounded-md border'>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Payee</TableHead>
-                    <TableHead>Memo</TableHead>
-                    <TableHead className='text-right'>Amount</TableHead>
+                    <TableHead>{t('importTransactions.date')}</TableHead>
+                    <TableHead>{t('transactions.payee')}</TableHead>
+                    <TableHead>{t('importTransactions.memo')}</TableHead>
+                    <TableHead className='text-right'>{t('importTransactions.amount')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -212,22 +222,24 @@ export function ImportTransactionsDialog({
           {step === 'choose' ? (
             <>
               <Button variant='outline' onClick={close} disabled={busy}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={runPreview} disabled={!payload || busy}>
-                {busy ? 'Reading...' : 'Preview'}
+                {busy ? t('importTransactions.reading') : t('importTransactions.preview')}
               </Button>
             </>
           ) : (
             <>
               <Button variant='outline' onClick={() => setStep('choose')} disabled={busy}>
-                Back
+                {t('importTransactions.back')}
               </Button>
               <Button
                 onClick={runImport}
                 disabled={busy || !preview || preview.detected_rows === 0}
               >
-                {step === 'importing' ? 'Importing...' : `Import ${preview?.detected_rows ?? 0}`}
+                {step === 'importing'
+                  ? t('importTransactions.importing')
+                  : t('importTransactions.importCount', { number: preview?.detected_rows ?? 0 })}
               </Button>
             </>
           )}

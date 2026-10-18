@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { v1FinanceTransactionsDestroy } from '@/client/gen/pft/v1/v1'
 import { useInvalidateLedger } from '@/lib/ledger'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 export function DeleteTransactionAlert({
@@ -24,17 +25,18 @@ export function DeleteTransactionAlert({
   transactionId: string
   currentPage?: number
 }) {
+  const { t } = useTranslation()
   const refreshLedger = useInvalidateLedger()
 
   const handleDeleteTransaction = async () => {
     try {
       await v1FinanceTransactionsDestroy(transactionId)
       await refreshLedger()
-      toast.success('Transaction deleted successfully')
+      toast.success(t('deleteTransaction.deleted'))
       onOpenChange(false)
     } catch (err) {
       console.error('Failed to delete transaction:', err)
-      toast.error('Failed to delete transaction')
+      toast.error(t('deleteTransaction.deleteFailed'))
     }
   }
 
@@ -42,19 +44,18 @@ export function DeleteTransactionAlert({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogTitle>{t('deleteTransaction.title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete the transaction from your
-            account.
+            {t('deleteTransaction.description')}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDeleteTransaction}
             className='bg-destructive text-destructive-foreground'
           >
-            Delete
+            {t('deleteTransaction.confirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

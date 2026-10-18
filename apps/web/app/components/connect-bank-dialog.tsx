@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Building2, Landmark, Search } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -16,6 +17,7 @@ import {
 } from '@/lib/bank-sync-client'
 import type { FinanceAccount } from '@/lib/finance-client'
 
+import i18n from '@/i18n'
 import { MapDiscoveredAccounts } from '@/components/map-discovered-accounts'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -44,6 +46,25 @@ const GOCARDLESS_COUNTRIES = [
   { code: 'PL', label: 'Poland' },
 ]
 
+// Catalogue key per country; GOCARDLESS_COUNTRIES keeps the English labels.
+const COUNTRY_KEYS: Record<string, string> = {
+  GB: 'connectBank.countryGB',
+  DE: 'connectBank.countryDE',
+  FR: 'connectBank.countryFR',
+  ES: 'connectBank.countryES',
+  IT: 'connectBank.countryIT',
+  NL: 'connectBank.countryNL',
+  IE: 'connectBank.countryIE',
+  PT: 'connectBank.countryPT',
+  BE: 'connectBank.countryBE',
+  AT: 'connectBank.countryAT',
+  DK: 'connectBank.countryDK',
+  SE: 'connectBank.countrySE',
+  FI: 'connectBank.countryFI',
+  NO: 'connectBank.countryNO',
+  PL: 'connectBank.countryPL',
+}
+
 type Step =
   | 'provider'
   | 'gocardless-country'
@@ -62,6 +83,11 @@ export function ConnectBankDialog({
   existingAccounts: FinanceAccount[]
   onLinked?: () => void
 }) {
+  const { t } = useTranslation()
+  const countryLabel = (code: string) => {
+    const key = COUNTRY_KEYS[code]
+    return key ? t(key) : code
+  }
   const [step, setStep] = useState<Step>('provider')
   const [providers, setProviders] = useState<BankSyncProviderInfo[]>([])
 
@@ -86,7 +112,8 @@ export function ConnectBankDialog({
     setConnection(null)
     listBankSyncProviders()
       .then(setProviders)
-      .catch(() => toast.error('Failed to load bank sync providers'))
+      // i18n.t rather than the hook's t, so the effect still only reruns on open.
+      .catch(() => toast.error(i18n.t('connectBank.providersFailed')))
   }, [open])
 
   const chooseCountry = async (code: string) => {
@@ -97,7 +124,7 @@ export function ConnectBankDialog({
       const rows = await listBankInstitutions('gocardless', code)
       setInstitutions(rows)
     } catch {
-      toast.error('Failed to load institutions for that country')
+      toast.error(t('connectBank.institutionsFailed'))
     } finally {
       setLoadingInstitutions(false)
     }
@@ -113,14 +140,14 @@ export function ConnectBankDialog({
       // which then redirects back to /bank-sync/callback?connection=<id>.
       window.location.href = result.redirect_url
     } catch {
-      toast.error("Couldn't start the connection to that bank")
+      toast.error(t('connectBank.startFailed'))
       setConnectingInstitutionId('')
     }
   }
 
   const connectSimplefin = async () => {
     if (!setupToken.trim()) {
-      toast.error('Paste your SimpleFIN setup token first')
+      toast.error(t('connectBank.tokenRequired'))
       return
     }
     setConnectingSimplefin(true)
@@ -131,7 +158,7 @@ export function ConnectBankDialog({
       setConnection(withAccounts)
       setStep('mapping')
     } catch {
-      toast.error("Couldn't connect that SimpleFIN bridge - check the setup token and try again")
+      toast.error(t('connectBank.simplefinFailed'))
     } finally {
       setConnectingSimplefin(false)
     }
@@ -148,10 +175,9 @@ export function ConnectBankDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[520px]'>
         <DialogHeader>
-          <DialogTitle>Connect a bank</DialogTitle>
+          <DialogTitle>{t('connectBank.title')}</DialogTitle>
           <DialogDescription>
-            Transactions sync automatically and flow through the same dedup and rules as file
-            imports.
+            {t('connectBank.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -167,9 +193,8 @@ export function ConnectBankDialog({
               <div>
                 <div className='font-medium'>GoCardless Bank Account Data</div>
                 <div className='text-sm text-muted-foreground'>
-                  EU/UK banks, free tier.
-                  {!goCardlessProvider?.configured &&
-                    ' Not configured on this instance yet - see docs/self-hosting.md#bank-sync.'}
+                  {t('connectBank.gocardlessDescription')}
+                  {!goCardlessProvider?.configured && ` ${t('connectBank.gocardlessNotConfigured')}`}
                 </div>
               </div>
             </button>
@@ -184,7 +209,7 @@ export function ConnectBankDialog({
               <div>
                 <div className='font-medium'>SimpleFIN Bridge</div>
                 <div className='text-sm text-muted-foreground'>
-                  US/CA banks, via your own SimpleFIN bridge setup token.
+                  {t('connectBank.simplefinDescription')}
                 </div>
               </div>
             </button>
@@ -194,13 +219,13 @@ export function ConnectBankDialog({
         {step === 'gocardless-country' && (
           <div className='space-y-3'>
             <Button variant='ghost' size='sm' onClick={() => setStep('provider')} className='-ml-2'>
-              <ArrowLeft className='mr-1 h-4 w-4' /> Back
+              <ArrowLeft className='mr-1 h-4 w-4' /> {t('connectBank.back')}
             </Button>
-            <p className='text-sm text-muted-foreground'>Where is your bank?</p>
+            <p className='text-sm text-muted-foreground'>{t('connectBank.whereIsBank')}</p>
             <div className='grid grid-cols-3 gap-2'>
               {GOCARDLESS_COUNTRIES.map((item) => (
                 <Button key={item.code} variant='outline' onClick={() => chooseCountry(item.code)}>
-                  {item.label}
+                  {countryLabel(item.code)}
                 </Button>
               ))}
             </div>
@@ -215,16 +240,20 @@ export function ConnectBankDialog({
               onClick={() => setStep('gocardless-country')}
               className='-ml-2'
             >
-              <ArrowLeft className='mr-1 h-4 w-4' /> Back
+              <ArrowLeft className='mr-1 h-4 w-4' /> {t('connectBank.back')}
             </Button>
             <p className='text-sm text-muted-foreground'>
-              Banks in {GOCARDLESS_COUNTRIES.find((item) => item.code === country)?.label || country}
+              {t('connectBank.banksIn', {
+                country: GOCARDLESS_COUNTRIES.some((item) => item.code === country)
+                  ? countryLabel(country)
+                  : country,
+              })}
             </p>
             <div className='relative'>
               <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
               <Input
                 autoFocus
-                placeholder='Search banks…'
+                placeholder={t('connectBank.searchBanks')}
                 className='pl-8'
                 value={institutionSearch}
                 onChange={(e) => setInstitutionSearch(e.target.value)}
@@ -232,10 +261,10 @@ export function ConnectBankDialog({
             </div>
             <div className='max-h-72 space-y-1 overflow-y-auto'>
               {loadingInstitutions && (
-                <p className='py-6 text-center text-sm text-muted-foreground'>Loading banks…</p>
+                <p className='py-6 text-center text-sm text-muted-foreground'>{t('connectBank.loadingBanks')}</p>
               )}
               {!loadingInstitutions && filteredInstitutions.length === 0 && (
-                <p className='py-6 text-center text-sm text-muted-foreground'>No banks found.</p>
+                <p className='py-6 text-center text-sm text-muted-foreground'>{t('connectBank.noBanks')}</p>
               )}
               {filteredInstitutions.map((institution) => (
                 <button
@@ -252,7 +281,7 @@ export function ConnectBankDialog({
                   )}
                   <span className='flex-1'>{institution.name}</span>
                   {connectingInstitutionId === institution.id && (
-                    <span className='text-xs text-muted-foreground'>Connecting…</span>
+                    <span className='text-xs text-muted-foreground'>{t('connectBank.connecting')}</span>
                   )}
                 </button>
               ))}
@@ -263,24 +292,23 @@ export function ConnectBankDialog({
         {step === 'simplefin-token' && (
           <div className='space-y-3'>
             <Button variant='ghost' size='sm' onClick={() => setStep('provider')} className='-ml-2'>
-              <ArrowLeft className='mr-1 h-4 w-4' /> Back
+              <ArrowLeft className='mr-1 h-4 w-4' /> {t('connectBank.back')}
             </Button>
             <div className='space-y-2'>
-              <Label htmlFor='simplefin-setup-token'>SimpleFIN setup token</Label>
+              <Label htmlFor='simplefin-setup-token'>{t('connectBank.tokenLabel')}</Label>
               <Textarea
                 id='simplefin-setup-token'
-                placeholder='Paste the setup token from your SimpleFIN bridge'
+                placeholder={t('connectBank.tokenPlaceholder')}
                 value={setupToken}
                 onChange={(e) => setSetupToken(e.target.value)}
                 rows={4}
               />
               <p className='text-xs text-muted-foreground'>
-                Get one from your bridge (e.g. beta-bridge.simplefin.org) - it's a one-time token
-                FinTrack exchanges for a durable connection, never stored in plain text.
+                {t('connectBank.tokenHint')}
               </p>
             </div>
             <Button onClick={connectSimplefin} disabled={connectingSimplefin} className='w-full'>
-              {connectingSimplefin ? 'Connecting…' : 'Connect'}
+              {connectingSimplefin ? t('connectBank.connecting') : t('connectBank.connect')}
             </Button>
           </div>
         )}

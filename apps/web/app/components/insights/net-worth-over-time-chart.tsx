@@ -1,9 +1,11 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Wallet } from 'lucide-react'
 
+import { LoadError } from '@/components/load-error'
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
@@ -14,7 +16,7 @@ import { useNetWorthSeries, type NetWorthSeriesPoint } from '@/lib/ledger'
 // a single series needs no legend box and no series-identity color scheme,
 // just one consistent hue.
 const chartConfig = {
-  total: { label: 'Net worth', theme: { light: '#2a78d6', dark: '#3987e5' } },
+  total: { label: 'Net worth', color: 'var(--chart-2)' },
 } satisfies ChartConfig
 
 interface ChartPoint {
@@ -27,7 +29,7 @@ function pointsToChartData(points: NetWorthSeriesPoint[]): ChartPoint[] {
   return points.map((point) => ({
     label: new Date(`${point.date}T00:00:00`).toLocaleDateString('default', {
       month: 'short',
-      year: '2-digit',
+      year: 'numeric',
     }),
     total: Number(point.total),
     missing_rate: point.missing_rate,
@@ -48,8 +50,16 @@ function NetWorthDot({ cx, cy, payload }: { cx?: number; cy?: number; payload?: 
 }
 
 export function NetWorthOverTimeChart() {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
-  const { data, isLoading } = useNetWorthSeries()
+  const localizedChartConfig = useMemo(
+    () =>
+      ({
+        total: { ...chartConfig.total, label: t('insights.netWorth') },
+      }) satisfies ChartConfig,
+    [t],
+  )
+  const { data, isLoading, error, mutate } = useNetWorthSeries()
 
   const chartData = useMemo(() => pointsToChartData(data?.points ?? []), [data])
   const hasMissingRate = chartData.some((point) => point.missing_rate)
@@ -58,19 +68,23 @@ export function NetWorthOverTimeChart() {
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
+  }
+
   if (!chartData.length) {
     return (
       <EmptyPlaceholder
         icon={<Wallet className='w-12 h-12' />}
-        title='No net worth history yet'
-        description='Add an account and a few transactions to start tracking your net worth over time.'
+        title={t('insights.netWorthEmptyTitle')}
+        description={t('insights.netWorthEmptyDescription')}
       />
     )
   }
 
   return (
     <div className='space-y-2'>
-      <ChartContainer config={chartConfig} className='aspect-auto h-[320px] w-full'>
+      <ChartContainer config={localizedChartConfig} className='aspect-auto h-[320px] w-full'>
         <AreaChart data={chartData} margin={{ top: 20 }}>
           <CartesianGrid vertical={false} />
           <XAxis dataKey='label' tickMargin={10} fontSize={12} />
@@ -84,7 +98,7 @@ export function NetWorthOverTimeChart() {
             cursor={{ opacity: 0.1 }}
             content={
               <ChartTooltipContent
-                formatter={(value) => [formatCurrency(Number(value), currency.code), ' Net worth']}
+                formatter={(value) => [formatCurrency(Number(value), currency.code), ` ${t('insights.netWorth')}`]}
               />
             }
           />
@@ -100,8 +114,7 @@ export function NetWorthOverTimeChart() {
       </ChartContainer>
       {hasMissingRate && (
         <p className='text-xs text-muted-foreground'>
-          Hollow points are missing an exchange rate for that month, so their total excludes at least
-          one account - a partial figure, not a wrong one.
+          {t('insights.netWorthHollowNote')}
         </p>
       )}
     </div>

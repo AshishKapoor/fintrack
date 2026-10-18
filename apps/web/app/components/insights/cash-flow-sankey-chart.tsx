@@ -1,9 +1,11 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sankey, Rectangle } from 'recharts'
 import { Waves } from 'lucide-react'
 
+import { LoadError } from '@/components/load-error'
 import { ChartConfig, ChartContainer } from '@/components/ui/chart'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
@@ -25,15 +27,14 @@ interface RawNode extends SankeyNode {
   value?: number
 }
 
-// Money in vs money out is a polarity, not a set of category identities - the
-// dataviz skill's color-formula.md calls this job "diverging": two hues plus
-// a neutral midpoint, not a categorical sequence. Reusing the validated
-// default palette's blue/red diverging pair (references/palette.md) with the
-// hub as the neutral pivot between them.
+// Money in vs money out is a polarity, not a set of category identities: two
+// hues around a neutral hub. Those two hues are the app's own income and
+// expense tokens, so the flows read in the same colours as every amount
+// elsewhere, and follow the active theme.
 const chartConfig = {
-  income: { theme: { light: '#2a78d6', dark: '#3987e5' } },
-  expense: { theme: { light: '#e34948', dark: '#e66767' } },
-  hub: { theme: { light: '#898781', dark: '#898781' } },
+  income: { color: 'var(--income)' },
+  expense: { color: 'var(--expense)' },
+  hub: { color: 'var(--category-other)' },
 } satisfies ChartConfig
 
 // recharts' Sankey computes layout purely numerically (summing/comparing
@@ -149,8 +150,9 @@ function SankeyLinkShape(props: {
 }
 
 export function CashFlowSankeyChart({ startDate, endDate, topN }: CashFlowSankeyChartProps) {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
-  const { data, isLoading } = useCashFlowSankey(startDate, endDate, topN)
+  const { data, isLoading, error, mutate } = useCashFlowSankey(startDate, endDate, topN)
 
   const chartData = useMemo(() => toChartData(data?.nodes ?? [], data?.links ?? []), [data])
 
@@ -158,12 +160,16 @@ export function CashFlowSankeyChart({ startDate, endDate, topN }: CashFlowSankey
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
+  }
+
   if (!chartData.nodes.length) {
     return (
       <EmptyPlaceholder
         icon={<Waves className='w-12 h-12' />}
-        title='No cash flow to diagram yet'
-        description='Add some income and expense transactions to see how money moves through your budget.'
+        title={t('insights.cashFlowEmptyTitle')}
+        description={t('insights.cashFlowEmptyDescription')}
       />
     )
   }

@@ -8,22 +8,25 @@ import { NetWorthOverTimeChart } from '@/components/insights/net-worth-over-time
 import { CashFlowSankeyChart } from '@/components/insights/cash-flow-sankey-chart'
 import { SubscriptionsPanel } from '@/components/insights/subscriptions-panel'
 import { DebtPayoffPanel } from '@/components/insights/debt-payoff-panel'
+import { Overview } from '@/components/overview'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Typography from '@/components/ui/typography'
+import { useTranslation } from 'react-i18next'
 
 export default function InsightsPage() {
+  const { t } = useTranslation()
   const { dateRange } = useDateStore()
   const startDate = dateRange?.from ? formatDateForApi(dateRange.from) : undefined
   const endDate = dateRange?.to ? formatDateForApi(dateRange.to) : undefined
 
   return (
     <div className='space-y-6 p-6'>
-      <Typography variant='h2'>Insights</Typography>
+      <Typography variant='h2' as='h1'>{t('insights.title')}</Typography>
 
       <Card>
         <CardHeader>
-          <CardTitle>Net worth over time</CardTitle>
-          <CardDescription>The last 12 months, across every account.</CardDescription>
+          <CardTitle>{t('insights.netWorthTitle')}</CardTitle>
+          <CardDescription>{t('insights.netWorthDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <NetWorthOverTimeChart />
@@ -31,9 +34,22 @@ export default function InsightsPage() {
       </Card>
 
       <Card>
+        <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-4 space-y-0'>
+          <div className='space-y-1.5'>
+            <CardTitle>{t('insights.incomeExpensesTitle')}</CardTitle>
+            <CardDescription>{t('insights.incomeExpensesDescription')}</CardDescription>
+          </div>
+          <DatePickerWithRange />
+        </CardHeader>
+        <CardContent>
+          <Overview startDate={startDate} endDate={endDate} />
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
-          <CardTitle>Debt payoff plan</CardTitle>
-          <CardDescription>Snowball or avalanche - how fast your debts clear, and what it costs in interest.</CardDescription>
+          <CardTitle>{t('insights.debtTitle')}</CardTitle>
+          <CardDescription>{t('insights.debtDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <DebtPayoffPanel />
@@ -42,8 +58,8 @@ export default function InsightsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Subscriptions</CardTitle>
-          <CardDescription>Recurring charges detected from your transaction history.</CardDescription>
+          <CardTitle>{t('insights.subscriptionsTitle')}</CardTitle>
+          <CardDescription>{t('insights.subscriptionsDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <SubscriptionsPanel />
@@ -53,8 +69,8 @@ export default function InsightsPage() {
       <Card>
         <CardHeader className='flex flex-row flex-wrap items-start justify-between gap-4 space-y-0'>
           <div className='space-y-1.5'>
-            <CardTitle>Spending by category</CardTitle>
-            <CardDescription>How your spending on each category has moved, month over month.</CardDescription>
+            <CardTitle>{t('insights.categoryTitle')}</CardTitle>
+            <CardDescription>{t('insights.categoryDescription')}</CardDescription>
           </div>
           <DatePickerWithRange />
         </CardHeader>
@@ -65,8 +81,8 @@ export default function InsightsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Cash flow</CardTitle>
-          <CardDescription>Where money came from, and where it went, for the selected period.</CardDescription>
+          <CardTitle>{t('insights.cashFlowTitle')}</CardTitle>
+          <CardDescription>{t('insights.cashFlowDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <CashFlowSankeyChart startDate={startDate} endDate={endDate} />

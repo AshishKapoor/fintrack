@@ -37,7 +37,8 @@ export function currencyByCode(code: string | undefined | null): Currency {
 
 type CurrencyContextType = {
   currency: Currency
-  setCurrency: (currency: Currency) => void
+  /** Saves the budget's currency on the server, then shows it. Rejects if the save fails. */
+  setCurrency: (currency: Currency) => Promise<void>
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined)
@@ -82,13 +83,12 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const setCurrency = useCallback((next: Currency) => {
+  const setCurrency = useCallback(async (next: Currency) => {
+    // Server first: the currency belongs to the budget, so showing it before the
+    // save lands would claim a change that may not have happened.
+    await updateBudgetFileCurrency(next.code)
     setCurrencyState(next)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    // Persist server-side so the choice follows the account, not the browser.
-    updateBudgetFileCurrency(next.code).catch(() => {
-      // Non-fatal: the local display is already updated.
-    })
   }, [])
 
   return (

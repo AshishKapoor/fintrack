@@ -53,7 +53,7 @@ test('create a savings goal, watch its progress move with the account balance, t
 
   await test.step('adding an account transaction moves the goal toward its target', async () => {
     await page.goto('/transactions')
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await page.getByRole('button', { name: 'Add transaction' }).first().click()
     await page.getByRole('radio', { name: /income/i }).click()
     await page.locator('#title').fill('Paycheck')
     await page.locator('#amount').fill('400')

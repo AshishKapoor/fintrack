@@ -2,20 +2,16 @@ import { applyThemePreset, clearThemePreset, resolvePresetStyles } from '@/lib/a
 import { themePresets } from '@/lib/theme-presets'
 import { beforeEach, describe, expect, it } from 'vitest'
 
-const cyberpunk = themePresets.find((p) => p.key === 'cyberpunk')!
-const neoBrutalism = themePresets.find((p) => p.key === 'neo-brutalism')!
+const caffeine = themePresets.find((p) => p.key === 'caffeine')!
+const starryNight = themePresets.find((p) => p.key === 'starry-night')!
 
 describe('resolvePresetStyles', () => {
   it('returns light styles as-is for light mode', () => {
-    const styles = resolvePresetStyles(cyberpunk, 'light')
-    expect(styles.primary).toBe(cyberpunk.styles.light.primary)
+    expect(resolvePresetStyles(caffeine, 'light').primary).toBe(caffeine.styles.light.primary)
   })
 
-  it('falls back to light values for keys missing in dark mode', () => {
-    // Presets omit radius/fonts from their dark block; the light value applies.
-    const styles = resolvePresetStyles(cyberpunk, 'dark')
-    expect(styles.background).toBe(cyberpunk.styles.dark.background)
-    expect(styles.radius).toBe(cyberpunk.styles.light.radius)
+  it('uses dark values in dark mode', () => {
+    expect(resolvePresetStyles(caffeine, 'dark').background).toBe(caffeine.styles.dark.background)
   })
 })
 
@@ -26,28 +22,34 @@ describe('applyThemePreset', () => {
     root = document.createElement('div')
   })
 
-  it('sets color, radius, and font variables', () => {
-    applyThemePreset(root, cyberpunk, 'light')
-    expect(root.style.getPropertyValue('--primary')).toBe(cyberpunk.styles.light.primary)
-    expect(root.style.getPropertyValue('--radius')).toBe(cyberpunk.styles.light.radius)
-    expect(root.style.getPropertyValue('--font-sans')).toBe(cyberpunk.styles.light['font-sans'])
+  it('sets colour variables', () => {
+    applyThemePreset(root, caffeine, 'light')
+    expect(root.style.getPropertyValue('--primary')).toBe(caffeine.styles.light.primary)
+    expect(root.style.getPropertyValue('--background')).toBe(caffeine.styles.light.background)
   })
 
-  it('composes shadow variables from the preset shadow primitives', () => {
-    applyThemePreset(root, neoBrutalism, 'light')
-    const shadow = root.style.getPropertyValue('--shadow-md')
-    expect(shadow).toContain(neoBrutalism.styles.light['shadow-color'])
-    expect(shadow).toContain(neoBrutalism.styles.light['shadow-offset-x'])
+  it("never sets type, shape, depth or FinTrack's destructive colour", () => {
+    applyThemePreset(root, caffeine, 'dark')
+    for (const name of ['font-sans', 'radius', 'shadow-md', 'tracking-normal', 'destructive']) {
+      expect(root.style.getPropertyValue(`--${name}`), name).toBe('')
+    }
   })
 
-  it('switching presets leaves no stale variables behind', () => {
-    applyThemePreset(root, cyberpunk, 'light')
-    applyThemePreset(root, neoBrutalism, 'light')
-    expect(root.style.getPropertyValue('--primary')).toBe(neoBrutalism.styles.light.primary)
+  it('derives money colours for the theme', () => {
+    applyThemePreset(root, caffeine, 'light')
+    for (const name of ['income', 'expense', 'caution']) {
+      expect(root.style.getPropertyValue(`--${name}`), name).toMatch(/^oklch\(/)
+    }
+  })
+
+  it('switching themes leaves no stale variables behind', () => {
+    applyThemePreset(root, caffeine, 'light')
+    applyThemePreset(root, starryNight, 'light')
+    expect(root.style.getPropertyValue('--primary')).toBe(starryNight.styles.light.primary)
   })
 
   it('clearThemePreset removes every managed variable', () => {
-    applyThemePreset(root, cyberpunk, 'dark')
+    applyThemePreset(root, caffeine, 'dark')
     clearThemePreset(root)
     expect(root.getAttribute('style') || '').toBe('')
   })

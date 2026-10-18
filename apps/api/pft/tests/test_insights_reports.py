@@ -397,6 +397,33 @@ class SubscriptionDetectionTests(APITestCase):
         self.assertEqual(hit["occurrences"], 5)
         self.assertEqual(hit["monthly_equivalent"], "15.99")
 
+    def test_ignores_regular_income(self):
+        # A salary is as regular as any subscription, but money coming in is
+        # not a recurring charge.
+        income_category = Category.objects.filter(
+            budget_file=self.budget_file, kind=Category.KIND_INCOME
+        ).first()
+        employer = self._payee("Acme Corp")
+        start = date(2026, 1, 1)
+        for i in range(5):
+            self.client.post(
+                "/api/v1/finance/transactions/",
+                {
+                    "budget_file": self.budget_file.id,
+                    "transaction_date": (start + timedelta(days=30 * i)).isoformat(),
+                    "payee": employer.id,
+                    "memo": "salary fixture",
+                    "postings": [
+                        {"account": self.account.id, "amount": "4200.00"},
+                        {"category": income_category.id, "amount": "-4200.00"},
+                    ],
+                },
+                format="json",
+            )
+
+        data = self._run()
+        self.assertIsNone(self._by_payee(data, "Acme Corp"))
+
     def test_ignores_a_payee_with_too_few_charges(self):
         rare = self._payee("One-off Store")
         self._charge(rare, date(2026, 1, 5), Decimal("50.00"))

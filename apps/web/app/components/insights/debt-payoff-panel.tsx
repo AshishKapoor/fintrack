@@ -1,8 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Landmark } from 'lucide-react'
+import { LoadError } from '@/components/load-error'
+import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
@@ -25,8 +28,19 @@ import { useDebtPayoff, type DebtPayoffStrategy } from '@/lib/ledger'
 // this app already means "expense/outflow" elsewhere, which would misread
 // a declining-is-good chart as the opposite.
 const chartConfig = {
-  total_balance: { label: 'Remaining balance', theme: { light: '#2a78d6', dark: '#3987e5' } },
+  total_balance: { label: 'Remaining balance', color: 'var(--chart-2)' },
 } satisfies ChartConfig
+
+function useChartConfig() {
+  const { t } = useTranslation()
+  return useMemo(
+    () =>
+      ({
+        total_balance: { ...chartConfig.total_balance, label: t('insights.remainingBalance') },
+      }) satisfies ChartConfig,
+    [t],
+  )
+}
 
 function useDebounced<T>(value: T, delayMs: number) {
   const [debounced, setDebounced] = useState(value)
@@ -38,12 +52,14 @@ function useDebounced<T>(value: T, delayMs: number) {
 }
 
 export function DebtPayoffPanel() {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
+  const localizedChartConfig = useChartConfig()
   const [strategy, setStrategy] = useState<DebtPayoffStrategy>('avalanche')
   const [extraPaymentInput, setExtraPaymentInput] = useState('0')
   const extraPayment = useDebounced(extraPaymentInput, 400)
 
-  const { data, isLoading } = useDebtPayoff(strategy, extraPayment)
+  const { data, isLoading, error, mutate } = useDebtPayoff(strategy, extraPayment)
 
   const chartData = useMemo(
     () => (data?.schedule ?? []).map((point) => ({ month: point.month, total_balance: Number(point.total_balance) })),
@@ -57,18 +73,18 @@ export function DebtPayoffPanel() {
     <div className='space-y-4'>
       <div className='flex flex-wrap items-end gap-4'>
         <div className='space-y-1.5'>
-          <Label id='debt-strategy-label'>Strategy</Label>
+          <Label id='debt-strategy-label'>{t('insights.strategy')}</Label>
           <SegmentedControl
             aria-labelledby='debt-strategy-label'
             value={strategy}
             onValueChange={(value) => setStrategy(value as DebtPayoffStrategy)}
           >
-            <SegmentedControlItem value='avalanche'>Avalanche</SegmentedControlItem>
-            <SegmentedControlItem value='snowball'>Snowball</SegmentedControlItem>
+            <SegmentedControlItem value='avalanche'>{t('insights.avalanche')}</SegmentedControlItem>
+            <SegmentedControlItem value='snowball'>{t('insights.snowball')}</SegmentedControlItem>
           </SegmentedControl>
         </div>
         <div className='space-y-1.5'>
-          <Label htmlFor='debt-extra-payment'>Extra payment / month</Label>
+          <Label htmlFor='debt-extra-payment'>{t('insights.extraPayment')}</Label>
           <Input
             id='debt-extra-payment'
             type='number'
@@ -83,51 +99,52 @@ export function DebtPayoffPanel() {
 
       {isLoading ? (
         <AnimateSpinner size={48} />
+      ) : error && !data ? (
+        <LoadError inline what={t('loadError.debtPlan')} onRetry={() => void mutate()} />
       ) : !hasDebts ? (
         <EmptyPlaceholder
           icon={<Landmark className='w-12 h-12' />}
-          title='No debts to plan around yet'
+          title={t('insights.debtEmptyTitle')}
           description={
             hasExcluded
-              ? 'Add an interest rate and minimum payment to a credit or liability account to include it here.'
-              : 'Once a credit card or liability account has a balance, an interest rate, and a minimum payment, its payoff plan shows up here.'
+              ? t('insights.debtEmptyExcluded')
+              : t('insights.debtEmptyDescription')
           }
           action={
-            <Link to='/accounts' className='text-sm underline underline-offset-4'>
-              Go to Accounts
-            </Link>
+            <Button asChild variant='link' className='underline'>
+              <Link to='/accounts'>{t('insights.goToAccounts')}</Link>
+            </Button>
           }
         />
       ) : (
         <>
           <p className='text-sm text-muted-foreground'>
             {data!.months_to_debt_free === null ? (
-              <span className='text-destructive'>
-                At this rate, minimum payments alone never cover the interest - these debts will never be
-                paid off. Add an extra payment above.
-              </span>
+              <span className='text-destructive'>{t('insights.neverPaidOff')}</span>
             ) : (
               <>
-                Debt-free in{' '}
-                <span className='text-foreground font-semibold'>{data!.months_to_debt_free} months</span>,
-                paying{' '}
+                {t('insights.debtFreeIn')}{' '}
+                <span className='text-foreground font-semibold'>
+                  {t('insights.monthsCount', { count: data!.months_to_debt_free })}
+                </span>
+                {t('insights.debtFreePaying')}{' '}
                 <span className='text-foreground font-semibold'>
                   {formatCurrency(Number(data!.total_interest_paid), currency.code)}
                 </span>{' '}
-                in total interest.
+                {t('insights.debtFreeInterest')}
               </>
             )}
           </p>
 
           {chartData.length > 0 && (
-            <ChartContainer config={chartConfig} className='aspect-auto h-[260px] w-full'>
+            <ChartContainer config={localizedChartConfig} className='aspect-auto h-[260px] w-full'>
               <AreaChart data={chartData} margin={{ top: 20 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey='month'
                   tickMargin={10}
                   fontSize={12}
-                  label={{ value: 'Months from now', position: 'insideBottom', offset: -5 }}
+                  label={{ value: t('insights.monthsFromNow'), position: 'insideBottom', offset: -5 }}
                 />
                 <YAxis
                   width={80}
@@ -139,7 +156,7 @@ export function DebtPayoffPanel() {
                   cursor={{ opacity: 0.1 }}
                   content={
                     <ChartTooltipContent
-                      formatter={(value) => [formatCurrency(Number(value), currency.code), ' Remaining']}
+                      formatter={(value) => [formatCurrency(Number(value), currency.code), ` ${t('insights.remaining')}`]}
                     />
                   }
                 />
@@ -156,12 +173,12 @@ export function DebtPayoffPanel() {
           )}
 
           <div className='overflow-x-auto'>
-            <Table>
+            <Table scrollLabel={t('insights.payoffTimeline')}>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Account</TableHead>
-                  <TableHead>Paid off</TableHead>
-                  <TableHead className='text-right'>Interest paid</TableHead>
+                  <TableHead>{t('insights.account')}</TableHead>
+                  <TableHead>{t('insights.paidOff')}</TableHead>
+                  <TableHead className='text-right'>{t('insights.interestPaid')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -169,7 +186,9 @@ export function DebtPayoffPanel() {
                   <TableRow key={row.account_id}>
                     <TableCell className='font-medium'>{row.account}</TableCell>
                     <TableCell className='text-muted-foreground'>
-                      {row.payoff_month === null ? 'Never (at current payments)' : `${row.payoff_month} months`}
+                      {row.payoff_month === null
+                        ? t('insights.neverAtCurrentPayments')
+                        : t('insights.monthsCount', { count: row.payoff_month })}
                     </TableCell>
                     <TableCell className='text-right tabular-nums'>
                       {formatCurrency(Number(row.interest_paid), currency.code)}
@@ -182,10 +201,11 @@ export function DebtPayoffPanel() {
 
           {hasExcluded && (
             <p className='text-xs text-muted-foreground'>
-              Not included: {data!.excluded.map((row) => row.account).join(', ')} - missing an interest rate,
-              minimum payment, or exchange rate.{' '}
+              {t('insights.debtExcludedNote', {
+                accounts: data!.excluded.map((row) => row.account).join(', '),
+              })}{' '}
               <Link to='/accounts' className='underline underline-offset-4'>
-                Fix on Accounts
+                {t('insights.fixOnAccounts')}
               </Link>
               .
             </p>

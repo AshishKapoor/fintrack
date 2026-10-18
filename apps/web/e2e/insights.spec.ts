@@ -19,7 +19,7 @@ function uniqueEmail() {
 
 async function addExpense(page: import('@playwright/test').Page, title: string, amount: string, category: string) {
   await page.goto('/transactions')
-  await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+  await page.getByRole('button', { name: 'Add transaction' }).first().click()
   await page.locator('#title').fill(title)
   await page.locator('#amount').fill(amount)
   await page.locator('#category').click()

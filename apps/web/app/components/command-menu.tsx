@@ -20,6 +20,7 @@ import {
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
+import { useOrganization } from "@/context/organization-context";
 
 import {
   CommandDialog,
@@ -35,6 +36,9 @@ export function CommandMenu() {
   const { t } = useTranslation();
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { activeOrg } = useOrganization();
+  const canManageAuditLog =
+    activeOrg && !activeOrg.personal && (activeOrg.my_role === "owner" || activeOrg.my_role === "admin");
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -57,7 +61,7 @@ export function CommandMenu() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 relative w-full justify-start text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
+        className="inline-flex items-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 pointer-coarse:h-11 px-4 py-2 relative w-full justify-start text-muted-foreground sm:pr-12 md:w-40 lg:w-64"
       >
         <span className="inline-flex">
           <Search className="mr-2 h-4 w-4" />
@@ -83,46 +87,37 @@ export function CommandMenu() {
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading={t("commandMenu.groupNavigation")}>
-            <CommandItem onSelect={() => runCommand(() => navigate("/"))}>
-              <Home className="mr-2 h-4 w-4" />
-              <span>{t("nav.dashboard")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/categories"))}>
-              <Tag className="mr-2 h-4 w-4" />
-              <span>{t("nav.categories")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/budgets"))}>
-              <PieChart className="mr-2 h-4 w-4" />
-              <span>{t("nav.budgets")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/accounts"))}>
-              <Landmark className="mr-2 h-4 w-4" />
-              <span>{t("nav.accounts")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/savings-goals"))}>
-              <PiggyBank className="mr-2 h-4 w-4" />
-              <span>{t("nav.savingsGoals")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/transactions"))}>
-              <CreditCard className="mr-2 h-4 w-4" />
-              <span>{t("nav.transactions")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/reports"))}>
-              <Gauge className="mr-2 h-4 w-4" />
-              <span>{t("nav.reports")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/insights"))}>
-              <LineChart className="mr-2 h-4 w-4" />
-              <span>{t("nav.insights")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/rules"))}>
-              <Repeat className="mr-2 h-4 w-4" />
-              <span>{t("nav.rules")}</span>
-            </CommandItem>
-            <CommandItem onSelect={() => runCommand(() => navigate("/audit-log"))}>
-              <History className="mr-2 h-4 w-4" />
-              <span>{t("nav.auditLog")}</span>
-            </CommandItem>
+            {[
+              { to: "/", icon: Home, label: t("nav.home") },
+              { to: "/transactions", icon: CreditCard, label: t("nav.transactions") },
+              { to: "/budgets", icon: PieChart, label: t("nav.budgets") },
+              { to: "/savings-goals", icon: PiggyBank, label: t("nav.savingsGoals") },
+              { to: "/rules?tab=recurring", icon: Repeat, label: t("nav.bills") },
+              { to: "/accounts", icon: Landmark, label: t("nav.accounts") },
+              { to: "/reports", icon: Gauge, label: t("nav.reports") },
+              { to: "/insights", icon: LineChart, label: t("nav.insights") },
+            ].map(({ to, icon: Icon, label }) => (
+              <CommandItem key={to} onSelect={() => runCommand(() => navigate(to))}>
+                <Icon className="mr-2 h-4 w-4" />
+                <span>{label}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+          <CommandSeparator />
+          <CommandGroup heading={t("nav.setup")}>
+            {[
+              { to: "/categories", icon: Tag, label: t("nav.categories") },
+              { to: "/rules?tab=rules", icon: Repeat, label: t("nav.rules") },
+              { to: "/transactions?import=1", icon: FileText, label: t("nav.import") },
+              { to: "/accounts?tab=bank-sync", icon: Landmark, label: t("nav.bankSync") },
+              // Same gate as the sidebar: the API shows non-managers nothing.
+              ...(canManageAuditLog ? [{ to: "/audit-log", icon: History, label: t("nav.auditLog") }] : []),
+            ].map(({ to, icon: Icon, label }) => (
+              <CommandItem key={to} onSelect={() => runCommand(() => navigate(to))}>
+                <Icon className="mr-2 h-4 w-4" />
+                <span>{label}</span>
+              </CommandItem>
+            ))}
           </CommandGroup>
           <CommandSeparator />
           <CommandGroup heading={t("commandMenu.groupSettings")}>
@@ -130,7 +125,7 @@ export function CommandMenu() {
               onSelect={() => runCommand(() => navigate("/settings"))}
             >
               <User className="mr-2 h-4 w-4" />
-              <span>{t("commandMenu.general")}</span>
+              <span>{t("nav.settings")}</span>
             </CommandItem>
           </CommandGroup>
           <CommandSeparator />

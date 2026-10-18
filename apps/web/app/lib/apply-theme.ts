@@ -1,6 +1,9 @@
-import type { ThemePreset, ThemeStyleProps } from '@/lib/theme-presets'
+import { deriveSemanticColors, SEMANTIC_COLOR_VARS } from '@/lib/semantic-colors'
+import type { ThemePreset, ThemeStyleProps } from '@/lib/theme-preset-types'
 
-// CSS variables from globals.css that a tweakcn preset can override directly.
+// The CSS variables from globals.css a colour theme may set. Only colours: a
+// theme never touches type, radius or shadows, and never the destructive
+// colour, which keeps FinTrack's own AA-checked values in every theme.
 const COLOR_VARS = [
   'background',
   'foreground',
@@ -16,8 +19,6 @@ const COLOR_VARS = [
   'muted-foreground',
   'accent',
   'accent-foreground',
-  'destructive',
-  'destructive-foreground',
   'border',
   'input',
   'ring',
@@ -36,70 +37,10 @@ const COLOR_VARS = [
   'sidebar-ring',
 ]
 
-const OTHER_VARS = ['font-sans', 'font-serif', 'font-mono', 'radius']
-
-const SHADOW_VARS = [
-  'shadow-2xs',
-  'shadow-xs',
-  'shadow-sm',
-  'shadow',
-  'shadow-md',
-  'shadow-lg',
-  'shadow-xl',
-  'shadow-2xl',
-]
-
-const MANAGED_VARS = [...COLOR_VARS, ...OTHER_VARS, ...SHADOW_VARS, 'tracking-normal']
-
-// Defaults tweakcn assumes when a preset omits a shadow primitive
-// (see config/theme.ts in https://github.com/jnsahaj/tweakcn).
-const SHADOW_DEFAULTS = {
-  'shadow-color': 'hsl(0 0% 0%)',
-  'shadow-opacity': '0.1',
-  'shadow-blur': '3px',
-  'shadow-spread': '0px',
-  'shadow-offset-x': '0',
-  'shadow-offset-y': '1px',
-}
-
-// Port of tweakcn's getShadowMap (utils/shadows.ts), using color-mix() so any
-// color notation the presets use (hex, hsl, oklch) works without conversion.
-function getShadowMap(styles: ThemeStyleProps): Record<string, string> {
-  const shadowColor = styles['shadow-color'] ?? SHADOW_DEFAULTS['shadow-color']
-  const opacity = parseFloat(styles['shadow-opacity'] ?? SHADOW_DEFAULTS['shadow-opacity'])
-  const offsetX = styles['shadow-offset-x'] ?? SHADOW_DEFAULTS['shadow-offset-x']
-  const offsetY = styles['shadow-offset-y'] ?? SHADOW_DEFAULTS['shadow-offset-y']
-  const blur = styles['shadow-blur'] ?? SHADOW_DEFAULTS['shadow-blur']
-  const spread = styles['shadow-spread'] ?? SHADOW_DEFAULTS['shadow-spread']
-
-  const color = (opacityMultiplier: number) => {
-    const pct = Math.min(100, Math.max(0, opacity * opacityMultiplier * 100))
-    return `color-mix(in srgb, ${shadowColor} ${pct.toFixed(0)}%, transparent)`
-  }
-
-  const secondLayer = (fixedOffsetY: string, fixedBlur: string) => {
-    const spread2 = `${parseFloat(spread.replace('px', '') || '0') - 1}px`
-    return `${offsetX} ${fixedOffsetY} ${fixedBlur} ${spread2} ${color(1)}`
-  }
-
-  const firstLayer = (opacityMultiplier: number) =>
-    `${offsetX} ${offsetY} ${blur} ${spread} ${color(opacityMultiplier)}`
-
-  return {
-    'shadow-2xs': firstLayer(0.5),
-    'shadow-xs': firstLayer(0.5),
-    'shadow-sm': `${firstLayer(1)}, ${secondLayer('1px', '2px')}`,
-    shadow: `${firstLayer(1)}, ${secondLayer('1px', '2px')}`,
-    'shadow-md': `${firstLayer(1)}, ${secondLayer('2px', '4px')}`,
-    'shadow-lg': `${firstLayer(1)}, ${secondLayer('4px', '6px')}`,
-    'shadow-xl': `${firstLayer(1)}, ${secondLayer('8px', '10px')}`,
-    'shadow-2xl': firstLayer(2.5),
-  }
-}
+const MANAGED_VARS = [...COLOR_VARS, ...SEMANTIC_COLOR_VARS]
 
 export function resolvePresetStyles(preset: ThemePreset, mode: 'light' | 'dark'): ThemeStyleProps {
-  // Dark mode falls back to the preset's light values for any missing key,
-  // mirroring tweakcn's mergePresetWithDefaults.
+  // Dark mode falls back to the preset's light value for any key it omits.
   return mode === 'dark' ? { ...preset.styles.light, ...preset.styles.dark } : preset.styles.light
 }
 
@@ -113,17 +54,14 @@ export function applyThemePreset(root: HTMLElement, preset: ThemePreset, mode: '
   clearThemePreset(root)
   const styles = resolvePresetStyles(preset, mode)
 
-  for (const name of [...COLOR_VARS, ...OTHER_VARS]) {
+  for (const name of COLOR_VARS) {
     const value = styles[name]
     if (value) root.style.setProperty(`--${name}`, value)
   }
 
-  const letterSpacing = styles['letter-spacing']
-  if (letterSpacing && letterSpacing !== 'normal') {
-    root.style.setProperty('--tracking-normal', letterSpacing)
-  }
-
-  for (const [name, value] of Object.entries(getShadowMap(styles))) {
+  // Money colours keep their hue but are re-derived against this theme's
+  // surfaces, so amounts stay legible whichever theme is chosen.
+  for (const [name, value] of Object.entries(deriveSemanticColors(styles, mode))) {
     root.style.setProperty(`--${name}`, value)
   }
 }

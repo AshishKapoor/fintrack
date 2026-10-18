@@ -30,11 +30,17 @@ export const typographyVariants = cva('text-xl', {
 
 export interface TypographyProps
   extends React.HTMLAttributes<HTMLHeadingElement>,
-    VariantProps<typeof typographyVariants> {}
+    VariantProps<typeof typographyVariants> {
+  /**
+   * The element to render, when the document outline needs a different level
+   * from the look: a page title styled as `h2` is still the page's `h1`.
+   */
+  as?: 'h1' | 'h2' | 'h3' | 'h4' | 'p'
+}
 
 const Typography = React.forwardRef<HTMLHeadingElement, TypographyProps>(
-  ({ className, variant, affects, ...props }, ref) => {
-    const Comp = variant || 'p'
+  ({ className, variant, affects, as, ...props }, ref) => {
+    const Comp = as ?? variant ?? 'p'
     return (
       <Comp
         className={cn(typographyVariants({ variant, affects, className }))}

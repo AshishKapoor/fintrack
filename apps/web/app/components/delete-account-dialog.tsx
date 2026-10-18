@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { logout } from '@/lib/auth'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 const CONFIRMATION = 'DELETE'
@@ -23,6 +24,7 @@ const CONFIRMATION = 'DELETE'
  * the password and an explicit confirmation phrase, and the API checks both.
  */
 export function DeleteAccountDialog() {
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -43,14 +45,14 @@ export function DeleteAccountDialog() {
         method: 'POST',
         data: { password, confirmation },
       })
-      toast.success('Your account and all of its data have been deleted.')
+      toast.success(t('deleteAccount.deleted'))
       // logout() clears the local tokens and redirects to /login. The refresh
       // token is already revoked server-side by the delete endpoint.
       await logout()
     } catch (error: unknown) {
       const message =
         (error as { errorMessage?: string })?.errorMessage ??
-        'Could not delete the account. Check your password and try again.'
+        t('deleteAccount.failed')
       toast.error(message)
       setSubmitting(false)
     }
@@ -65,21 +67,19 @@ export function DeleteAccountDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button variant='destructive'>Delete Account</Button>
+        <Button variant='destructive'>{t('deleteAccount.trigger')}</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete your account?</DialogTitle>
+          <DialogTitle>{t('deleteAccount.title')}</DialogTitle>
           <DialogDescription>
-            This permanently deletes your account and everything in it: every budget file,
-            account, category, transaction and report. It cannot be undone. Export your data
-            first if you want to keep it.
+            {t('deleteAccount.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4'>
           <div className='space-y-2'>
-            <Label htmlFor='delete-account-password'>Confirm your password</Label>
+            <Label htmlFor='delete-account-password'>{t('deleteAccount.password')}</Label>
             <Input
               id='delete-account-password'
               type='password'
@@ -90,7 +90,9 @@ export function DeleteAccountDialog() {
           </div>
           <div className='space-y-2'>
             <Label htmlFor='delete-account-confirmation'>
-              Type <span className='font-mono font-semibold'>{CONFIRMATION}</span> to confirm
+              {t('deleteAccount.typePrefix')}{' '}
+              <span className='font-mono font-semibold'>{CONFIRMATION}</span>{' '}
+              {t('deleteAccount.typeSuffix')}
             </Label>
             <Input
               id='delete-account-confirmation'
@@ -102,10 +104,10 @@ export function DeleteAccountDialog() {
 
         <DialogFooter>
           <Button variant='outline' onClick={() => setOpen(false)} disabled={submitting}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant='destructive' onClick={deleteAccount} disabled={!canSubmit}>
-            {submitting ? 'Deleting...' : 'Delete my account'}
+            {submitting ? t('deleteAccount.deleting') : t('deleteAccount.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>

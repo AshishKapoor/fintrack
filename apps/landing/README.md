@@ -10,6 +10,24 @@ pnpm dev     # http://localhost:3000
 pnpm build   # what CI and Vercel run; lint and type errors fail the build
 ```
 
+## Live demo tour
+
+The "Take the Tour" section (`components/live-demo.tsx`) is a clickable
+walkthrough of real screens from a FinTrack instance seeded with
+`manage.py seed_demo`, stored in `public/demo/`. It needs no backend, so it
+works on Vercel as-is. Recapture the screens after a visible UI change:
+
+```bash
+docker compose exec api python manage.py seed_demo --reset
+node scripts/capture-demo.cjs            # app at http://localhost:5173
+```
+
+Set `NEXT_PUBLIC_DEMO_URL` to a public instance running
+`docker-compose.demo.yml` ([docs/demo.md](../../docs/demo.md)) and the tour
+also shows an "Open the live demo" button with the sign-in details
+(`NEXT_PUBLIC_DEMO_EMAIL` / `NEXT_PUBLIC_DEMO_PASSWORD`, defaulting to the
+seed's). Unset, the button is hidden.
+
 ## Deployment
 
 The site deploys through the Vercel Git integration (project `fintrack`),

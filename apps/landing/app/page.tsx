@@ -1,5 +1,6 @@
 import { FaqAccordion } from "@/components/faq-accordion";
 import { FeatureCard } from "@/components/feature-card";
+import { LiveDemo } from "@/components/live-demo";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
@@ -24,6 +25,14 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://fintrack.sannty.in";
 
 const GITHUB_URL = "https://github.com/AshishKapoor/fintrack";
 
+// A public instance running docker-compose.demo.yml (see docs/demo.md). Unset,
+// the tour below still works from its screenshots; it just has no button out.
+const DEMO_URL = process.env.NEXT_PUBLIC_DEMO_URL;
+const DEMO_EMAIL =
+  process.env.NEXT_PUBLIC_DEMO_EMAIL ?? "demo@fintrack.local";
+const DEMO_PASSWORD =
+  process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "demo-password-123";
+
 export default function LandingPage() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -39,6 +48,12 @@ export default function LandingPage() {
             <span className="text-xl font-bold">FinTrack</span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="#demo"
+              className="text-sm font-medium hover:text-emerald-600 transition-colors"
+            >
+              Demo
+            </Link>
             <Link
               href="#features"
               className="text-sm font-medium hover:text-emerald-600 transition-colors"
@@ -125,13 +140,13 @@ export default function LandingPage() {
                     Start for Free
                   </Button>
                 </Link>
-                <Link href="#how-it-works">
+                <Link href="#demo">
                   <Button
                     size="lg"
                     variant="outline"
                     className="w-full sm:w-auto"
                   >
-                    See How It Works
+                    Take the Tour
                   </Button>
                 </Link>
               </div>
@@ -168,6 +183,26 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Live Demo Section */}
+      <section id="demo" className="py-16 md:py-24 scroll-mt-16 overflow-x-clip">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold mb-4">Take the Tour</h2>
+            <p className="text-xl text-gray-600 max-w-[800px] mx-auto">
+              A year of household money in FinTrack: envelopes, bills,
+              transactions and the trends they add up to.
+            </p>
+          </div>
+          <div className="max-w-6xl mx-auto">
+            <LiveDemo
+              demoUrl={DEMO_URL}
+              demoEmail={DEMO_EMAIL}
+              demoPassword={DEMO_PASSWORD}
+            />
           </div>
         </div>
       </section>

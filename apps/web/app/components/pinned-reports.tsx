@@ -34,11 +34,9 @@ export function PinnedReports() {
     return (
       <div className='space-y-2'>
         <p className='text-sm text-muted-foreground'>No pinned reports yet.</p>
-        <Link to='/reports'>
-          <Button variant='outline' size='sm'>
-            Open Reports
-          </Button>
-        </Link>
+        <Button asChild variant='outline' size='sm'>
+          <Link to='/reports'>Open Reports</Link>
+        </Button>
       </div>
     )
   }
@@ -48,7 +46,7 @@ export function PinnedReports() {
       {reports.map((report) => (
         <div key={report.id} className='flex items-center justify-between rounded-md border p-2'>
           <div className='flex items-center gap-2'>
-            <Pin className='h-3 w-3 text-amber-600' />
+            <Pin className='h-3 w-3 text-caution' />
             <span className='text-sm font-medium'>{report.name}</span>
           </div>
           <div className='flex items-center gap-2'>
@@ -74,11 +72,9 @@ export function PinnedReports() {
           </div>
         </div>
       ))}
-      <Link to='/reports'>
-        <Button variant='ghost' size='sm'>
-          Manage Reports
-        </Button>
-      </Link>
+      <Button asChild variant='ghost' size='sm'>
+        <Link to='/reports'>Manage Reports</Link>
+      </Button>
     </div>
   )
 }

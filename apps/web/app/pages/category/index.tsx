@@ -179,7 +179,7 @@ export default function CategoriesPage() {
   return (
     <div className='space-y-6 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Categories</Typography>
+        <Typography variant='h2' as='h1'>Categories</Typography>
         <Button onClick={() => setShowAddCategory(true)}>Add Category</Button>
       </div>
 
@@ -204,7 +204,7 @@ export default function CategoriesPage() {
                     <TableRow key={category.id}>
                       <TableCell className='font-medium'>
                         <div className='flex items-center'>
-                          <ArrowDownIcon className='mr-2 h-4 w-4 text-rose-600' />
+                          <ArrowDownIcon className='mr-2 h-4 w-4 text-expense' />
                           {category.name}
                         </div>
                       </TableCell>
@@ -257,7 +257,7 @@ export default function CategoriesPage() {
                     <TableRow key={category.id}>
                       <TableCell className='font-medium'>
                         <div className='flex items-center'>
-                          <ArrowUpIcon className='mr-2 h-4 w-4 text-emerald-600' />
+                          <ArrowUpIcon className='mr-2 h-4 w-4 text-income' />
                           {category.name}
                         </div>
                       </TableCell>

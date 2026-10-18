@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import Typography from '@/components/ui/typography'
+import { budgetTone, budgetToneFill, budgetToneText } from '@/lib/budget-tone'
 import { cn } from '@/lib/utils'
 import { CircleDollarSign, Copy, Edit, Eraser, Plus, Sigma } from 'lucide-react'
 import { useState } from 'react'
@@ -216,7 +217,7 @@ export default function BudgetsPage() {
     <div className='space-y-6 p-6'>
       <div className='flex items-center justify-between'>
         <div>
-          <Typography variant='h2'>Budgets</Typography>
+          <Typography variant='h2' as='h1'>Budgets</Typography>
           <p className='text-muted-foreground'>
             Manage your spending limits for {currentMonthDisplay}
           </p>
@@ -257,6 +258,7 @@ export default function BudgetsPage() {
             const spent = Number(row.spent)
             const limit = Number(row.assigned) + Number(row.carryover)
             const percentage = limit ? (spent / limit) * 100 : 0
+            const tone = budgetTone(percentage)
 
             return (
               <Card key={row.category_id}>
@@ -291,31 +293,18 @@ export default function BudgetsPage() {
                 <CardContent>
                   <Progress
                     value={percentage}
-                    className={cn(
-                      percentage >= 100
-                        ? 'text-rose-600'
-                        : percentage >= 85
-                        ? 'text-amber-600'
-                        : '',
-                    )}
+                    aria-label={`${row.category} budget`}
+                    getValueLabel={() => `${percentage.toFixed(1)}% spent`}
+                    indicatorClassName={budgetToneFill[tone]}
                   />
-                  <p
-                    className={cn(
-                      'mt-2 text-sm font-medium text-right',
-                      percentage >= 100
-                        ? 'text-rose-600'
-                        : percentage >= 85
-                        ? 'text-amber-600'
-                        : 'text-emerald-600',
-                    )}
-                  >
+                  <p className={cn('mt-2 text-right text-sm font-medium', budgetToneText[tone])}>
                     {percentage.toFixed(1)}%
                   </p>
                 </CardContent>
                 <CardFooter className='pt-0'>
                   <div className='text-xs text-muted-foreground'>
-                    {percentage >= 100 ? (
-                      <span className='text-rose-600 font-medium'>
+                    {tone === 'over' ? (
+                      <span className='text-expense font-medium'>
                         Over budget by <CurrencyDisplay amount={spent - limit} />
                       </span>
                     ) : (

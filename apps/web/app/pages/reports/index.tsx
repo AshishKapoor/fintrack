@@ -160,7 +160,7 @@ export default function ReportsPage() {
   return (
     <div className='space-y-6 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Reports</Typography>
+        <Typography variant='h2' as='h1'>Reports</Typography>
         <Button variant='outline' onClick={() => void refreshSavedReports()} disabled={loadingSaved}>
           <RefreshCw className='mr-2 h-4 w-4' />
           Refresh
@@ -300,7 +300,7 @@ export default function ReportsPage() {
                         onClick={() => void handleTogglePin(report)}
                         aria-label={report.pinned ? 'Unpin report' : 'Pin report'}
                       >
-                        {report.pinned ? <Pin className='h-4 w-4 text-amber-600' /> : <PinOff className='h-4 w-4' />}
+                        {report.pinned ? <Pin className='h-4 w-4 text-caution' /> : <PinOff className='h-4 w-4' />}
                       </Button>
                     </TableCell>
                     <TableCell>

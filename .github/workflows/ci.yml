@@ -358,6 +358,12 @@ jobs:
           docker compose logs
           exit 1
 
+      # accessibility-seeded.spec.ts signs in as this account: a brand-new user
+      # has no money on screen, so the per-user specs can never see amounts,
+      # budget bars or the Insights tables - the surfaces that broke contrast.
+      - name: Seed the demo account
+        run: docker compose exec -T api python manage.py seed_demo
+
       # Drives the real stack through the browser: register, sign in, add a
       # transaction, see it listed and summed on the dashboard. Includes
       # accessibility.spec.ts, which runs axe over every page and both modal

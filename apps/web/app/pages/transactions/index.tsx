@@ -192,10 +192,12 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className='space-y-4 p-6'>
-      <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Transactions</Typography>
-        <div className='flex items-center gap-2'>
+    <div className='space-y-4 p-4 sm:p-6'>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
+        <Typography variant='h2' as='h1'>Transactions</Typography>
+        {/* Phones: the primary action spans the row and comes first, the two
+            secondary actions share the row beneath it. */}
+        <div className='grid grid-cols-2 gap-2 sm:flex sm:items-center'>
           <Button variant='outline' onClick={() => setShowImport(true)}>
             <Upload className='mr-2 h-4 w-4' />
             Import
@@ -204,16 +206,20 @@ export default function TransactionsPage() {
             <Repeat className='mr-2 h-4 w-4' />
             Add Transfer
           </Button>
-          <Button ref={addTransactionTriggerRef} onClick={() => setShowAddTransaction(true)}>
+          <Button
+            ref={addTransactionTriggerRef}
+            className='order-first col-span-2 sm:order-none'
+            onClick={() => setShowAddTransaction(true)}
+          >
             Add Transaction
           </Button>
         </div>
       </div>
 
       <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-        <div className='flex flex-1 items-center gap-2'>
-          <div className='relative flex-1'>
-            <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+        <div className='flex flex-1 flex-wrap items-center gap-2 sm:flex-nowrap'>
+          <div className='relative basis-full sm:basis-auto sm:flex-1'>
+            <Search className='pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
             <Input
               type='search'
               placeholder='Search transactions...'
@@ -251,7 +257,7 @@ export default function TransactionsPage() {
           </DropdownMenu>
           <Popover>
             <PopoverTrigger asChild>
-              <Button variant='outline' className='gap-1 w-[180px] justify-start'>
+              <Button variant='outline' className='min-w-0 flex-1 justify-start gap-1 sm:w-[180px] sm:flex-none'>
                 <CalendarIcon className='h-4 w-4' />
                 {date ? format(date, 'MMM dd, yyyy') : 'Select date'}
               </Button>
@@ -266,7 +272,7 @@ export default function TransactionsPage() {
             value={sortOrder}
             onValueChange={(value) => setSortOrder(value as typeof sortOrder)}
           >
-            <SelectTrigger aria-label='Sort by' className='w-[180px]'>
+            <SelectTrigger aria-label='Sort by' className='flex-1 sm:w-[180px] sm:flex-none'>
               <SelectValue placeholder='Sort by' />
             </SelectTrigger>
             <SelectContent>
@@ -398,14 +404,14 @@ export default function TransactionsPage() {
                     <TableCell>
                       <div className='flex items-center gap-2'>
                         {display.kind === 'income' ? (
-                          <ArrowUpIcon className='h-4 w-4 text-emerald-600' />
+                          <ArrowUpIcon className='h-4 w-4 text-income' />
                         ) : (
-                          <ArrowDownIcon className='h-4 w-4 text-rose-600' />
+                          <ArrowDownIcon className='h-4 w-4 text-expense' />
                         )}
                         <span
                           className={cn(
                             'tabular-nums',
-                            display.kind === 'income' ? 'text-emerald-600' : 'text-rose-600',
+                            display.kind === 'income' ? 'text-income' : 'text-expense',
                           )}
                         >
                           <CurrencyDisplay amount={display.amount} />

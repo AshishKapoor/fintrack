@@ -14,7 +14,7 @@ import { useNetWorthSeries, type NetWorthSeriesPoint } from '@/lib/ledger'
 // a single series needs no legend box and no series-identity color scheme,
 // just one consistent hue.
 const chartConfig = {
-  total: { label: 'Net worth', theme: { light: '#2a78d6', dark: '#3987e5' } },
+  total: { label: 'Net worth', color: 'var(--chart-2)' },
 } satisfies ChartConfig
 
 interface ChartPoint {

@@ -16,10 +16,12 @@ import { CurrencyDisplay } from '@/components/ui/currency-display'
 import { DatePickerWithRange } from '@/components/date-range-picker'
 import { useSearchParams } from 'react-router-dom'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDateStore } from '@/hooks/use-date-store'
 import { formatDateForApi, parseApiDate } from '@/lib/date'
 
 export default function DashboardPage() {
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { dateRange, setDateRange } = useDateStore()
   const startParam = searchParams.get('start')
@@ -182,6 +184,9 @@ export default function DashboardPage() {
 
   return (
     <div className='flex flex-col gap-4 p-6'>
+      {/* The stat cards are the page's visual opening; the title is for the
+          document outline and screen-reader heading navigation. */}
+      <h1 className='sr-only'>{t('nav.dashboard')}</h1>
       <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
@@ -198,7 +203,7 @@ export default function DashboardPage() {
             <CardTitle className='text-sm font-medium'>Income</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold text-emerald-600'>
+            <div className='text-2xl font-bold text-income'>
               <CurrencyDisplay amount={stats.monthlyIncome} />
             </div>
             <p className='text-xs text-muted-foreground'>
@@ -212,7 +217,7 @@ export default function DashboardPage() {
             <CardTitle className='text-sm font-medium'>Expenses</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold text-rose-600'>
+            <div className='text-2xl font-bold text-expense'>
               <CurrencyDisplay amount={stats.monthlyExpenses} />
             </div>
             <p className='text-xs text-muted-foreground'>

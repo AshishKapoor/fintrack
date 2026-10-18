@@ -124,7 +124,7 @@ export default function AuditLogPage() {
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
         <div>
-          <Typography variant='h2'>Audit Log</Typography>
+          <Typography variant='h2' as='h1'>Audit Log</Typography>
           <p className='text-sm text-muted-foreground'>
             Every create, update and delete in <strong>{org.name}</strong>, newest first.
           </p>

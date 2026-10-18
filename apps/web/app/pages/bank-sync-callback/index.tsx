@@ -61,7 +61,7 @@ export default function BankSyncCallbackPage() {
 
   return (
     <div className='mx-auto flex max-w-lg flex-col gap-4 py-10'>
-      <Typography variant='h2'>Connecting your bank</Typography>
+      <Typography variant='h2' as='h1'>Connecting your bank</Typography>
 
       <Card>
         <CardHeader>

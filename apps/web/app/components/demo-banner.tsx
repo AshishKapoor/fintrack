@@ -14,7 +14,7 @@ export function DemoBanner() {
   if (!status?.demo) return null
 
   return (
-    <div className='flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-amber-500 px-4 py-2 text-center text-sm font-medium text-amber-950'>
+    <div className='flex flex-wrap items-center justify-center gap-x-2 gap-y-1 bg-caution px-4 py-2 text-center text-sm font-medium text-background'>
       <span>
         You are viewing a public FinTrack demo
         {status.demoEmail ? (

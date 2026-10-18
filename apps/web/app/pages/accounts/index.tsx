@@ -257,7 +257,7 @@ export default function AccountsPage() {
   return (
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Accounts</Typography>
+        <Typography variant='h2' as='h1'>Accounts</Typography>
       </div>
 
       <Tabs defaultValue='accounts' className='space-y-4'>
@@ -539,7 +539,7 @@ export default function AccountsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-white hover:bg-destructive/90'>
+            <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

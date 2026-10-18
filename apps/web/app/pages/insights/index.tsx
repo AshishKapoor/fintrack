@@ -18,7 +18,7 @@ export default function InsightsPage() {
 
   return (
     <div className='space-y-6 p-6'>
-      <Typography variant='h2'>Insights</Typography>
+      <Typography variant='h2' as='h1'>Insights</Typography>
 
       <Card>
         <CardHeader>

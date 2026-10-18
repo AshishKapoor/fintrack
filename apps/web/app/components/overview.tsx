@@ -22,11 +22,11 @@ interface MonthlyData {
 const chartConfig = {
   income: {
     label: 'Income',
-    color: 'hsl(142.1 76.2% 36.3%)',
+    color: 'var(--income)',
   },
   expenses: {
     label: 'Expenses',
-    color: 'hsl(0 84.2% 60.2%)',
+    color: 'var(--expense)',
   },
 } satisfies ChartConfig
 

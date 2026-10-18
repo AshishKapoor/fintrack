@@ -31,6 +31,10 @@ The format is loosely [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- Improve contrast, keyboard access and mobile layouts throughout the web app.
+  Colour themes now use a curated palette list while preserving FinTrack's
+  typography and accessible money colours; retired theme selections fall back
+  to the default theme. Fonts remain self-hosted.
 - Redis moves from 7 to 8 in the compose stack. No action needed: Redis only
   carries queued jobs in flight here.
 

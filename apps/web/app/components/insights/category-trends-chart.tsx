@@ -31,15 +31,10 @@ interface CategoryTrendsChartProps {
 // range, not a stable per-category identity - this app has no persisted
 // per-category color anywhere else, so a given category's color can shift if
 // the selected range changes which categories rank highest.
-const PALETTE: { light: string; dark: string }[] = [
-  { light: '#2a78d6', dark: '#3987e5' },
-  { light: '#eb6834', dark: '#d95926' },
-  { light: '#1baf7a', dark: '#199e70' },
-  { light: '#eda100', dark: '#c98500' },
-  { light: '#e87ba4', dark: '#d55181' },
-  { light: '#008300', dark: '#008300' },
-]
-const OTHER_COLOR = { light: '#898781', dark: '#898781' }
+// The values live in globals.css as --category-1..6 / --category-other, with
+// their light and dark steps.
+const PALETTE = [1, 2, 3, 4, 5, 6].map((slot) => `var(--category-${slot})`)
+const OTHER_COLOR = 'var(--category-other)'
 
 function seriesKey(index: number) {
   return `series-${index}`
@@ -82,7 +77,7 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     const config: ChartConfig = {}
     categories.forEach((category, index) => {
       config[seriesKey(index)] =
-        category === OTHER_CATEGORY_LABEL ? { theme: OTHER_COLOR } : { theme: PALETTE[index] }
+        category === OTHER_CATEGORY_LABEL ? { color: OTHER_COLOR } : { color: PALETTE[index] }
     })
     return config
   }, [categories])
@@ -148,7 +143,7 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
 
       <TabsContent value='table'>
         <div className='overflow-x-auto'>
-          <Table>
+          <Table scrollLabel='Spending by category and month'>
             <TableHeader>
               <TableRow>
                 <TableHead>Period</TableHead>

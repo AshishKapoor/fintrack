@@ -172,13 +172,13 @@ export default function UserSettingsPage() {
 
   return (
     <div className='p-6'>
-      <Typography variant='h2' className='mb-4'>
+      <Typography variant='h2' as='h1' className='mb-4'>
         {t('settings.title')}
       </Typography>
       {loading && <AnimateSpinner size={64} />}
       {!loading && profile && (
         <Tabs defaultValue={defaultTab} className='space-y-6'>
-          <TabsList className='w-full justify-start p-0'>
+          <TabsList className='w-full justify-start overflow-x-auto p-0'>
             <TabsTrigger value='profile'>
               <User className='mr-2 h-4 w-4' />
               {t('settings.tabs.profile')}

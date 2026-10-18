@@ -58,7 +58,7 @@ export function SubscriptionsPanel() {
         /mo
       </p>
       <div className='overflow-x-auto'>
-        <Table>
+        <Table scrollLabel='Recurring charges'>
           <TableHeader>
             <TableRow>
               <TableHead>Payee</TableHead>

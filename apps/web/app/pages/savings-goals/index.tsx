@@ -156,7 +156,7 @@ export default function SavingsGoalsPage() {
   return (
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Savings Goals</Typography>
+        <Typography variant='h2' as='h1'>Savings Goals</Typography>
         <Button onClick={openCreate}>
           <Plus className='mr-1 h-4 w-4' /> Add goal
         </Button>
@@ -179,7 +179,6 @@ export default function SavingsGoalsPage() {
         <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
           {goals.map((goal) => {
             const percent = goal.progress_percent ?? 0
-            const barValue = Math.min(percent, 100)
             return (
               <Card key={goal.id}>
                 <CardHeader>
@@ -187,7 +186,11 @@ export default function SavingsGoalsPage() {
                   <CardDescription>{goal.account_name}</CardDescription>
                 </CardHeader>
                 <CardContent className='space-y-3'>
-                  <Progress value={barValue} />
+                  <Progress
+                    value={percent}
+                    aria-label={`${goal.name} progress`}
+                    getValueLabel={() => `${percent.toFixed(0)}% of target`}
+                  />
                   <div className='flex items-baseline justify-between text-sm'>
                     <span className='font-medium'>
                       {formatCurrency(Number(goal.current_amount), currency.code)}
@@ -302,7 +305,7 @@ export default function SavingsGoalsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-white hover:bg-destructive/90'>
+            <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

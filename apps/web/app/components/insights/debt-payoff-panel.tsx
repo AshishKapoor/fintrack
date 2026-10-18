@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { Landmark } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
 
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
@@ -25,7 +26,7 @@ import { useDebtPayoff, type DebtPayoffStrategy } from '@/lib/ledger'
 // this app already means "expense/outflow" elsewhere, which would misread
 // a declining-is-good chart as the opposite.
 const chartConfig = {
-  total_balance: { label: 'Remaining balance', theme: { light: '#2a78d6', dark: '#3987e5' } },
+  total_balance: { label: 'Remaining balance', color: 'var(--chart-2)' },
 } satisfies ChartConfig
 
 function useDebounced<T>(value: T, delayMs: number) {
@@ -93,9 +94,9 @@ export function DebtPayoffPanel() {
               : 'Once a credit card or liability account has a balance, an interest rate, and a minimum payment, its payoff plan shows up here.'
           }
           action={
-            <Link to='/accounts' className='text-sm underline underline-offset-4'>
-              Go to Accounts
-            </Link>
+            <Button asChild variant='link' className='underline'>
+              <Link to='/accounts'>Go to Accounts</Link>
+            </Button>
           }
         />
       ) : (
@@ -156,7 +157,7 @@ export function DebtPayoffPanel() {
           )}
 
           <div className='overflow-x-auto'>
-            <Table>
+            <Table scrollLabel='Payoff timeline'>
               <TableHeader>
                 <TableRow>
                   <TableHead>Account</TableHead>

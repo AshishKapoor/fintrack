@@ -1,102 +1,51 @@
 import { useTheme } from '@/components/theme-provider'
 import { Button } from '@/components/ui/button'
 import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { resolvePresetStyles } from '@/lib/apply-theme'
 import { DEFAULT_THEME_KEY, themePresets, type ThemePreset } from '@/lib/theme-presets'
-import { cn } from '@/lib/utils'
-import { Check, Paintbrush, Star } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Paintbrush } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+// FinTrack's own primary, secondary and background (globals.css). Literal, not
+// var(--primary): while another theme is active those variables hold its colours.
+const FINTRACK_SWATCH = {
+  light: ['oklch(0.52 0.13 144.17)', 'oklch(0.96 0.02 147.64)', 'oklch(0.97 0.01 80.72)'],
+  dark: ['oklch(0.67 0.16 144.21)', 'oklch(0.39 0.03 142.99)', 'oklch(0.27 0.03 150.77)'],
+}
+
+/** Three dots previewing a theme: its accent, a secondary surface and its background. */
 function ThemeSwatch({ preset, mode }: { preset?: ThemePreset; mode: 'light' | 'dark' }) {
   const colors = preset
     ? (() => {
         const styles = resolvePresetStyles(preset, mode)
-        return [styles.primary, styles.accent, styles.secondary, styles.background]
+        return [styles.primary, styles.secondary, styles.background]
       })()
-    : ['var(--primary)', 'var(--accent)', 'var(--secondary)', 'var(--background)']
+    : FINTRACK_SWATCH[mode]
 
   return (
-    <div className='flex shrink-0 items-center -space-x-1'>
+    <span aria-hidden='true' className='flex shrink-0 items-center -space-x-1'>
       {colors.map((color, index) => (
         <span
           key={index}
-          className='h-3.5 w-3.5 rounded-full border border-border/60'
+          className='h-3.5 w-3.5 rounded-full border border-border'
           style={{ backgroundColor: color }}
         />
       ))}
-    </div>
-  )
-}
-
-interface ThemeItemProps {
-  preset?: ThemePreset
-  label: string
-  themeKey: string
-  mode: 'light' | 'dark'
-  isActive: boolean
-  isFavorite: boolean
-  favoriteLabel: string
-  onSelect: (key: string) => void
-  onToggleFavorite: (key: string) => void
-}
-
-function ThemeItem({
-  preset,
-  label,
-  themeKey,
-  mode,
-  isActive,
-  isFavorite,
-  favoriteLabel,
-  onSelect,
-  onToggleFavorite,
-}: ThemeItemProps) {
-  return (
-    <CommandItem
-      value={`${themeKey} ${label}`}
-      onSelect={() => onSelect(themeKey)}
-      className='group flex items-center gap-2'
-    >
-      <ThemeSwatch preset={preset} mode={mode} />
-      <span className='flex-1 truncate'>{label}</span>
-      <Check className={cn('h-4 w-4 shrink-0', isActive ? 'opacity-100' : 'opacity-0')} />
-      <button
-        type='button'
-        tabIndex={-1}
-        aria-label={favoriteLabel}
-        aria-pressed={isFavorite}
-        onClick={(event) => {
-          event.preventDefault()
-          event.stopPropagation()
-          onToggleFavorite(themeKey)
-        }}
-        className={cn(
-          'shrink-0 rounded-sm p-0.5 transition-opacity hover:text-foreground',
-          isFavorite
-            ? 'text-amber-500 opacity-100 hover:text-amber-600'
-            : 'text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100',
-        )}
-      >
-        <Star className={cn('h-4 w-4', isFavorite && 'fill-current')} />
-      </button>
-    </CommandItem>
+    </span>
   )
 }
 
 export function ThemeSwitcher() {
   const { t } = useTranslation()
-  const { theme, colorTheme, setColorTheme, favoriteThemes, toggleFavoriteTheme } = useTheme()
-  const [open, setOpen] = useState(false)
+  const { theme, colorTheme, setColorTheme } = useTheme()
 
   const mode: 'light' | 'dark' =
     theme === 'system'
@@ -105,69 +54,36 @@ export function ThemeSwitcher() {
         : 'light'
       : theme
 
-  const { favorites, others } = useMemo(() => {
-    const favorites: (ThemePreset | undefined)[] = []
-    const others: (ThemePreset | undefined)[] = []
-    const all: (ThemePreset | undefined)[] = [undefined, ...themePresets]
-    for (const preset of all) {
-      const key = preset?.key ?? DEFAULT_THEME_KEY
-      if (favoriteThemes.includes(key)) {
-        favorites.push(preset)
-      } else {
-        others.push(preset)
-      }
-    }
-    return { favorites, others }
-  }, [favoriteThemes])
-
-  const renderItem = (preset?: ThemePreset) => {
-    const key = preset?.key ?? DEFAULT_THEME_KEY
-    return (
-      <ThemeItem
-        key={key}
-        preset={preset}
-        themeKey={key}
-        label={preset?.label ?? t('themeSwitcher.default')}
-        mode={mode}
-        isActive={colorTheme === key}
-        isFavorite={favoriteThemes.includes(key)}
-        favoriteLabel={t('themeSwitcher.toggleFavorite')}
-        onSelect={(selected) => {
-          setColorTheme(selected)
-          setOpen(false)
-        }}
-        onToggleFavorite={toggleFavoriteTheme}
-      />
-    )
-  }
+  // A retired theme key still stored from before the curated set reads as the
+  // FinTrack theme, which is what the provider applies for it.
+  const selected = themePresets.some((preset) => preset.key === colorTheme)
+    ? colorTheme
+    : DEFAULT_THEME_KEY
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button variant='ghost' size='icon'>
           <Paintbrush className='h-[1.2rem] w-[1.2rem]' />
           <span className='sr-only'>{t('themeSwitcher.label')}</span>
         </Button>
-      </PopoverTrigger>
-      <PopoverContent align='end' className='w-72 p-0'>
-        <Command>
-          <CommandInput placeholder={t('themeSwitcher.findTheme')} />
-          <CommandList>
-            <CommandEmpty>{t('themeSwitcher.noThemeFound')}</CommandEmpty>
-            {favorites.length > 0 && (
-              <>
-                <CommandGroup heading={t('themeSwitcher.favorites')}>
-                  {favorites.map(renderItem)}
-                </CommandGroup>
-                <CommandSeparator />
-              </>
-            )}
-            <CommandGroup heading={t('themeSwitcher.allThemes')}>
-              {others.map(renderItem)}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-52'>
+        <DropdownMenuLabel>{t('themeSwitcher.label')}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup value={selected} onValueChange={setColorTheme}>
+          <DropdownMenuRadioItem value={DEFAULT_THEME_KEY} className='gap-2'>
+            <ThemeSwatch mode={mode} />
+            {t('themeSwitcher.default')}
+          </DropdownMenuRadioItem>
+          {themePresets.map((preset) => (
+            <DropdownMenuRadioItem key={preset.key} value={preset.key} className='gap-2'>
+              <ThemeSwatch preset={preset} mode={mode} />
+              {preset.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

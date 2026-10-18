@@ -88,7 +88,13 @@ export function InlineTransactionRow({
   const refreshLedger = useInvalidateLedger()
 
   useEffect(() => {
-    if (!transaction) amountRef.current?.focus()
+    // Desktop's keyboard-first entry wants the cursor waiting in the amount
+    // field. On a touch screen that same focus opens the on-screen keyboard as
+    // soon as the register loads and scrolls the table sideways to the amount
+    // column, so only take focus when there is a fine pointer to type alongside.
+    if (!transaction && window.matchMedia('(pointer: fine)').matches) {
+      amountRef.current?.focus()
+    }
   }, [transaction])
 
   const filteredCategories = (categories ?? []).filter(
@@ -240,7 +246,7 @@ export function InlineTransactionRow({
             onClick={save}
             aria-label={t('common.save')}
           >
-            <Check className='h-4 w-4 text-emerald-600' />
+            <Check className='h-4 w-4 text-primary' />
           </Button>
           {transaction && (
             <Button

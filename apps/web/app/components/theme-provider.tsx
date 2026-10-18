@@ -1,7 +1,6 @@
-import { applyThemePreset, clearThemePreset, resolvePresetStyles } from '@/lib/apply-theme'
-import { loadThemeFonts } from '@/lib/theme-fonts'
+import { applyThemePreset, clearThemePreset } from '@/lib/apply-theme'
 import { DEFAULT_THEME_KEY, themePresets } from '@/lib/theme-presets'
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type Theme = 'dark' | 'light' | 'system'
 
@@ -10,7 +9,6 @@ type ThemeProviderProps = {
   defaultTheme?: Theme
   storageKey?: string
   colorThemeStorageKey?: string
-  favoritesStorageKey?: string
 }
 
 type ThemeProviderState = {
@@ -18,8 +16,6 @@ type ThemeProviderState = {
   setTheme: (theme: Theme) => void
   colorTheme: string
   setColorTheme: (colorTheme: string) => void
-  favoriteThemes: string[]
-  toggleFavoriteTheme: (colorTheme: string) => void
 }
 
 const initialState: ThemeProviderState = {
@@ -27,39 +23,33 @@ const initialState: ThemeProviderState = {
   setTheme: () => null,
   colorTheme: DEFAULT_THEME_KEY,
   setColorTheme: () => null,
-  favoriteThemes: [],
-  toggleFavoriteTheme: () => null,
 }
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 
-function readFavorites(storageKey: string): string[] {
-  try {
-    const raw = localStorage.getItem(storageKey)
-    const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : []
-  } catch {
-    return []
-  }
-}
+// Left behind by the earlier 42-theme picker: favourites, and a cached copy of
+// the active preset from when the catalogue was loaded on demand.
+const RETIRED_STORAGE_KEYS = ['vite-ui-favorite-themes', 'vite-ui-color-theme-preset']
 
 export function ThemeProvider({
   children,
   defaultTheme = 'system',
   storageKey = 'vite-ui-theme',
   colorThemeStorageKey = 'vite-ui-color-theme',
-  favoritesStorageKey = 'vite-ui-favorite-themes',
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
     () => (localStorage.getItem(storageKey) as Theme) || defaultTheme,
   )
+  // A key from a theme that is no longer offered resolves to no preset below,
+  // so FinTrack's own theme applies.
   const [colorTheme, setColorTheme] = useState<string>(
     () => localStorage.getItem(colorThemeStorageKey) || DEFAULT_THEME_KEY,
   )
-  const [favoriteThemes, setFavoriteThemes] = useState<string[]>(() =>
-    readFavorites(favoritesStorageKey),
-  )
+
+  useEffect(() => {
+    for (const key of RETIRED_STORAGE_KEYS) localStorage.removeItem(key)
+  }, [])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -78,7 +68,6 @@ export function ThemeProvider({
       const preset = themePresets.find((p) => p.key === colorTheme)
       if (preset) {
         applyThemePreset(root, preset, mode)
-        loadThemeFonts(resolvePresetStyles(preset, mode))
       } else {
         clearThemePreset(root)
       }
@@ -93,19 +82,6 @@ export function ThemeProvider({
     }
   }, [theme, colorTheme])
 
-  const toggleFavoriteTheme = useCallback(
-    (key: string) => {
-      setFavoriteThemes((current) => {
-        const next = current.includes(key)
-          ? current.filter((item) => item !== key)
-          : [...current, key]
-        localStorage.setItem(favoritesStorageKey, JSON.stringify(next))
-        return next
-      })
-    },
-    [favoritesStorageKey],
-  )
-
   const value = {
     theme,
     setTheme: (theme: Theme) => {
@@ -117,8 +93,6 @@ export function ThemeProvider({
       localStorage.setItem(colorThemeStorageKey, colorTheme)
       setColorTheme(colorTheme)
     },
-    favoriteThemes,
-    toggleFavoriteTheme,
   }
 
   return (

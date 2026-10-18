@@ -94,7 +94,7 @@
     "budgets": "Budgets",
     "categories": "Categories",
     "dashboard": "Dashboard",
-    "footer": "© 2025 FinTrack.",
+    "footer": "© {{year}} FinTrack.",
     "footerRights": "All rights reserved",
     "insights": "Insights",
     "mainMenu": "MAIN MENU",
@@ -104,6 +104,7 @@
     "savingsGoals": "Savings Goals",
     "settings": "General",
     "settingsSection": "SETTINGS",
+    "preferences": "PREFERENCES",
     "toggleSidebar": "Toggle sidebar",
     "transactions": "Transactions"
   },
@@ -204,15 +205,11 @@
     "title": "Settings"
   },
   "themeSwitcher": {
-    "allThemes": "All themes",
-    "default": "Default",
-    "favorites": "Favorites",
-    "findTheme": "Find a theme…",
-    "label": "Switch theme",
-    "noThemeFound": "No theme found.",
-    "toggleFavorite": "Toggle favorite"
+    "default": "FinTrack",
+    "label": "Color theme"
   },
   "topbar": {
+    "account": "Account menu",
     "logout": "Log out",
     "notifications": "Notifications",
     "settings": "Settings",

@@ -25,15 +25,14 @@ interface RawNode extends SankeyNode {
   value?: number
 }
 
-// Money in vs money out is a polarity, not a set of category identities - the
-// dataviz skill's color-formula.md calls this job "diverging": two hues plus
-// a neutral midpoint, not a categorical sequence. Reusing the validated
-// default palette's blue/red diverging pair (references/palette.md) with the
-// hub as the neutral pivot between them.
+// Money in vs money out is a polarity, not a set of category identities: two
+// hues around a neutral hub. Those two hues are the app's own income and
+// expense tokens, so the flows read in the same colours as every amount
+// elsewhere, and follow the active theme.
 const chartConfig = {
-  income: { theme: { light: '#2a78d6', dark: '#3987e5' } },
-  expense: { theme: { light: '#e34948', dark: '#e66767' } },
-  hub: { theme: { light: '#898781', dark: '#898781' } },
+  income: { color: 'var(--income)' },
+  expense: { color: 'var(--expense)' },
+  hub: { color: 'var(--category-other)' },
 } satisfies ChartConfig
 
 // recharts' Sankey computes layout purely numerically (summing/comparing

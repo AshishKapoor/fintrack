@@ -2,11 +2,42 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+/**
+ * A table in a horizontally scrolling container.
+ *
+ * When the table is wider than its container, the container becomes a named,
+ * focusable region so a keyboard user can scroll it with the arrow keys (WCAG
+ * 2.1.1); a table that fits gets no extra tab stop. Pass `scrollLabel` to name
+ * the region - it defaults to the table's caption-less "Table".
+ */
+function Table({
+  className,
+  scrollLabel,
+  ...props
+}: React.ComponentProps<"table"> & { scrollLabel?: string }) {
+  const containerRef = React.useRef<HTMLDivElement>(null)
+  const [scrollable, setScrollable] = React.useState(false)
+
+  React.useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const measure = () => setScrollable(container.scrollWidth > container.clientWidth + 1)
+    measure()
+    if (typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(measure)
+    observer.observe(container)
+    if (container.firstElementChild) observer.observe(container.firstElementChild)
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <div
+      ref={containerRef}
       data-slot="table-container"
-      className="relative w-full overflow-x-auto"
+      className="relative w-full overflow-x-auto rounded-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      {...(scrollable
+        ? { tabIndex: 0, role: "region", "aria-label": scrollLabel ?? "Table" }
+        : {})}
     >
       <table
         data-slot="table"

@@ -1,5 +1,6 @@
 'use client'
 
+import { PreferenceControls } from '@/components/preference-controls'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { useOrganization } from '@/context/organization-context'
@@ -64,7 +65,7 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
     <Link
       key={to}
       to={to}
-      className={`flex items-center rounded-md px-3 py-2 text-sm font-medium ${
+      className={`flex items-center rounded-md px-3 py-2 pointer-coarse:py-3 text-sm font-medium ${
         location.pathname === to ? 'bg-muted text-primary-background' : 'hover:bg-muted'
       } ${expanded || isMobile ? 'gap-3' : 'justify-center'}`}
       onClick={() => isMobile && onOpenChange(false)}
@@ -111,10 +112,17 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
         <nav className='space-y-1'>{settingsNavItems.map(renderLink)}</nav>
       </div>
 
+      {isMobile && (
+        <div className='p-4'>
+          <h3 className='mb-2 text-xs font-semibold text-muted-foreground'>{t('nav.preferences')}</h3>
+          <PreferenceControls />
+        </div>
+      )}
+
       <div className='mt-auto p-4 border-t'>
         {(expanded || isMobile) && (
           <div className='text-xs text-muted-foreground'>
-            <p>{t('nav.footer')}</p>
+            <p>{t('nav.footer', { year: new Date().getFullYear() })}</p>
             <p>{t('nav.footerRights')}</p>
           </div>
         )}
@@ -125,7 +133,7 @@ export function Sidebar({ expanded, toggleSidebar, isMobile, isOpen, onOpenChang
   if (isMobile) {
     return (
       <Sheet open={isOpen} onOpenChange={onOpenChange}>
-        <SheetContent side='left' className='w-[240px] p-0'>
+        <SheetContent side='left' className='w-[280px] gap-0 overflow-y-auto p-0'>
           {sidebarContent}
         </SheetContent>
       </Sheet>

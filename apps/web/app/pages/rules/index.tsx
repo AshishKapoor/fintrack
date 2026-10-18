@@ -413,7 +413,7 @@ export default function RulesAndRecurringPage() {
   return (
     <div className='space-y-6 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2'>Rules & Recurring</Typography>
+        <Typography variant='h2' as='h1'>Rules & Recurring</Typography>
         <div className='flex gap-2'>
           <Button variant='outline' onClick={() => void loadAll()} disabled={loading}>
             <RefreshCw className='mr-2 h-4 w-4' />

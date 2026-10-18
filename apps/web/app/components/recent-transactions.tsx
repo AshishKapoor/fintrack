@@ -19,17 +19,14 @@ import {
 import type { LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-interface CategoryIcon {
-  icon: LucideIcon
-  color: string
-}
-
-const categoryIcons: Record<string, CategoryIcon> = {
-  Salary: { icon: Briefcase, color: 'text-emerald-500 bg-emerald-100' },
-  Housing: { icon: HomeIcon, color: 'text-blue-500 bg-blue-100' },
-  Food: { icon: ShoppingBag, color: 'text-orange-500 bg-orange-100' },
-  Coffee: { icon: Coffee, color: 'text-amber-500 bg-amber-100' },
-  Transportation: { icon: Car, color: 'text-indigo-500 bg-indigo-100' },
+// The icon identifies the category; the chip itself stays neutral. Colour in
+// this list belongs to the amount (income or expense), not to decoration.
+const categoryIcons: Record<string, LucideIcon> = {
+  Salary: Briefcase,
+  Housing: HomeIcon,
+  Food: ShoppingBag,
+  Coffee: Coffee,
+  Transportation: Car,
 }
 
 /**
@@ -82,15 +79,11 @@ export function RecentTransactions() {
     <div className='space-y-4'>
       {transactions.map((transaction) => {
         const { title, categoryName, amount, isIncome } = displayFields(transaction)
-        const categoryInfo = categoryIcons[categoryName] || {
-          icon: ShoppingBag,
-          color: 'text-gray-500 bg-gray-100',
-        }
-        const Icon = categoryInfo.icon
+        const Icon = categoryIcons[categoryName] ?? ShoppingBag
 
         return (
           <div key={transaction.id} className='flex items-center'>
-            <div className={cn('flex h-9 w-9 items-center justify-center rounded-full', categoryInfo.color)}>
+            <div className='flex h-9 w-9 items-center justify-center rounded-full border bg-muted text-foreground'>
               <Icon className='h-4 w-4' aria-hidden='true' />
             </div>
             <div className='ml-4 space-y-1'>
@@ -103,7 +96,7 @@ export function RecentTransactions() {
             <div
               className={cn(
                 'ml-auto text-sm font-medium flex items-center',
-                isIncome ? 'text-emerald-600' : 'text-rose-600',
+                isIncome ? 'text-income' : 'text-expense',
               )}
             >
               {isIncome ? (

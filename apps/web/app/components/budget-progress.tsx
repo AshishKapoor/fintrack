@@ -6,6 +6,7 @@ import { CurrencyDisplay } from '@/components/ui/currency-display'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { Progress } from '@/components/ui/progress'
 import { useCurrentEnvelopeSnapshot } from '@/lib/ledger'
+import { budgetTone, budgetToneFill, budgetToneText } from '@/lib/budget-tone'
 import { cn } from '@/lib/utils'
 import { CircleDollarSign, Plus } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -50,6 +51,7 @@ export function BudgetProgress() {
         const spent = Number(row.spent)
         const limit = Number(row.assigned) + Number(row.carryover)
         const percentage = limit ? Math.round((spent / limit) * 100) : 0
+        const tone = budgetTone(percentage)
 
         return (
           <div key={row.category_id} className='space-y-2'>
@@ -60,24 +62,15 @@ export function BudgetProgress() {
                   <CurrencyDisplay amount={spent} /> of <CurrencyDisplay amount={limit} />
                 </p>
               </div>
-              <p
-                className={cn(
-                  'text-sm font-medium',
-                  percentage >= 100
-                    ? 'text-rose-600'
-                    : percentage >= 85
-                      ? 'text-amber-600'
-                      : 'text-emerald-600',
-                )}
-              >
+              <p className={cn('text-sm font-medium', budgetToneText[tone])}>
                 {percentage}%
               </p>
             </div>
             <Progress
-              value={Math.min(percentage, 100)}
-              className={cn(
-                percentage >= 100 ? 'text-rose-600' : percentage >= 85 ? 'text-amber-600' : '',
-              )}
+              value={percentage}
+              aria-label={`${row.category} budget`}
+              getValueLabel={() => `${percentage}% spent`}
+              indicatorClassName={budgetToneFill[tone]}
             />
           </div>
         )

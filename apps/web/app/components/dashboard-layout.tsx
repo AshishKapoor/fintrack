@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
+import { MobileTabBar } from "@/components/mobile-tab-bar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
@@ -38,6 +39,7 @@ function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex flex-col flex-1 overflow-hidden">
         <TopBar onMenuClick={toggleSidebar} />
         <main className="flex-1 overflow-y-auto">{children}</main>
+        <MobileTabBar />
       </div>
     </div>
   );

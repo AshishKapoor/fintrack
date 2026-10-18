@@ -1,6 +1,9 @@
 'use client'
 
+import { formatDateForApi } from '@/lib/date'
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Plus, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -33,6 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { LoadError } from '@/components/load-error'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -66,6 +70,16 @@ const ACCOUNT_TYPES = [
   { value: 'liability', label: 'Liability' },
 ]
 
+// Catalogue key per account type; ACCOUNT_TYPES keeps the English labels.
+const ACCOUNT_TYPE_KEYS: Record<string, string> = {
+  checking: 'accounts.typeChecking',
+  savings: 'accounts.typeSavings',
+  cash: 'accounts.typeCash',
+  credit: 'accounts.typeCredit',
+  asset: 'accounts.typeAsset',
+  liability: 'accounts.typeLiability',
+}
+
 const STATUS_VARIANT: Record<SyncConnection['status'], 'secondary' | 'destructive' | 'outline'> = {
   active: 'secondary',
   error: 'destructive',
@@ -85,13 +99,34 @@ type AccountForm = {
 const DEBT_TYPES = new Set(['credit', 'liability'])
 
 export default function AccountsPage() {
+  // ?tab= deep-links straight to a tab (the sidebar's Setup entries use it).
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requested = searchParams.get('tab')
+  const tab = requested === 'accounts' || requested === 'bank-sync' ? requested : 'accounts'
+  const setTab = (value: string) => {
+    const next = new URLSearchParams(searchParams)
+    next.set('tab', value)
+    setSearchParams(next, { replace: true })
+  }
+  const { t } = useTranslation()
   const { currency: homeCurrency } = useCurrency()
+  const accountTypeLabel = (value: string) => {
+    const key = ACCOUNT_TYPE_KEYS[value]
+    return key ? t(key) : value
+  }
+  const statusLabel: Record<SyncConnection['status'], string> = {
+    active: t('accounts.statusActive'),
+    error: t('accounts.statusError'),
+    pending: t('accounts.statusPending'),
+    revoked: t('accounts.statusRevoked'),
+  }
 
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [balancesByAccount, setBalancesByAccount] = useState<Record<number, AccountBalanceRow>>({})
   const [netWorth, setNetWorth] = useState<{ total: string; missing_rate: boolean } | null>(null)
   const [connections, setConnections] = useState<SyncConnection[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -112,10 +147,12 @@ export default function AccountsPage() {
 
   const loadAll = async () => {
     try {
+      setLoadFailed(false)
       setLoading(true)
       const [accountRows, balances, connectionRows] = await Promise.all([
         listAccounts(),
-        getBudgetFileBalances(),
+        // As of today, so future-dated entries don't count toward today's balance.
+        getBudgetFileBalances(formatDateForApi(new Date())),
         listSyncConnections(),
       ])
       setAccounts(accountRows)
@@ -125,7 +162,7 @@ export default function AccountsPage() {
       setNetWorth(balances.net_worth)
       setConnections(connectionRows)
     } catch {
-      toast.error('Failed to load accounts')
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -163,7 +200,7 @@ export default function AccountsPage() {
 
   const submitForm = async () => {
     if (!form.name.trim()) {
-      toast.error('Name is required')
+      toast.error(t('accounts.nameRequired'))
       return
     }
     setSaving(true)
@@ -175,10 +212,10 @@ export default function AccountsPage() {
       }
       if (editingId) {
         await updateAccount(editingId, payload)
-        toast.success('Account updated')
+        toast.success(t('accounts.updated'))
       } else {
         await createAccount(payload)
-        toast.success('Account created')
+        toast.success(t('accounts.created'))
       }
       setFormOpen(false)
       await loadAll()
@@ -198,7 +235,7 @@ export default function AccountsPage() {
     if (!deleteTarget) return
     try {
       await deleteAccount(deleteTarget.id)
-      toast.success('Account deleted')
+      toast.success(t('accounts.deleted'))
       setDeleteTarget(null)
       await loadAll()
     } catch {
@@ -210,7 +247,7 @@ export default function AccountsPage() {
     setBusyConnectionId(connection.id)
     try {
       await syncBankConnection(connection.id)
-      toast.success('Sync started')
+      toast.success(t('accounts.syncStarted'))
       await loadAll()
     } catch {
       // toasted
@@ -223,7 +260,7 @@ export default function AccountsPage() {
     setBusyConnectionId(connection.id)
     try {
       await disconnectBankConnection(connection.id)
-      toast.success('Bank connection disconnected')
+      toast.success(t('accounts.connectionDisconnected'))
       await loadAll()
     } finally {
       setBusyConnectionId(null)
@@ -234,7 +271,7 @@ export default function AccountsPage() {
     setBusyConnectionId(connection.id)
     try {
       await deleteBankConnection(connection.id)
-      toast.success('Bank connection removed')
+      toast.success(t('accounts.connectionRemoved'))
       await loadAll()
     } finally {
       setBusyConnectionId(null)
@@ -245,7 +282,7 @@ export default function AccountsPage() {
     setSyncingRates(true)
     try {
       const result = await syncFxRatesNow()
-      toast.success(`Fetched exchange rates for ${result.stored} currencies`)
+      toast.success(t('accounts.ratesFetched', { count: result.stored }))
       await loadAll()
     } catch {
       // toasted by the interceptor
@@ -254,57 +291,69 @@ export default function AccountsPage() {
     }
   }
 
+
+  // A failed load is not an empty list: say so instead of "No ... yet".
+  if (loadFailed) {
+    return (
+      <div className='space-y-4 p-6'>
+        <Typography variant='h2' as='h1'>
+          {t('accounts.title')}
+        </Typography>
+        <LoadError what={t('loadError.accounts')} onRetry={() => void loadAll()} />
+      </div>
+    )
+  }
   return (
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2' as='h1'>Accounts</Typography>
+        <Typography variant='h2' as='h1'>{t('accounts.title')}</Typography>
       </div>
 
-      <Tabs defaultValue='accounts' className='space-y-4'>
+      <Tabs value={tab} onValueChange={setTab} className='space-y-4'>
         <TabsList>
-          <TabsTrigger value='accounts'>Accounts</TabsTrigger>
-          <TabsTrigger value='bank-sync'>Bank Sync</TabsTrigger>
+          <TabsTrigger value='accounts'>{t('accounts.tabAll')}</TabsTrigger>
+          <TabsTrigger value='bank-sync'>{t('accounts.tabBankSync')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value='accounts' className='space-y-4'>
           <Card>
             <CardHeader className='flex flex-row items-center justify-between gap-4 space-y-0'>
               <div>
-                <CardTitle>Your accounts</CardTitle>
+                <CardTitle>{t('accounts.yourAccounts')}</CardTitle>
                 <CardDescription>
                   {netWorth &&
-                    `Net worth: ${formatCurrency(Number(netWorth.total), homeCurrency.code)}${
-                      netWorth.missing_rate ? ' (partial - some balances have no exchange rate yet)' : ''
-                    }`}
+                    t(netWorth.missing_rate ? 'accounts.netWorthPartial' : 'accounts.netWorth', {
+                      amount: formatCurrency(Number(netWorth.total), homeCurrency.code),
+                    })}
                 </CardDescription>
               </div>
               <div className='flex items-center gap-2'>
                 {netWorth?.missing_rate && (
                   <Button variant='outline' size='sm' disabled={syncingRates} onClick={runFxSync}>
                     <RefreshCw className='mr-1 h-3 w-3' />
-                    {syncingRates ? 'Fetching rates…' : 'Fetch exchange rates'}
+                    {syncingRates ? t('accounts.fetchingRates') : t('accounts.fetchRates')}
                   </Button>
                 )}
                 <Button onClick={openCreate}>
-                  <Plus className='mr-1 h-4 w-4' /> Add account
+                  <Plus className='mr-1 h-4 w-4' /> {t('accounts.addAccount')}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
               {!loading && accounts.length === 0 && (
                 <p className='py-8 text-center text-sm text-muted-foreground'>
-                  No accounts yet - add one, or connect a bank from the Bank Sync tab.
+                  {t('accounts.empty')}
                 </p>
               )}
               {accounts.length > 0 && (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Currency</TableHead>
-                      <TableHead className='text-right'>Balance</TableHead>
-                      <TableHead className='text-right'>Actions</TableHead>
+                      <TableHead>{t('accounts.name')}</TableHead>
+                      <TableHead>{t('accounts.type')}</TableHead>
+                      <TableHead>{t('accounts.currency')}</TableHead>
+                      <TableHead className='text-right'>{t('accounts.balance')}</TableHead>
+                      <TableHead className='text-right'>{t('accounts.actions')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -316,7 +365,9 @@ export default function AccountsPage() {
                         <TableRow key={account.id} className={account.is_archived ? 'opacity-50' : undefined}>
                           <TableCell className='font-medium'>{account.name}</TableCell>
                           <TableCell>
-                            <Badge variant='outline'>{account.type}</Badge>
+                            <Badge variant='outline'>
+                              {accountTypeLabel(account.type)}
+                            </Badge>
                           </TableCell>
                           <TableCell>{account.currency_code || homeCurrency.code}</TableCell>
                           <TableCell className='text-right'>
@@ -329,10 +380,10 @@ export default function AccountsPage() {
                           </TableCell>
                           <TableCell className='space-x-1 text-right'>
                             <Button variant='ghost' size='sm' onClick={() => openEdit(account)}>
-                              Edit
+                              {t('accounts.edit')}
                             </Button>
                             <Button variant='ghost' size='sm' onClick={() => toggleArchived(account)}>
-                              {account.is_archived ? 'Unarchive' : 'Archive'}
+                              {account.is_archived ? t('accounts.unarchive') : t('accounts.archive')}
                             </Button>
                             <Button
                               variant='ghost'
@@ -340,7 +391,7 @@ export default function AccountsPage() {
                               className='text-destructive hover:text-destructive'
                               onClick={() => setDeleteTarget(account)}
                             >
-                              Delete
+                              {t('accounts.delete')}
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -357,19 +408,19 @@ export default function AccountsPage() {
           <Card>
             <CardHeader className='flex flex-row items-center justify-between gap-4 space-y-0'>
               <div>
-                <CardTitle>Bank connections</CardTitle>
+                <CardTitle>{t('accounts.bankConnections')}</CardTitle>
                 <CardDescription>
-                  Synced transactions flow through the same dedup and rules as file imports.
+                  {t('accounts.bankConnectionsDescription')}
                 </CardDescription>
               </div>
               <Button onClick={() => setConnectOpen(true)}>
-                <Plus className='mr-1 h-4 w-4' /> Connect a bank
+                <Plus className='mr-1 h-4 w-4' /> {t('accounts.connectBank')}
               </Button>
             </CardHeader>
             <CardContent className='space-y-3'>
               {connections.length === 0 && (
                 <p className='py-8 text-center text-sm text-muted-foreground'>
-                  No bank connections yet.
+                  {t('accounts.noConnections')}
                 </p>
               )}
               {connections.map((connection) => (
@@ -384,10 +435,10 @@ export default function AccountsPage() {
                           ? connection.linked_accounts
                               .map((linked) => linked.account_name || linked.display_name)
                               .join(', ')
-                          : 'No accounts linked'}
+                          : t('accounts.noAccountsLinked')}
                       </div>
                     </div>
-                    <Badge variant={STATUS_VARIANT[connection.status]}>{connection.status}</Badge>
+                    <Badge variant={STATUS_VARIANT[connection.status]}>{statusLabel[connection.status] ?? connection.status}</Badge>
                   </div>
                   {connection.last_error && (
                     <p className='text-xs text-destructive'>{connection.last_error}</p>
@@ -399,7 +450,7 @@ export default function AccountsPage() {
                       disabled={busyConnectionId === connection.id || connection.status !== 'active'}
                       onClick={() => runSync(connection)}
                     >
-                      <RefreshCw className='mr-1 h-3 w-3' /> Sync now
+                      <RefreshCw className='mr-1 h-3 w-3' /> {t('accounts.syncNow')}
                     </Button>
                     {connection.status === 'active' && (
                       <Button
@@ -408,7 +459,7 @@ export default function AccountsPage() {
                         disabled={busyConnectionId === connection.id}
                         onClick={() => runDisconnect(connection)}
                       >
-                        Disconnect
+                        {t('accounts.disconnect')}
                       </Button>
                     )}
                     <Button
@@ -418,7 +469,7 @@ export default function AccountsPage() {
                       disabled={busyConnectionId === connection.id}
                       onClick={() => removeConnection(connection)}
                     >
-                      Remove
+                      {t('accounts.remove')}
                     </Button>
                   </div>
                 </div>
@@ -431,11 +482,11 @@ export default function AccountsPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className='sm:max-w-[420px]'>
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit account' : 'Add account'}</DialogTitle>
+            <DialogTitle>{editingId ? t('accounts.editAccount') : t('accounts.addAccount')}</DialogTitle>
           </DialogHeader>
           <div className='space-y-3'>
             <div className='space-y-1'>
-              <Label htmlFor='account-name'>Name</Label>
+              <Label htmlFor='account-name'>{t('accounts.name')}</Label>
               <Input
                 id='account-name'
                 value={form.name}
@@ -443,7 +494,7 @@ export default function AccountsPage() {
               />
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='account-type'>Type</Label>
+              <Label htmlFor='account-type'>{t('accounts.type')}</Label>
               <Select value={form.type} onValueChange={(value) => setForm((prev) => ({ ...prev, type: value }))}>
                 <SelectTrigger id='account-type'>
                   <SelectValue />
@@ -451,14 +502,14 @@ export default function AccountsPage() {
                 <SelectContent>
                   {ACCOUNT_TYPES.map((item) => (
                     <SelectItem key={item.value} value={item.value}>
-                      {item.label}
+                      {accountTypeLabel(item.value)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='account-opening-balance'>Opening balance</Label>
+              <Label htmlFor='account-opening-balance'>{t('accounts.openingBalance')}</Label>
               <Input
                 id='account-opening-balance'
                 type='number'
@@ -468,7 +519,7 @@ export default function AccountsPage() {
               />
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='account-currency'>Currency</Label>
+              <Label htmlFor='account-currency'>{t('accounts.currency')}</Label>
               <Select
                 value={form.currency_code}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, currency_code: value }))}
@@ -488,41 +539,41 @@ export default function AccountsPage() {
             {DEBT_TYPES.has(form.type) && (
               <>
                 <div className='space-y-1'>
-                  <Label htmlFor='account-interest-rate'>Interest rate (APR %)</Label>
+                  <Label htmlFor='account-interest-rate'>{t('accounts.interestRate')}</Label>
                   <Input
                     id='account-interest-rate'
                     type='number'
                     step='0.01'
                     min='0'
-                    placeholder='e.g. 19.99'
+                    placeholder={t('accounts.interestRatePlaceholder')}
                     value={form.interest_rate}
                     onChange={(e) => setForm((prev) => ({ ...prev, interest_rate: e.target.value }))}
                   />
                 </div>
                 <div className='space-y-1'>
-                  <Label htmlFor='account-minimum-payment'>Minimum payment</Label>
+                  <Label htmlFor='account-minimum-payment'>{t('accounts.minimumPayment')}</Label>
                   <Input
                     id='account-minimum-payment'
                     type='number'
                     step='0.01'
                     min='0'
-                    placeholder='e.g. 25.00'
+                    placeholder={t('accounts.minimumPaymentPlaceholder')}
                     value={form.minimum_payment}
                     onChange={(e) => setForm((prev) => ({ ...prev, minimum_payment: e.target.value }))}
                   />
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  Set both to include this account in debt payoff planning on the Insights page.
+                  {t('accounts.debtHint')}
                 </p>
               </>
             )}
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setFormOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={submitForm} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -531,16 +582,15 @@ export default function AccountsPage() {
       <AlertDialog open={deleteTarget != null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('accounts.deleteTitle', { name: deleteTarget?.name ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
-              This deletes the account and every transaction posted against it. This cannot be
-              undone.
+              {t('accounts.deleteBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
-              Delete
+              {t('accounts.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -282,10 +282,41 @@ Tactile and confident: a definite colour change on hover and a firm 3px focus ri
 - **Semantics:** built as a radio group, not as tabs. Use it when the choice changes the surrounding view. Use real Tabs only when there are panels to switch between.
 
 ### Navigation (sidebar)
-- **Style:** an Oat Paper surface with a right hairline. A `--sidebar` token set to Oat Shade exists, but the sidebar currently renders on `bg-background`. The logo and wordmark sit at the top, Label-style section headers ("Main menu", "Settings") divide the groups, and the footer is separated by a top hairline.
-- **Items:** 14px/500 with a 16px icon, 8px by 12px padding and a 6px radius. Hover shows an Oat Shade wash. The active item gets an Oat Shade fill.
-- **Collapsed:** icons only, centred, at 80px wide.
-- **Mobile:** the same content in a left sheet.
+- **Organised by household task, not by database object.** The sections are:
+  - Home, with no heading.
+  - **Spending:** Transactions, Quick add.
+  - **Plan:** Budgets, Savings goals, Bills & repeating.
+  - Accounts, with no heading.
+  - **Reports:** Reports, Insights.
+  - **Setup:** Categories, Rules, Import, Bank sync, Settings and Change history. Setup sits below a hairline and is visually quieter: chores come last.
+- **Headings:** sentence case at 12px/500 in Umber Muted. Never all caps, never "Main menu".
+- **Items:** 14px/500 with a 16px icon, 8px by 12px padding (12px vertical on touch screens) and a 6px radius. Hover shows an Oat Shade wash. The active item gets an Oat Shade fill and `aria-current="page"`.
+- **Collapsed:** icons only, centred, at 80px wide, with the label kept for screen readers and as a tooltip.
+- **Phone:** a bottom bar with Home · Spending · **+** · Plan · Accounts. The **+** is a 48px Ledger Green disc that opens Quick add in thumb reach. The full list stays in the left sheet, along with the language, colour theme and light/dark preferences.
+
+### Home (signature surface)
+Read top to bottom like a page of the household's books:
+1. **The month in one sentence:** "$210.00 left to spend in October", with the number in tabular figures, and the envelope count and days left beneath it.
+2. **Needs attention:** overspent envelopes, money ready to assign or over-assigned, and bills due within 7 days. Each row links to where you fix it. When nothing needs attention, it says one calm line: "Everything's on plan."
+3. **Envelopes:** what's available in each, sorted so the ones needing attention come first.
+4. **Recent entries:** grouped by day ("Today", "Yesterday", then dates), up to today only, with the payee as the label.
+5. **Net worth:** as of today, with a 12-month sparkline drawn in SVG. Home never loads the chart library.
+
+**The No Dashboard Rule.** Home never becomes a grid of equal stat cards with "% vs previous period". It answers one question, what's left this month, and says the rest in sentences.
+
+### Envelope states
+- **Over:** "$43.00 over" in Expense ink. It is the only red state, and it always has a way forward ("Cover…").
+- **Spent as planned:** a check mark in Umber Muted. A fully spent envelope is done, not over budget by $0.00.
+- **Running low:** under 15% left, with the amount in Caution ink.
+- **Otherwise:** the available amount in Umber Ink.
+
+**The Way Forward Rule.** Any figure shown as a problem links to, or offers, the action that fixes it.
+
+### Error and empty states
+- A failed request renders `LoadError`: what couldn't load, that the data is safe, and a retry. Inside a card it uses `inline` so it never puts a card inside a card.
+- An empty state appears only after a successful empty response.
+
+**The Errors Aren't Empty Rule.** "No transactions yet" after a failed request tells someone their records are gone. Never show it.
 
 ### Money Amount (signature component)
 - **Display:** amounts are always formatted through `CurrencyDisplay` (Intl, the locale's grouping, the currency's own symbol placement) and always set in tabular figures.

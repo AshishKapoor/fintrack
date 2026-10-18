@@ -13,7 +13,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from django.db import transaction
 from django.db.models import Q, Sum, Value
-from django.db.models.functions import Abs, Coalesce, ExtractMonth, ExtractYear
+from django.db.models.functions import Coalesce, ExtractMonth, ExtractYear
 from django.utils import timezone
 
 from .fx_rates import convert_amount
@@ -477,13 +477,14 @@ def compute_subscriptions(budget_file: BudgetFile):
         .exclude(source_type=LedgerTransaction.SOURCE_SCHEDULED)
         .annotate(
             # A ledger transaction has no amount column - see
-            # LedgerTransactionViewSet.get_queryset, whose exact derivation
-            # this mirrors: the category legs' magnitude, split-safe.
-            amount=Abs(
-                Coalesce(
-                    Sum("postings__amount", filter=Q(postings__category__isnull=False)),
-                    Value(Decimal("0.00")),
-                )
+            # LedgerTransactionViewSet.get_queryset. The category legs sum to a
+            # positive amount for spending and a negative one for income, so
+            # the sign is kept: a monthly salary is perfectly regular, but it is
+            # not a recurring *charge*, and taking the magnitude here listed
+            # paychecks as subscriptions.
+            amount=Coalesce(
+                Sum("postings__amount", filter=Q(postings__category__isnull=False)),
+                Value(Decimal("0.00")),
             )
         )
         .filter(amount__gt=Decimal("0.00"))

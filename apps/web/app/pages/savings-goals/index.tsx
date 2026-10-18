@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PiggyBank, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -25,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { LoadError } from '@/components/load-error'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -58,11 +60,13 @@ type GoalForm = {
 const EMPTY_FORM: GoalForm = { account: '', name: '', target_amount: '', target_date: '' }
 
 export default function SavingsGoalsPage() {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
 
   const [goals, setGoals] = useState<SavingsGoal[]>([])
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadFailed, setLoadFailed] = useState(false)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -72,12 +76,13 @@ export default function SavingsGoalsPage() {
 
   const loadAll = async () => {
     try {
+      setLoadFailed(false)
       setLoading(true)
       const [goalRows, accountRows] = await Promise.all([listSavingsGoals(), listAccounts()])
       setGoals(goalRows)
       setAccounts(accountRows.filter((account) => !account.is_archived))
     } catch {
-      toast.error('Failed to load savings goals')
+      setLoadFailed(true)
     } finally {
       setLoading(false)
     }
@@ -106,15 +111,15 @@ export default function SavingsGoalsPage() {
 
   const submitForm = async () => {
     if (!form.name.trim()) {
-      toast.error('Name is required')
+      toast.error(t('savingsGoals.nameRequired'))
       return
     }
     if (!form.account) {
-      toast.error('Choose an account to track')
+      toast.error(t('savingsGoals.accountRequired'))
       return
     }
     if (!(Number(form.target_amount) > 0)) {
-      toast.error('Target amount must be greater than zero')
+      toast.error(t('savingsGoals.targetRequired'))
       return
     }
     setSaving(true)
@@ -127,10 +132,10 @@ export default function SavingsGoalsPage() {
       }
       if (editingId) {
         await updateSavingsGoal(editingId, payload)
-        toast.success('Goal updated')
+        toast.success(t('savingsGoals.updated'))
       } else {
         await createSavingsGoal(payload)
-        toast.success('Goal created')
+        toast.success(t('savingsGoals.created'))
       }
       setFormOpen(false)
       await loadAll()
@@ -145,7 +150,7 @@ export default function SavingsGoalsPage() {
     if (!deleteTarget) return
     try {
       await deleteSavingsGoal(deleteTarget.id)
-      toast.success('Goal deleted')
+      toast.success(t('savingsGoals.deleted'))
       setDeleteTarget(null)
       await loadAll()
     } catch {
@@ -153,12 +158,24 @@ export default function SavingsGoalsPage() {
     }
   }
 
+
+  // A failed load is not an empty list: say so instead of "No ... yet".
+  if (loadFailed) {
+    return (
+      <div className='space-y-4 p-6'>
+        <Typography variant='h2' as='h1'>
+          {t('savingsGoals.title')}
+        </Typography>
+        <LoadError what={t('loadError.savingsGoals')} onRetry={() => void loadAll()} />
+      </div>
+    )
+  }
   return (
     <div className='space-y-4 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2' as='h1'>Savings Goals</Typography>
+        <Typography variant='h2' as='h1'>{t('savingsGoals.title')}</Typography>
         <Button onClick={openCreate}>
-          <Plus className='mr-1 h-4 w-4' /> Add goal
+          <Plus className='mr-1 h-4 w-4' /> {t('savingsGoals.addGoal')}
         </Button>
       </div>
 
@@ -167,11 +184,11 @@ export default function SavingsGoalsPage() {
       ) : goals.length === 0 ? (
         <EmptyPlaceholder
           icon={<PiggyBank className='w-12 h-12' />}
-          title='No savings goals yet'
-          description='Pick an account and a target amount to start tracking progress toward it.'
+          title={t('savingsGoals.emptyTitle')}
+          description={t('savingsGoals.emptyDescription')}
           action={
             <Button onClick={openCreate}>
-              <Plus className='mr-1 h-4 w-4' /> Add goal
+              <Plus className='mr-1 h-4 w-4' /> {t('savingsGoals.addGoal')}
             </Button>
           }
         />
@@ -188,31 +205,34 @@ export default function SavingsGoalsPage() {
                 <CardContent className='space-y-3'>
                   <Progress
                     value={percent}
-                    aria-label={`${goal.name} progress`}
-                    getValueLabel={() => `${percent.toFixed(0)}% of target`}
+                    aria-label={t('savingsGoals.progressLabel', { name: goal.name })}
+                    getValueLabel={() => t('savingsGoals.progressValue', { percent: percent.toFixed(0) })}
                   />
                   <div className='flex items-baseline justify-between text-sm'>
                     <span className='font-medium'>
                       {formatCurrency(Number(goal.current_amount), currency.code)}
                     </span>
                     <span className='text-muted-foreground'>
-                      of {formatCurrency(Number(goal.target_amount), currency.code)} (
-                      {percent.toFixed(0)}%)
+                      {t('savingsGoals.ofTarget', {
+                        target: formatCurrency(Number(goal.target_amount), currency.code),
+                        percent: percent.toFixed(0),
+                      })}
                     </span>
                   </div>
                   {goal.target_date && (
                     <p className='text-xs text-muted-foreground'>
-                      Target date:{' '}
-                      {new Date(`${goal.target_date}T00:00:00`).toLocaleDateString('default', {
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
+                      {t('savingsGoals.targetDateValue', {
+                        date: new Date(`${goal.target_date}T00:00:00`).toLocaleDateString('default', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        }),
                       })}
                     </p>
                   )}
                   <div className='flex justify-end gap-1 pt-1'>
                     <Button variant='ghost' size='sm' onClick={() => openEdit(goal)}>
-                      Edit
+                      {t('savingsGoals.edit')}
                     </Button>
                     <Button
                       variant='ghost'
@@ -220,7 +240,7 @@ export default function SavingsGoalsPage() {
                       className='text-destructive hover:text-destructive'
                       onClick={() => setDeleteTarget(goal)}
                     >
-                      Delete
+                      {t('savingsGoals.delete')}
                     </Button>
                   </div>
                 </CardContent>
@@ -233,26 +253,26 @@ export default function SavingsGoalsPage() {
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className='sm:max-w-[420px]'>
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Edit goal' : 'Add goal'}</DialogTitle>
+            <DialogTitle>{editingId ? t('savingsGoals.editGoal') : t('savingsGoals.addGoal')}</DialogTitle>
           </DialogHeader>
           <div className='space-y-3'>
             <div className='space-y-1'>
-              <Label htmlFor='goal-name'>Name</Label>
+              <Label htmlFor='goal-name'>{t('savingsGoals.name')}</Label>
               <Input
                 id='goal-name'
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder='e.g. Emergency Fund'
+                placeholder={t('savingsGoals.namePlaceholder')}
               />
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='goal-account'>Account</Label>
+              <Label htmlFor='goal-account'>{t('savingsGoals.account')}</Label>
               <Select
                 value={form.account}
                 onValueChange={(value) => setForm((prev) => ({ ...prev, account: value }))}
               >
                 <SelectTrigger id='goal-account'>
-                  <SelectValue placeholder='Which account tracks this goal?' />
+                  <SelectValue placeholder={t('savingsGoals.accountPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((account) => (
@@ -264,7 +284,7 @@ export default function SavingsGoalsPage() {
               </Select>
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='goal-target-amount'>Target amount</Label>
+              <Label htmlFor='goal-target-amount'>{t('savingsGoals.targetAmount')}</Label>
               <Input
                 id='goal-target-amount'
                 type='number'
@@ -275,7 +295,7 @@ export default function SavingsGoalsPage() {
               />
             </div>
             <div className='space-y-1'>
-              <Label htmlFor='goal-target-date'>Target date (optional)</Label>
+              <Label htmlFor='goal-target-date'>{t('savingsGoals.targetDate')}</Label>
               <Input
                 id='goal-target-date'
                 type='date'
@@ -286,10 +306,10 @@ export default function SavingsGoalsPage() {
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setFormOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={submitForm} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -298,15 +318,15 @@ export default function SavingsGoalsPage() {
       <AlertDialog open={deleteTarget != null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogTitle>{t('savingsGoals.deleteTitle', { name: deleteTarget?.name })}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the goal. It does not affect the account or its transactions.
+              {t('savingsGoals.deleteDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className='bg-destructive text-destructive-foreground hover:bg-destructive/90'>
-              Delete
+              {t('savingsGoals.delete')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

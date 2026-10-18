@@ -50,7 +50,7 @@ export function AddTransactionDialog({
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  // The visible "Add Transaction" button lives in the parent page, not inside
+  // The visible "Add transaction" button lives in the parent page, not inside
   // this Dialog's tree, so Radix has no DialogTrigger to return focus to on
   // close - onCloseAutoFocus below does that restoration by hand.
   triggerRef?: RefObject<HTMLButtonElement | null>
@@ -110,12 +110,12 @@ export function AddTransactionDialog({
         postings: buildSplitPostings(accountId, effectiveSplits, kind),
       } as never)
       await refreshLedger()
-      toast.success('Transaction created successfully')
+      toast.success(t('addTransaction.created'))
       onOpenChange(false)
       resetForm()
     } catch (err) {
       console.error('Failed to create transaction:', err)
-      toast.error('Failed to create transaction')
+      toast.error(t('addTransaction.createFailed'))
     } finally {
       setSaving(false)
     }
@@ -161,12 +161,12 @@ export function AddTransactionDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Transaction</DialogTitle>
-          <DialogDescription>Enter the details of your transaction below.</DialogDescription>
+          <DialogTitle>{t('addTransaction.title')}</DialogTitle>
+          <DialogDescription>{t('addTransaction.description')}</DialogDescription>
         </DialogHeader>
         <div className='grid gap-4 py-4'>
           <div className='grid gap-2'>
-            <Label htmlFor='transaction-type'>Transaction Type</Label>
+            <Label htmlFor='transaction-type'>{t('addTransaction.type')}</Label>
             <RadioGroup
               id='transaction-type'
               value={kind}
@@ -180,22 +180,22 @@ export function AddTransactionDialog({
               <div className='flex items-center space-x-2'>
                 <RadioGroupItem value='expense' id='expense' />
                 <Label htmlFor='expense' className='cursor-pointer'>
-                  Expense
+                  {t('addTransaction.expense')}
                 </Label>
               </div>
               <div className='flex items-center space-x-2'>
                 <RadioGroupItem value='income' id='income' />
                 <Label htmlFor='income' className='cursor-pointer'>
-                  Income
+                  {t('addTransaction.income')}
                 </Label>
               </div>
             </RadioGroup>
           </div>
           <div className='grid gap-2'>
-            <Label htmlFor='title'>Title</Label>
+            <Label htmlFor='title'>{t('addTransaction.titleLabel')}</Label>
             <Input
               id='title'
-              placeholder='e.g., Grocery Shopping'
+              placeholder={t('addTransaction.titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -209,7 +209,7 @@ export function AddTransactionDialog({
             />
           </div>
           <div className='grid gap-2'>
-            <Label htmlFor='amount'>Amount</Label>
+            <Label htmlFor='amount'>{t('addTransaction.amount')}</Label>
             <Input
               id='amount'
               type='number'
@@ -235,10 +235,10 @@ export function AddTransactionDialog({
             />
           ) : (
             <div className='grid gap-2'>
-              <Label htmlFor='category'>Category</Label>
+              <Label htmlFor='category'>{t('addTransaction.category')}</Label>
               <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                 <SelectTrigger id='category'>
-                  <SelectValue placeholder='Select a category' />
+                  <SelectValue placeholder={t('addTransaction.categoryPlaceholder')} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredCategories.map((category) => (
@@ -251,7 +251,7 @@ export function AddTransactionDialog({
             </div>
           )}
           <div className='grid gap-2'>
-            <Label htmlFor='date'>Date</Label>
+            <Label htmlFor='date'>{t('addTransaction.date')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -263,7 +263,7 @@ export function AddTransactionDialog({
                   )}
                 >
                   <CalendarIcon className='mr-2 h-4 w-4' />
-                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  {date ? format(date, 'PPP') : <span>{t('addTransaction.pickDate')}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-auto p-0'>
@@ -274,10 +274,10 @@ export function AddTransactionDialog({
         </div>
         <DialogFooter>
           <Button variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type='submit' onClick={handleCreateTransaction} disabled={!canSave}>
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? t('addTransaction.saving') : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>

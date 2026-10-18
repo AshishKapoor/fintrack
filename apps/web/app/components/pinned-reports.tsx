@@ -1,16 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { Pin, Play } from 'lucide-react'
 import { toast } from 'sonner'
 
 import { listSavedReports, runSavedReport, type SavedReport } from '@/lib/finance-client'
+import { LoadError } from '@/components/load-error'
 import { Button } from '@/components/ui/button'
 
 export function PinnedReports() {
+  const { t } = useTranslation()
   const [reports, setReports] = useState<SavedReport[]>([])
   const [runningId, setRunningId] = useState<number | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let canceled = false
@@ -18,9 +22,12 @@ export function PinnedReports() {
     const load = async () => {
       try {
         const rows = await listSavedReports({ pinned: true })
-        if (!canceled) setReports(rows)
+        if (!canceled) {
+          setReports(rows)
+          setLoadFailed(false)
+        }
       } catch {
-        if (!canceled) toast.error('Failed to load pinned reports')
+        if (!canceled) setLoadFailed(true)
       }
     }
 
@@ -28,16 +35,23 @@ export function PinnedReports() {
     return () => {
       canceled = true
     }
-  }, [])
+  }, [attempt])
+
+  if (loadFailed) {
+    return (
+      <LoadError
+        inline
+        what={t('loadError.pinnedReports')}
+        onRetry={() => setAttempt((n) => n + 1)}
+      />
+    )
+  }
 
   if (!reports.length) {
     return (
-      <div className='space-y-2'>
-        <p className='text-sm text-muted-foreground'>No pinned reports yet.</p>
-        <Button asChild variant='outline' size='sm'>
-          <Link to='/reports'>Open Reports</Link>
-        </Button>
-      </div>
+      <p className='text-sm text-muted-foreground'>
+        {t('pinnedReports.empty')}
+      </p>
     )
   }
 
@@ -58,23 +72,20 @@ export function PinnedReports() {
                 try {
                   setRunningId(report.id)
                   await runSavedReport(report.id)
-                  toast.success(`Ran ${report.name}`)
+                  toast.success(t('pinnedReports.ran', { name: report.name }))
                 } catch {
-                  toast.error('Failed to run report')
+                  toast.error(t('pinnedReports.runFailed'))
                 } finally {
                   setRunningId(null)
                 }
               }}
             >
               <Play className='mr-1 h-3 w-3' />
-              Run
+              {t('pinnedReports.run')}
             </Button>
           </div>
         </div>
       ))}
-      <Button asChild variant='ghost' size='sm'>
-        <Link to='/reports'>Manage Reports</Link>
-      </Button>
     </div>
   )
 }

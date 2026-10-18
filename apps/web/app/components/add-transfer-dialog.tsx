@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { createTransferTransaction, listAccounts, type FinanceAccount } from '@/lib/finance-client'
@@ -38,6 +39,7 @@ export function AddTransferDialog({
   onOpenChange: (open: boolean) => void
   onCreated?: () => void
 }) {
+  const { t } = useTranslation()
   const [accounts, setAccounts] = useState<FinanceAccount[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [fromAccountId, setFromAccountId] = useState('')
@@ -63,7 +65,7 @@ export function AddTransferDialog({
         }
       } catch {
         if (!cancelled) {
-          toast.error('Failed to load accounts for transfer')
+          toast.error(t('addTransfer.loadAccountsFailed'))
         }
       } finally {
         if (!cancelled) setIsLoading(false)
@@ -74,7 +76,7 @@ export function AddTransferDialog({
     return () => {
       cancelled = true
     }
-  }, [open])
+  }, [open, t])
 
   const reset = () => {
     setAmount('')
@@ -85,11 +87,11 @@ export function AddTransferDialog({
   const handleCreateTransfer = async () => {
     const parsedAmount = Number(amount)
     if (!fromAccountId || !toAccountId || !parsedAmount || parsedAmount <= 0) {
-      toast.error('Select source/destination accounts and a valid amount')
+      toast.error(t('addTransfer.invalidInput'))
       return
     }
     if (fromAccountId === toAccountId) {
-      toast.error('Source and destination accounts must be different')
+      toast.error(t('addTransfer.sameAccount'))
       return
     }
 
@@ -101,12 +103,12 @@ export function AddTransferDialog({
         transactionDate: format(transferDate, 'yyyy-MM-dd'),
         memo: memo.trim() || `Transfer ${parsedAmount.toFixed(2)}`,
       })
-      toast.success('Transfer created')
+      toast.success(t('addTransfer.created'))
       onCreated?.()
       onOpenChange(false)
       reset()
     } catch {
-      toast.error('Failed to create transfer')
+      toast.error(t('addTransfer.createFailed'))
     }
   }
 
@@ -114,18 +116,18 @@ export function AddTransferDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-[480px]'>
         <DialogHeader>
-          <DialogTitle>Add Transfer</DialogTitle>
+          <DialogTitle>{t('addTransfer.title')}</DialogTitle>
           <DialogDescription>
-            Create a paired transfer between two accounts with one balanced ledger transaction.
+            {t('addTransfer.description')}
           </DialogDescription>
         </DialogHeader>
 
         <div className='grid gap-4 py-2'>
           <div className='grid gap-2'>
-            <Label htmlFor='transfer-from'>From account</Label>
+            <Label htmlFor='transfer-from'>{t('addTransfer.fromAccount')}</Label>
             <Select value={fromAccountId} onValueChange={setFromAccountId}>
               <SelectTrigger id='transfer-from'>
-                <SelectValue placeholder='Select source account' />
+                <SelectValue placeholder={t('addTransfer.fromPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((account) => (
@@ -138,10 +140,10 @@ export function AddTransferDialog({
           </div>
 
           <div className='grid gap-2'>
-            <Label htmlFor='transfer-to'>To account</Label>
+            <Label htmlFor='transfer-to'>{t('addTransfer.toAccount')}</Label>
             <Select value={toAccountId} onValueChange={setToAccountId}>
               <SelectTrigger id='transfer-to'>
-                <SelectValue placeholder='Select destination account' />
+                <SelectValue placeholder={t('addTransfer.toPlaceholder')} />
               </SelectTrigger>
               <SelectContent>
                 {accounts.map((account) => (
@@ -154,7 +156,7 @@ export function AddTransferDialog({
           </div>
 
           <div className='grid gap-2'>
-            <Label htmlFor='transfer-amount'>Amount</Label>
+            <Label htmlFor='transfer-amount'>{t('addTransfer.amount')}</Label>
             <Input
               id='transfer-amount'
               type='number'
@@ -167,7 +169,7 @@ export function AddTransferDialog({
           </div>
 
           <div className='grid gap-2'>
-            <Label htmlFor='transfer-date'>Date</Label>
+            <Label htmlFor='transfer-date'>{t('addTransfer.date')}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -176,7 +178,7 @@ export function AddTransferDialog({
                   className={cn('justify-start text-left font-normal', !transferDate && 'text-muted-foreground')}
                 >
                   <CalendarIcon className='mr-2 h-4 w-4' />
-                  {transferDate ? format(transferDate, 'PPP') : 'Pick a date'}
+                  {transferDate ? format(transferDate, 'PPP') : t('addTransfer.pickDate')}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-auto p-0' align='start'>
@@ -186,10 +188,10 @@ export function AddTransferDialog({
           </div>
 
           <div className='grid gap-2'>
-            <Label htmlFor='transfer-memo'>Memo</Label>
+            <Label htmlFor='transfer-memo'>{t('addTransfer.memo')}</Label>
             <Input
               id='transfer-memo'
-              placeholder='Optional memo'
+              placeholder={t('addTransfer.memoPlaceholder')}
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
             />
@@ -198,10 +200,10 @@ export function AddTransferDialog({
 
         <DialogFooter>
           <Button variant='outline' onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={handleCreateTransfer} disabled={isLoading}>
-            Create Transfer
+            {t('addTransfer.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>

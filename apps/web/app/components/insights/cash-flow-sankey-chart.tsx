@@ -1,9 +1,11 @@
 'use client'
 
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Sankey, Rectangle } from 'recharts'
 import { Waves } from 'lucide-react'
 
+import { LoadError } from '@/components/load-error'
 import { ChartConfig, ChartContainer } from '@/components/ui/chart'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
@@ -148,8 +150,9 @@ function SankeyLinkShape(props: {
 }
 
 export function CashFlowSankeyChart({ startDate, endDate, topN }: CashFlowSankeyChartProps) {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
-  const { data, isLoading } = useCashFlowSankey(startDate, endDate, topN)
+  const { data, isLoading, error, mutate } = useCashFlowSankey(startDate, endDate, topN)
 
   const chartData = useMemo(() => toChartData(data?.nodes ?? [], data?.links ?? []), [data])
 
@@ -157,12 +160,16 @@ export function CashFlowSankeyChart({ startDate, endDate, topN }: CashFlowSankey
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
+  }
+
   if (!chartData.nodes.length) {
     return (
       <EmptyPlaceholder
         icon={<Waves className='w-12 h-12' />}
-        title='No cash flow to diagram yet'
-        description='Add some income and expense transactions to see how money moves through your budget.'
+        title={t('insights.cashFlowEmptyTitle')}
+        description={t('insights.cashFlowEmptyDescription')}
       />
     )
   }

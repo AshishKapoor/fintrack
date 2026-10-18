@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { PieChart as PieChartIcon } from 'lucide-react'
 
@@ -11,6 +12,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { LoadError } from '@/components/load-error'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { AnimateSpinner } from '@/components/spinner'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -64,9 +66,10 @@ function CategoryLegend({ payload }: { payload?: Array<{ value?: string; color?:
 }
 
 export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartProps) {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
   const [view, setView] = useState<'chart' | 'table'>('chart')
-  const { data, isLoading } = useSpendingTrends(startDate, endDate)
+  const { data, isLoading, error, mutate } = useSpendingTrends(startDate, endDate)
 
   const { points, categories } = useMemo(
     () => pivotCategoryTrends(data?.rows ?? [], 6),
@@ -86,12 +89,16 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     return <AnimateSpinner size={48} />
   }
 
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
+  }
+
   if (!points.length) {
     return (
       <EmptyPlaceholder
         icon={<PieChartIcon className='w-12 h-12' />}
-        title='No spending to compare yet'
-        description='Add expense transactions across a couple of months to see how your spending shifts by category.'
+        title={t('insights.categoryEmptyTitle')}
+        description={t('insights.categoryEmptyDescription')}
       />
     )
   }
@@ -100,8 +107,8 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
     <Tabs value={view} onValueChange={(value) => setView(value as 'chart' | 'table')}>
       <div className='flex justify-end'>
         <TabsList>
-          <TabsTrigger value='chart'>Chart</TabsTrigger>
-          <TabsTrigger value='table'>Table</TabsTrigger>
+          <TabsTrigger value='chart'>{t('insights.viewChart')}</TabsTrigger>
+          <TabsTrigger value='table'>{t('insights.viewTable')}</TabsTrigger>
         </TabsList>
       </div>
 
@@ -143,10 +150,10 @@ export function CategoryTrendsChart({ startDate, endDate }: CategoryTrendsChartP
 
       <TabsContent value='table'>
         <div className='overflow-x-auto'>
-          <Table scrollLabel='Spending by category and month'>
+          <Table scrollLabel={t('insights.categoryTableLabel')}>
             <TableHeader>
               <TableRow>
-                <TableHead>Period</TableHead>
+                <TableHead>{t('insights.period')}</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className='text-right'>
                     {category}

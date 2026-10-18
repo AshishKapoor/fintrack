@@ -33,7 +33,7 @@ test('back up, wipe, restore', async ({ page }) => {
 
   await test.step('add a transaction worth backing up', async () => {
     await page.goto('/transactions')
-    await page.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await page.getByRole('button', { name: 'Add transaction' }).first().click()
     await page.locator('#title').fill('Precious data')
     await page.locator('#amount').fill('99.99')
     await page.locator('#category').click()

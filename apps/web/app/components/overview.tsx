@@ -1,5 +1,7 @@
 'use client'
 
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts'
 import {
   ChartConfig,
@@ -7,6 +9,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
+import { LoadError } from '@/components/load-error'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { CircleDollarSign } from 'lucide-react'
 import { formatCurrency, useCurrency } from '@/context/currency-context'
@@ -36,13 +39,26 @@ interface OverviewProps {
 }
 
 export function Overview({ startDate, endDate }: OverviewProps) {
+  const { t } = useTranslation()
   const { currency } = useCurrency()
+  const localizedChartConfig = useMemo(
+    () =>
+      ({
+        income: { ...chartConfig.income, label: t('overview.income') },
+        expenses: { ...chartConfig.expenses, label: t('overview.expenses') },
+      }) satisfies ChartConfig,
+    [t],
+  )
   // Server-side monthly series over the whole range - the previous version
   // bucketed a (paginated) transaction list in the browser.
-  const { data, isLoading } = useMonthlyCashFlow(startDate, endDate)
+  const { data, isLoading, error, mutate } = useMonthlyCashFlow(startDate, endDate)
 
   if (isLoading) {
     return <AnimateSpinner size={48} />
+  }
+
+  if (error && !data) {
+    return <LoadError inline what={t('loadError.chart')} onRetry={() => void mutate()} />
   }
 
   const rows = data?.rows ?? []
@@ -51,8 +67,8 @@ export function Overview({ startDate, endDate }: OverviewProps) {
     return (
       <EmptyPlaceholder
         icon={<CircleDollarSign className='w-12 h-12' />}
-        title='No data to visualize'
-        description='Add some transactions to see your financial overview here.'
+        title={t('overview.emptyTitle')}
+        description={t('overview.emptyDescription')}
       />
     )
   }
@@ -60,14 +76,14 @@ export function Overview({ startDate, endDate }: OverviewProps) {
   const sortedData: MonthlyData[] = rows.slice(-6).map((row) => ({
     name: new Date(row.year, row.month - 1, 1).toLocaleString('default', {
       month: 'short',
-      year: '2-digit',
+      year: 'numeric',
     }),
     income: Number(row.income),
     expenses: Number(row.expenses),
   }))
 
   return (
-    <ChartContainer config={chartConfig}>
+    <ChartContainer config={localizedChartConfig}>
       <BarChart
         data={sortedData}
         margin={{
@@ -79,10 +95,10 @@ export function Overview({ startDate, endDate }: OverviewProps) {
           dataKey='name'
           tickMargin={10}
           fontSize={12}
-          label={{ value: 'Months', position: 'right', offset: 0 }}
+          label={{ value: t('overview.months'), position: 'right', offset: 0 }}
         />
         <YAxis
-          label={{ value: `Amount (${currency.symbol})`, angle: -90, position: 'left' }}
+          label={{ value: t('overview.amountAxis', { symbol: currency.symbol }), angle: -90, position: 'left' }}
           tickFormatter={(value) => formatCurrency(Number(value), currency.code, { maximumFractionDigits: 0 })}
         />
         <ChartTooltip
@@ -92,7 +108,7 @@ export function Overview({ startDate, endDate }: OverviewProps) {
               active={active}
               payload={payload}
               formatter={(label, value) => [`${value} - ${formatCurrency(Number(label), currency.code)}`, ' ']}
-              labelFormatter={() => `Total:`}
+              labelFormatter={() => t('overview.total')}
             />
           )}
         />
@@ -102,9 +118,9 @@ export function Overview({ startDate, endDate }: OverviewProps) {
           radius={[4, 4, 0, 0]}
           label={{
             position: 'top',
-            formatter: (value: number) => `Income ${formatCurrency(value, currency.code)}`,
+            formatter: (value: number) => t('overview.incomeLabel', { amount: formatCurrency(value, currency.code) }),
           }}
-          name='Income'
+          name={t('overview.income')}
         />
         <Bar
           dataKey='expenses'
@@ -112,9 +128,9 @@ export function Overview({ startDate, endDate }: OverviewProps) {
           radius={[4, 4, 0, 0]}
           label={{
             position: 'top',
-            formatter: (value: number) => `Expenses ${formatCurrency(value, currency.code)}`,
+            formatter: (value: number) => t('overview.expensesLabel', { amount: formatCurrency(value, currency.code) }),
           }}
-          name='Expenses'
+          name={t('overview.expenses')}
         />
         <Legend />
       </BarChart>

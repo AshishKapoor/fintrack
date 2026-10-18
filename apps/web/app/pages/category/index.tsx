@@ -3,6 +3,7 @@
 import { useAllCategories } from '@/lib/finance-lists'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowDownIcon, ArrowUpIcon, Edit, FolderIcon, Plus, Trash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,10 +34,12 @@ import {
 } from '@/client/gen/pft/v1/v1'
 import { getDefaultBudgetFileId } from '@/lib/finance-client'
 import { AnimateSpinner } from '@/components/spinner'
+import { LoadError } from '@/components/load-error'
 import { EmptyPlaceholder } from '@/components/ui/empty-placeholder'
 import { toast } from 'sonner'
 
 export default function CategoriesPage() {
+  const { t } = useTranslation()
   const [showAddCategory, setShowAddCategory] = useState(false)
   const [categoryType, setCategoryType] = useState<'income' | 'expense'>('expense')
   const [categoryName, setCategoryName] = useState('')
@@ -46,7 +49,12 @@ export default function CategoriesPage() {
     type: 'income' | 'expense'
   } | null>(null)
 
-  const { data: categories, isLoading, mutate: refreshCategories } = useAllCategories()
+  const {
+    data: categories,
+    isLoading,
+    error: categoriesError,
+    mutate: refreshCategories,
+  } = useAllCategories()
 
   // Native ledger categories: the classification field is `kind`. Adapt to the
   // page's existing `type` vocabulary at the boundary.
@@ -65,13 +73,13 @@ export default function CategoriesPage() {
         name: categoryName,
         kind: categoryType,
       })
-      toast.success('Category created successfully')
+      toast.success(t('categories.created'))
       setShowAddCategory(false)
       setCategoryName('')
       refreshCategories()
     } catch (err) {
       console.error('Failed to create category:', err)
-      toast.error('Failed to create category')
+      toast.error(t('categories.createFailed'))
     }
   }
 
@@ -84,23 +92,23 @@ export default function CategoriesPage() {
         name: editingCategory.name,
         kind: editingCategory.type,
       })
-      toast.success('Category updated successfully')
+      toast.success(t('categories.updated'))
       setEditingCategory(null)
       refreshCategories()
     } catch (err) {
       console.error('Failed to update category:', err)
-      toast.error('Failed to update category')
+      toast.error(t('categories.updateFailed'))
     }
   }
 
   const handleDeleteCategory = async (categoryId: number) => {
     try {
       await v1FinanceCategoriesDestroy(categoryId.toString())
-      toast.success('Category deleted successfully')
+      toast.success(t('categories.deleted'))
       refreshCategories()
     } catch (err) {
       console.error('Failed to delete category:', err)
-      toast.error('Failed to delete category')
+      toast.error(t('categories.deleteFailed'))
     }
   }
 
@@ -108,30 +116,41 @@ export default function CategoriesPage() {
     return <AnimateSpinner size={64} />
   }
 
+  if (categoriesError && !categories) {
+    return (
+      <div className='space-y-4 p-6'>
+        <Typography variant='h2' as='h1'>
+          {t('categories.title')}
+        </Typography>
+        <LoadError what={t('loadError.categories')} onRetry={() => void refreshCategories()} />
+      </div>
+    )
+  }
+
   if (!categoriesList?.length) {
     return (
       <div className='p-6'>
         <EmptyPlaceholder
           icon={<FolderIcon className='w-12 h-12' />}
-          title='No categories yet'
-          description='Categories help you organize your transactions. Create your first category to get started!'
+          title={t('categories.emptyTitle')}
+          description={t('categories.emptyDescription')}
           action={
             <Button onClick={() => setShowAddCategory(true)}>
-              <Plus className='mr-2 h-4 w-4' /> Create Category
+              <Plus className='mr-2 h-4 w-4' /> {t('categories.createCategory')}
             </Button>
           }
         />
         <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
           <DialogContent className='sm:max-w-[425px]'>
             <DialogHeader>
-              <DialogTitle>Category</DialogTitle>
+              <DialogTitle>{t('categories.dialogTitle')}</DialogTitle>
               <DialogDescription>
-                Create a new category for organizing your transactions.
+                {t('categories.dialogDescription')}
               </DialogDescription>
             </DialogHeader>
             <div className='grid gap-4 py-4'>
               <div className='grid gap-2'>
-                <Label htmlFor='category-type'>Category Type</Label>
+                <Label htmlFor='category-type'>{t('categories.categoryType')}</Label>
                 <RadioGroup
                   id='category-type'
                   value={categoryType}
@@ -141,33 +160,33 @@ export default function CategoriesPage() {
                   <div className='flex items-center space-x-2'>
                     <RadioGroupItem value='expense' id='expense-type' />
                     <Label htmlFor='expense-type' className='cursor-pointer'>
-                      Expense
+                      {t('categories.expense')}
                     </Label>
                   </div>
                   <div className='flex items-center space-x-2 ml-4'>
                     <RadioGroupItem value='income' id='income-type' />
                     <Label htmlFor='income-type' className='cursor-pointer'>
-                      Income
+                      {t('categories.income')}
                     </Label>
                   </div>
                 </RadioGroup>
               </div>
               <div className='grid gap-2'>
-                <Label htmlFor='name'>Category Name</Label>
+                <Label htmlFor='name'>{t('categories.categoryName')}</Label>
                 <Input
                   id='name'
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
-                  placeholder='e.g., Groceries'
+                  placeholder={t('categories.namePlaceholder')}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button variant='outline' onClick={() => setShowAddCategory(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type='submit' onClick={handleCreateCategory}>
-                Save
+                {t('common.save')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -179,21 +198,21 @@ export default function CategoriesPage() {
   return (
     <div className='space-y-6 p-6'>
       <div className='flex items-center justify-between'>
-        <Typography variant='h2' as='h1'>Categories</Typography>
-        <Button onClick={() => setShowAddCategory(true)}>Add Category</Button>
+        <Typography variant='h2' as='h1'>{t('categories.title')}</Typography>
+        <Button onClick={() => setShowAddCategory(true)}>{t('categories.addCategory')}</Button>
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
         <Card>
           <CardHeader>
-            <CardTitle>Expense Categories</CardTitle>
-            <CardDescription>Categories for tracking your spending</CardDescription>
+            <CardTitle>{t('categories.expenseTitle')}</CardTitle>
+            <CardDescription>{t('categories.expenseDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>{t('categories.name')}</TableHead>
                   <TableHead className='w-[100px]'></TableHead>
                 </TableRow>
               </TableHeader>
@@ -217,7 +236,7 @@ export default function CategoriesPage() {
                             onClick={() => setEditingCategory(category)}
                           >
                             <Edit className='h-4 w-4' />
-                            <span className='sr-only'>Edit</span>
+                            <span className='sr-only'>{t('categories.edit')}</span>
                           </Button>
                           <Button
                             variant='ghost'
@@ -226,7 +245,7 @@ export default function CategoriesPage() {
                             onClick={() => handleDeleteCategory(category.id)}
                           >
                             <Trash className='h-4 w-4' />
-                            <span className='sr-only'>Delete</span>
+                            <span className='sr-only'>{t('categories.delete')}</span>
                           </Button>
                         </div>
                       </TableCell>
@@ -239,14 +258,14 @@ export default function CategoriesPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Income Categories</CardTitle>
-            <CardDescription>Categories for tracking your earnings</CardDescription>
+            <CardTitle>{t('categories.incomeTitle')}</CardTitle>
+            <CardDescription>{t('categories.incomeDescription')}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead>{t('categories.name')}</TableHead>
                   <TableHead className='w-[100px]'></TableHead>
                 </TableRow>
               </TableHeader>
@@ -270,7 +289,7 @@ export default function CategoriesPage() {
                             onClick={() => setEditingCategory(category)}
                           >
                             <Edit className='h-4 w-4' />
-                            <span className='sr-only'>Edit</span>
+                            <span className='sr-only'>{t('categories.edit')}</span>
                           </Button>
                           <Button
                             variant='ghost'
@@ -279,7 +298,7 @@ export default function CategoriesPage() {
                             onClick={() => handleDeleteCategory(category.id)}
                           >
                             <Trash className='h-4 w-4' />
-                            <span className='sr-only'>Delete</span>
+                            <span className='sr-only'>{t('categories.delete')}</span>
                           </Button>
                         </div>
                       </TableCell>
@@ -295,14 +314,14 @@ export default function CategoriesPage() {
       <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
         <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
-            <DialogTitle>Category</DialogTitle>
+            <DialogTitle>{t('categories.dialogTitle')}</DialogTitle>
             <DialogDescription>
-              Create a new category for organizing your transactions.
+              {t('categories.dialogDescription')}
             </DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='grid gap-2'>
-              <Label htmlFor='category-type'>Category Type</Label>
+              <Label htmlFor='category-type'>{t('categories.categoryType')}</Label>
               <RadioGroup
                 id='category-type'
                 value={categoryType}
@@ -312,33 +331,33 @@ export default function CategoriesPage() {
                 <div className='flex items-center space-x-2'>
                   <RadioGroupItem value='expense' id='expense-type' />
                   <Label htmlFor='expense-type' className='cursor-pointer'>
-                    Expense
+                    {t('categories.expense')}
                   </Label>
                 </div>
                 <div className='flex items-center space-x-2 ml-4'>
                   <RadioGroupItem value='income' id='income-type' />
                   <Label htmlFor='income-type' className='cursor-pointer'>
-                    Income
+                    {t('categories.income')}
                   </Label>
                 </div>
               </RadioGroup>
             </div>
             <div className='grid gap-2'>
-              <Label htmlFor='name'>Category Name</Label>
+              <Label htmlFor='name'>{t('categories.categoryName')}</Label>
               <Input
                 id='name'
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
-                placeholder='e.g., Groceries'
+                placeholder={t('categories.namePlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setShowAddCategory(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type='submit' onClick={handleCreateCategory}>
-              Save
+              {t('common.save')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -348,12 +367,12 @@ export default function CategoriesPage() {
       <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
         <DialogContent className='sm:max-w-[425px]'>
           <DialogHeader>
-            <DialogTitle>Edit Category</DialogTitle>
-            <DialogDescription>Update the category details.</DialogDescription>
+            <DialogTitle>{t('categories.editTitle')}</DialogTitle>
+            <DialogDescription>{t('categories.editDescription')}</DialogDescription>
           </DialogHeader>
           <div className='grid gap-4 py-4'>
             <div className='grid gap-2'>
-              <Label htmlFor='edit-category-type'>Category Type</Label>
+              <Label htmlFor='edit-category-type'>{t('categories.categoryType')}</Label>
               <RadioGroup
                 id='edit-category-type'
                 value={editingCategory?.type}
@@ -365,35 +384,35 @@ export default function CategoriesPage() {
                 <div className='flex items-center space-x-2'>
                   <RadioGroupItem value='expense' id='edit-expense-type' />
                   <Label htmlFor='edit-expense-type' className='cursor-pointer'>
-                    Expense
+                    {t('categories.expense')}
                   </Label>
                 </div>
                 <div className='flex items-center space-x-2 ml-4'>
                   <RadioGroupItem value='income' id='edit-income-type' />
                   <Label htmlFor='edit-income-type' className='cursor-pointer'>
-                    Income
+                    {t('categories.income')}
                   </Label>
                 </div>
               </RadioGroup>
             </div>
             <div className='grid gap-2'>
-              <Label htmlFor='edit-name'>Category Name</Label>
+              <Label htmlFor='edit-name'>{t('categories.categoryName')}</Label>
               <Input
                 id='edit-name'
                 value={editingCategory?.name || ''}
                 onChange={(e) =>
                   setEditingCategory((prev) => (prev ? { ...prev, name: e.target.value } : null))
                 }
-                placeholder='e.g., Groceries'
+                placeholder={t('categories.namePlaceholder')}
               />
             </div>
           </div>
           <DialogFooter>
             <Button variant='outline' onClick={() => setEditingCategory(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type='submit' onClick={handleUpdateCategory}>
-              Update Category
+              {t('categories.updateCategory')}
             </Button>
           </DialogFooter>
         </DialogContent>

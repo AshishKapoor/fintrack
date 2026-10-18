@@ -62,6 +62,7 @@ FinTrack declines the trade-offs other open-source trackers force:
   - Opt-in AI categorization through the user's own API key or a local Ollama endpoint. Off by default and never required.
   - Real multi-currency: per-account currency, daily ECB rates, converted balances. A missing rate shows as unavailable, never as a wrong number.
   - An audit log, light and dark mode, and English and Spanish via react-i18next and Django gettext.
+- **Rules:** a rule can add to a transaction's note, mark it cleared or imported, and add tags. It cannot set a category. Categories come from payee suggestions and the opt-in AI categoriser. Copy must not describe rules as "auto-categorising".
 - Non-goals: native mobile apps, hosted SaaS, Plaid-first bank sync, investment portfolio tracking (Ghostfolio is the recommended tool for that).
 - There are no pre-seeded accounts. The first registered user owns the instance.
 - Open items needing accounts only the maintainer can create:

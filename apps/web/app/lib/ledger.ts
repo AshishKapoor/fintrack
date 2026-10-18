@@ -13,7 +13,12 @@ import {
   v1FinanceEnvelopeAssignmentsPartialUpdate,
   v1FinanceReportsRunCreate,
 } from '@/client/gen/pft/v1/v1'
-import { getDefaultBudgetFileId } from '@/lib/finance-client'
+import {
+  getBudgetFileBalances,
+  getDefaultBudgetFileId,
+  listScheduledTransactions,
+} from '@/lib/finance-client'
+import { formatDateForApi } from '@/lib/date'
 import { fetchAllPages } from '@/lib/paginated'
 import useSWR, { useSWRConfig } from 'swr'
 
@@ -141,7 +146,8 @@ export function useInvalidateLedger() {
         return (
           url.includes('/transactions/') ||
           url.startsWith('report/') ||
-          url === 'envelope-snapshot'
+          url === 'envelope-snapshot' ||
+          url === 'budget-file-balances'
         )
       },
       undefined,
@@ -188,6 +194,18 @@ export function useCashFlow(startDate?: string, endDate?: string, enabled = true
         end_date: endDate,
       }),
   )
+}
+
+/**
+ * Every account's balance today plus net worth, converted to the home
+ * currency. Net worth is what a household means by "how much do we have";
+ * a period's income minus expenses is not it.
+ */
+export function useBudgetFileBalances() {
+  // As of today: the ledger can hold future-dated entries (planned spending),
+  // and a balance described as "today" must not include them.
+  const today = formatDateForApi(new Date())
+  return useSWR(['budget-file-balances', today], () => getBudgetFileBalances(today))
 }
 
 /** Income and expenses per calendar month, for the overview chart. */
@@ -361,7 +379,19 @@ export interface EnvelopeSnapshotRow {
 }
 
 export interface EnvelopeSnapshot {
+  year: number
+  month: number
+  cash_on_hand: string
+  assigned_total: string
+  overspent_total: string
+  /** Money not yet given to an envelope ("ready to assign"); negative when over-assigned. */
+  available_to_budget: string
   assignments: EnvelopeSnapshotRow[]
+}
+
+/** Every scheduled transaction (bills, salary, repeating transfers). */
+export function useScheduledTransactions() {
+  return useSWR(['scheduled-transactions'], () => listScheduledTransactions())
 }
 
 /**
@@ -424,6 +454,29 @@ export async function upsertEnvelopeAssignment(categoryId: number, amount: strin
     category: categoryId,
     assigned_amount: amount,
   })
+}
+
+/**
+ * Move money between two envelopes this month ("cover an overspend"):
+ * take it from one envelope's assignment and give it to the other's.
+ *
+ * Two writes, source first. If the second fails the first is put back, so a
+ * failure never leaves money taken out of one envelope and not added to the
+ * other.
+ */
+export async function moveBetweenEnvelopes(
+  from: { categoryId: number; assigned: number },
+  to: { categoryId: number; assigned: number },
+  amount: number,
+) {
+  const cents = (value: number) => (Math.round(value * 100) / 100).toFixed(2)
+  await upsertEnvelopeAssignment(from.categoryId, cents(from.assigned - amount))
+  try {
+    await upsertEnvelopeAssignment(to.categoryId, cents(to.assigned + amount))
+  } catch (error) {
+    await upsertEnvelopeAssignment(from.categoryId, cents(from.assigned))
+    throw error
+  }
 }
 
 /** The three whole-month envelope actions the API already implements. */

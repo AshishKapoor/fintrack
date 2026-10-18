@@ -1,7 +1,9 @@
 import { httpPFTClient } from '@/client/httpPFTClient'
+import { LoadError } from '@/components/load-error'
 import { BackupManager } from '@/components/backup-manager'
 import { NotificationSettings } from '@/components/notification-settings'
 import { AiCategorizationSettings } from '@/components/ai-categorization-settings'
+import { BudgetCurrencySettings } from '@/components/budget-currency-settings'
 import { WorkspaceSettings } from '@/components/workspace-settings'
 import { DeleteAccountDialog } from '@/components/delete-account-dialog'
 import { AnimateSpinner } from '@/components/spinner'
@@ -16,15 +18,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 import Typography from '@/components/ui/typography'
 import { useToast } from '@/hooks/use-toast'
 import { AxiosError } from 'axios'
@@ -55,6 +49,9 @@ export default function UserSettingsPage() {
   const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const [loading, setLoading] = useState(false)
+  // Profile fetch failures render an error with a retry, not a blank page.
+  const [profileFailed, setProfileFailed] = useState(false)
+  const [profileAttempt, setProfileAttempt] = useState(0)
   const { toast } = useToast()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [passwordData, setPasswordData] = useState<PasswordChange>({
@@ -78,8 +75,10 @@ export default function UserSettingsPage() {
           method: 'GET',
         })
         setProfile(response)
+        setProfileFailed(false)
       } catch (error: unknown) {
         console.error('Failed to fetch profile:', error)
+        setProfileFailed(true)
         toast({
           title: t('common.error'),
           description:
@@ -94,7 +93,7 @@ export default function UserSettingsPage() {
     }
 
     fetchProfile()
-  }, [toast, t])
+  }, [toast, t, profileAttempt])
 
   const updateProfile = async (formData: Partial<UserProfile>) => {
     setLoading(true)
@@ -176,6 +175,12 @@ export default function UserSettingsPage() {
         {t('settings.title')}
       </Typography>
       {loading && <AnimateSpinner size={64} />}
+      {!loading && !profile && profileFailed && (
+        <LoadError
+          what={t('loadError.settings')}
+          onRetry={() => setProfileAttempt((attempt) => attempt + 1)}
+        />
+      )}
       {!loading && profile && (
         <Tabs defaultValue={defaultTab} className='space-y-6'>
           <TabsList className='w-full justify-start overflow-x-auto p-0'>
@@ -239,46 +244,6 @@ export default function UserSettingsPage() {
                       }
                     />
                   </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='phone_number'>{t('settings.profile.phone')}</Label>
-                    <Input
-                      id='phone_number'
-                      value={profile?.phone_number || ''}
-                      onChange={(e) =>
-                        setProfile((prev) => ({
-                          ...prev!,
-                          phone_number: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='location'>{t('settings.profile.location')}</Label>
-                    <Input
-                      id='location'
-                      value={profile?.location || ''}
-                      onChange={(e) =>
-                        setProfile((prev) => ({
-                          ...prev!,
-                          location: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className='space-y-2 md:col-span-2'>
-                    <Label htmlFor='bio'>{t('settings.profile.bio')}</Label>
-                    <Textarea
-                      id='bio'
-                      rows={4}
-                      value={profile?.bio || ''}
-                      onChange={(e) =>
-                        setProfile((prev) => ({
-                          ...prev!,
-                          bio: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
                 </div>
               </CardContent>
               <CardFooter className='flex justify-end'>
@@ -288,49 +253,6 @@ export default function UserSettingsPage() {
               </CardFooter>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t('settings.profile.workTitle')}</CardTitle>
-                <CardDescription>{t('settings.profile.workDescription')}</CardDescription>
-              </CardHeader>
-              <CardContent className='space-y-6'>
-                <div className='grid grid-cols-1 gap-6 md:grid-cols-2'>
-                  <div className='space-y-2'>
-                    <Label htmlFor='department'>{t('settings.profile.department')}</Label>
-                    <Select
-                      value={profile?.department || ''}
-                      onValueChange={(value) =>
-                        setProfile((prev) => ({
-                          ...prev!,
-                          department: value,
-                        }))
-                      }
-                    >
-                      <SelectTrigger id='department'>
-                        <SelectValue placeholder='Select department' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='engineering'>Engineering</SelectItem>
-                        <SelectItem value='finance'>Finance</SelectItem>
-                        <SelectItem value='hr'>HR</SelectItem>
-                        <SelectItem value='marketing'>Marketing</SelectItem>
-                        <SelectItem value='sales'>Sales</SelectItem>
-                        <SelectItem value='other'>Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className='space-y-2'>
-                    <Label htmlFor='role'>{t('settings.profile.role')}</Label>
-                    <Input id='role' value={profile?.role || ''} disabled />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className='flex justify-end'>
-                <Button onClick={() => updateProfile(profile!)} disabled={loading}>
-                  {loading ? t('common.saving') : t('settings.profile.saveWorkInfo')}
-                </Button>
-              </CardFooter>
-            </Card>
           </TabsContent>
 
           <TabsContent value='account' className='space-y-6'>
@@ -428,6 +350,7 @@ export default function UserSettingsPage() {
           </TabsContent>
 
           <TabsContent value='workspace' className='space-y-6'>
+            <BudgetCurrencySettings />
             <WorkspaceSettings />
           </TabsContent>
 

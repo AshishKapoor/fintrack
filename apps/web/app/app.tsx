@@ -10,7 +10,7 @@ import { Suspense, lazy, useEffect } from 'react'
 
 // Every page is its own chunk, so the initial route does not pay for recharts
 // or pages the user never visits. See the performance budget in CONTRIBUTING.
-const DashboardPage = lazy(() => import('@/pages/dashboard'))
+const HomePage = lazy(() => import('@/pages/home'))
 const CategoriesPage = lazy(() => import('@/pages/category'))
 const BudgetsPage = lazy(() => import('@/pages/budget'))
 const AccountsPage = lazy(() => import('@/pages/accounts'))
@@ -60,7 +60,7 @@ function App() {
             <DashboardLayout>
               <Suspense fallback={<AnimateSpinner size={64} />}>
                 <Routes>
-                <Route path='/' element={<DashboardPage />} />
+                <Route path='/' element={<HomePage />} />
                 <Route path='/categories' element={<CategoriesPage />} />
                 <Route path='/budgets' element={<BudgetsPage />} />
                 <Route path='/accounts' element={<AccountsPage />} />
@@ -72,7 +72,7 @@ function App() {
                 <Route path='/rules' element={<RulesAndRecurringPage />} />
                 <Route path='/audit-log' element={<AuditLogPage />} />
                 <Route path='/bank-sync/callback' element={<BankSyncCallbackPage />} />
-                <Route path='/home' element={<DashboardPage />} />
+                <Route path='/home' element={<HomePage />} />
                 <Route path='/settings' element={<UserSettingsPage />} />
                 <Route path='*' element={<NotFound />} />
                 </Routes>

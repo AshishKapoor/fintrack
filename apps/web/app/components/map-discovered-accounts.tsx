@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { mapSyncConnectionAccount, type SyncConnection, type SyncConnectionAccount } from '@/lib/bank-sync-client'
@@ -32,6 +33,7 @@ export function MapDiscoveredAccounts({
   onMapped?: () => void
   onDone: () => void
 }) {
+  const { t } = useTranslation()
   const unmapped = connection.linked_accounts.filter((linked) => linked.account == null)
   const [choices, setChoices] = useState<Record<number, Choice>>(() =>
     Object.fromEntries(
@@ -50,7 +52,7 @@ export function MapDiscoveredAccounts({
   const saveOne = async (linked: SyncConnectionAccount) => {
     const choice = choices[linked.id]
     if (choice.mode === 'existing' && !choice.existingId) {
-      toast.error('Choose an account to link to first')
+      toast.error(t('mapAccounts.chooseFirst'))
       return
     }
     setSavingId(linked.id)
@@ -63,7 +65,7 @@ export function MapDiscoveredAccounts({
       setSavedIds((prev) => new Set(prev).add(linked.id))
       onMapped?.()
     } catch {
-      toast.error(`Couldn't link ${linked.display_name || linked.external_account_id}`)
+      toast.error(t('mapAccounts.linkFailed', { name: linked.display_name || linked.external_account_id }))
     } finally {
       setSavingId(null)
     }
@@ -73,9 +75,9 @@ export function MapDiscoveredAccounts({
     return (
       <div className='space-y-4 py-6 text-center'>
         <p className='text-sm text-muted-foreground'>
-          Every account from {connection.institution_name || connection.provider_label} is already linked.
+          {t('mapAccounts.allLinked', { name: connection.institution_name || connection.provider_label })}
         </p>
-        <Button onClick={onDone}>Done</Button>
+        <Button onClick={onDone}>{t('mapAccounts.done')}</Button>
       </div>
     )
   }
@@ -83,8 +85,10 @@ export function MapDiscoveredAccounts({
   return (
     <div className='space-y-4'>
       <p className='text-sm text-muted-foreground'>
-        {connection.institution_name || connection.provider_label} has {unmapped.length} account
-        {unmapped.length === 1 ? '' : 's'}. Choose where each one goes in FinTrack.
+        {t('mapAccounts.intro', {
+          name: connection.institution_name || connection.provider_label,
+          count: unmapped.length,
+        })}
       </p>
 
       {unmapped.map((linked) => {
@@ -100,7 +104,7 @@ export function MapDiscoveredAccounts({
                   {linked.iban ? ` · ${linked.iban}` : ''}
                 </div>
               </div>
-              {saved && <Badge variant='secondary'>Linked</Badge>}
+              {saved && <Badge variant='secondary'>{t('mapAccounts.linked')}</Badge>}
             </div>
 
             {!saved && (
@@ -111,10 +115,10 @@ export function MapDiscoveredAccounts({
                   className='flex gap-4'
                 >
                   <Label className='flex items-center gap-2 text-sm font-normal'>
-                    <RadioGroupItem value='create' /> Create a new account
+                    <RadioGroupItem value='create' /> {t('mapAccounts.createNew')}
                   </Label>
                   <Label className='flex items-center gap-2 text-sm font-normal'>
-                    <RadioGroupItem value='existing' /> Link to an existing account
+                    <RadioGroupItem value='existing' /> {t('mapAccounts.linkExisting')}
                   </Label>
                 </RadioGroup>
 
@@ -122,7 +126,7 @@ export function MapDiscoveredAccounts({
                   <Input
                     value={choice.name}
                     onChange={(e) => setChoice(linked.id, { name: e.target.value })}
-                    placeholder='Account name'
+                    placeholder={t('mapAccounts.accountName')}
                   />
                 ) : (
                   <Select
@@ -130,7 +134,7 @@ export function MapDiscoveredAccounts({
                     onValueChange={(value) => setChoice(linked.id, { existingId: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder='Choose an account' />
+                      <SelectValue placeholder={t('mapAccounts.chooseAccount')} />
                     </SelectTrigger>
                     <SelectContent>
                       {existingAccounts.map((account) => (
@@ -143,7 +147,7 @@ export function MapDiscoveredAccounts({
                 )}
 
                 <Button size='sm' disabled={savingId === linked.id} onClick={() => saveOne(linked)}>
-                  {savingId === linked.id ? 'Linking…' : 'Link this account'}
+                  {savingId === linked.id ? t('mapAccounts.linking') : t('mapAccounts.linkThis')}
                 </Button>
               </>
             )}
@@ -152,7 +156,7 @@ export function MapDiscoveredAccounts({
       })}
 
       <Button variant='outline' className='w-full' onClick={onDone}>
-        Done
+        {t('mapAccounts.done')}
       </Button>
     </div>
   )

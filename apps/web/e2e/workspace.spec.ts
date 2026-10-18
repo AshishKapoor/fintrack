@@ -39,15 +39,15 @@ test('owner shares a workspace; viewer reads but cannot write', async ({ browser
   await test.step('owner registers and creates a workspace', async () => {
     await registerAndSignIn(owner, OWNER)
     await owner.goto('/settings')
-    await owner.getByRole('tab', { name: 'Workspace' }).click()
+    await owner.getByRole('tab', { name: 'Household' }).click()
     await owner.locator('#workspace-name').fill('Shared Books')
-    await owner.getByRole('button', { name: 'Create workspace' }).click()
-    await expect(owner.getByText('Shared Books — members')).toBeVisible({ timeout: 30_000 })
+    await owner.getByRole('button', { name: 'Create household' }).click()
+    await expect(owner.getByText("Who's in Shared Books")).toBeVisible({ timeout: 30_000 })
   })
 
   await test.step('owner adds a transaction in the shared workspace', async () => {
     await owner.goto('/transactions')
-    await owner.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await owner.getByRole('button', { name: 'Add transaction' }).first().click()
     await owner.locator('#title').fill('Team lunch')
     await owner.locator('#amount').fill('45.00')
     await owner.locator('#category').click()
@@ -58,10 +58,10 @@ test('owner shares a workspace; viewer reads but cannot write', async ({ browser
 
   await test.step('owner invites the viewer', async () => {
     await owner.goto('/settings')
-    await owner.getByRole('tab', { name: 'Workspace' }).click()
+    await owner.getByRole('tab', { name: 'Household' }).click()
     await owner.locator('#invite-email').fill(VIEWER)
     await owner.locator('#invite-role').click()
-    await owner.getByRole('option', { name: 'viewer' }).click()
+    await owner.getByRole('option', { name: 'View only' }).click()
     await owner.getByRole('button', { name: 'Invite' }).click()
     const tokenBox = owner.getByTestId('invite-token')
     await expect(tokenBox).toBeVisible({ timeout: 30_000 })
@@ -75,10 +75,10 @@ test('owner shares a workspace; viewer reads but cannot write', async ({ browser
   await test.step('viewer joins with the token and switches in', async () => {
     await registerAndSignIn(viewer, VIEWER)
     await viewer.goto('/settings')
-    await viewer.getByRole('tab', { name: 'Workspace' }).click()
+    await viewer.getByRole('tab', { name: 'Household' }).click()
     await viewer.locator('#join-token').fill(token)
     await viewer.getByRole('button', { name: 'Join' }).click()
-    await expect(viewer.getByText('Joined the workspace').first()).toBeVisible({
+    await expect(viewer.getByText('You joined the household').first()).toBeVisible({
       timeout: 30_000,
     })
     await switchWorkspace(viewer, 'Shared Books')
@@ -90,7 +90,7 @@ test('owner shares a workspace; viewer reads but cannot write', async ({ browser
   })
 
   await test.step('viewer cannot write', async () => {
-    await viewer.getByRole('button', { name: 'Add Transaction' }).first().click()
+    await viewer.getByRole('button', { name: 'Add transaction' }).first().click()
     await viewer.locator('#title').fill('Trespass')
     await viewer.locator('#amount').fill('1.00')
     await viewer.locator('#category').click()

@@ -3,8 +3,8 @@
   "short_name": "FinTrack",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#f9f5ee",
+  "theme_color": "#f9f5ee",
   "description": "Privacy-first personal finance tracking with envelope budgeting.",
   "icons": [
     {
